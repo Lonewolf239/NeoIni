@@ -15,6 +15,6 @@ Please note that **all previous versions** (`< 1.5.7.7`) are deprecated. They ar
 
 If you discover a security vulnerability in the supported version, please report it immediately.
 
-*   **How to report:** Please open a **Draft Security Advisory** in the repository.
+*   **How to report**: Please open a Draft Security Advisory in the repository or contact us via Telegram: [@an1onime](https://t.me/an1onime).
 *   **Timeline:** We aim to acknowledge all reports within 48 hours.
 *   **Policy:** Please do not disclose the vulnerability publicly until a patch has been released.
