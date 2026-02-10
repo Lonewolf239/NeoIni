@@ -7,10 +7,17 @@ namespace NeoIni;
 
 internal sealed class NeoIniParser
 {
-    internal static string ValueToString<T>(T value) => value?.ToString()?.Trim() ?? string.Empty;
+    internal static string ValueToString<T>(T value)
+    {
+        string valueString = value?.ToString()?.Trim() ?? string.Empty;
+        return valueString.Replace("\n", "\\n");
+    }
 
-    internal static string GetStringRaw(Data data, string section, string keyName) =>
-        data.TryGetValue(section, out var sec) && sec.TryGetValue(keyName, out var val) ? val.Trim() : null;
+    internal static string GetStringRaw(Data data, string section, string keyName)
+    {
+        string value = data.TryGetValue(section, out var sec) && sec.TryGetValue(keyName, out var val) ? val.Trim() : null;
+        return value.Replace("\\n", "\n");
+    }
 
     internal static string GetContent(Data data)
     {
