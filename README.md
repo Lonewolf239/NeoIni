@@ -244,6 +244,7 @@ using NeoIniReader reader = new("config.ini");
 | `SectionExists` | Check if section exists | - |
 | `KeyExists` | Check if key exists in section | - |
 | `SaveFile` | Saving data to a file | `SaveFileAsync` |
+| `ToString` | Serialize INI data to formatted string (as in file) | - |
 | `ReloadFromFile` | Reloading data from a file | - |
 | `DeleteFile` | Deleting a file from disk | - |
 | `DeleteFileWithData` | Deleting a file and clearing data | - |

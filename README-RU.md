@@ -245,6 +245,7 @@ using NeoIniReader reader = new("config.ini");
 | `SectionExists` | Проверка существования секции | - |
 | `KeyExists` | Проверка существования ключа в секции | - |
 | `SaveFile` | Сохранение данных в файл | `SaveFileAsync` |
+| `ToString` | Сериализация данных INI в отформатированную строку (как в файле) | - |
 | `ReloadFromFile` | Перезагрузка данных из файла | - |
 | `DeleteFile` | Удаление файла с диска | - |
 | `DeleteFileWithData` | Удаление файла и очистка данных | - |
