@@ -9,8 +9,26 @@ internal sealed class NeoIniParser
 {
     internal static string ValueToString<T>(T value)
     {
-        string valueString = value?.ToString()?.Trim() ?? string.Empty;
-        return valueString.Replace(@"\", @"\\").Replace("\r", "").Replace("\n", @"\\n");
+        var s = value?.ToString() ?? string.Empty;
+        if (s.Length == 0) return s;
+        var sb = new StringBuilder(s.Length * 2);
+        for (int i = 0; i < s.Length; i++)
+        {
+            char c = s[i];
+            if (c == '\r')
+            {
+                if (i + 1 < s.Length && s[i + 1] == '\n')
+                {
+                    sb.Append("\\r\\n");
+                    i++;
+                }
+                else sb.Append("\\r");
+                continue;
+            }
+            if (c == '\n') { sb.Append("\\n"); continue; }
+            sb.Append(c);
+        }
+        return sb.ToString().Trim();
     }
 
     internal static string GetStringRaw(Data data, string section, string keyName)
@@ -25,23 +43,28 @@ internal sealed class NeoIniParser
         var sb = new StringBuilder(s.Length);
         for (int i = 0; i < s.Length; i++)
         {
-            if (s[i] == '\\' && i + 1 < s.Length)
+            char c = s[i];
+            if (c == '\\' && i + 1 < s.Length)
             {
                 char next = s[i + 1];
-                if (next == 'n')
+                switch (next)
                 {
-                    sb.Append('\n');
-                    i++;
-                    continue;
-                }
-                if (next == '\\')
-                {
-                    sb.Append('\\');
-                    i++;
-                    continue;
+                    case 'r':
+                        if (i + 3 < s.Length && s[i + 2] == '\\' && s[i + 3] == 'n')
+                        {
+                            sb.Append('\r').Append('\n');
+                            i += 3;
+                        }
+                        else
+                        {
+                            sb.Append('\r');
+                            i++;
+                        }
+                        continue;
+                    case 'n': sb.Append('\n'); i++; continue;
                 }
             }
-            sb.Append(s[i]);
+            sb.Append(c);
         }
         return sb.ToString();
     }
