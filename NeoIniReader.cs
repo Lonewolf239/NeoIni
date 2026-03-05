@@ -13,7 +13,7 @@ namespace NeoIni;
 /// <br/>
 /// <b>Target Framework: .NET 6+</b>
 /// <br/>
-/// <b>Version: 1.5.7.9</b>
+/// <b>Version: 1.5.8</b>
 /// <br/>
 /// <b>Black Box Philosophy:</b> This class follows a strict "black box" design principle - users interact only through the public API without needing to understand internal implementation details. Input goes in, processed output comes out, internals remain hidden and abstracted.
 /// </summary>
@@ -122,11 +122,7 @@ public class NeoIniReader : IDisposable
     public Action<Exception> OnError
     {
         get => FileProvider?.OnError;
-        set
-        {
-            if (FileProvider is not null)
-                FileProvider.OnError = value;
-        }
+        set => FileProvider.OnError = value;
     }
 
     /// <summary>Called when the checksum does not match when loading a file</summary>
@@ -135,11 +131,7 @@ public class NeoIniReader : IDisposable
     public Action<byte[], byte[]> OnChecksumMismatch
     {
         get => FileProvider?.OnChecksumMismatch;
-        set
-        {
-            if (FileProvider is not null)
-                FileProvider.OnChecksumMismatch = value;
-        }
+        set => FileProvider.OnChecksumMismatch = value;
     }
 
     /// <summary>Called after each search</summary>
@@ -161,10 +153,10 @@ public class NeoIniReader : IDisposable
         {
             EncryptionKey = NeoIniEncryptionProvider.GetEncryptionKey();
             AutoEncryption = true;
-            FileProvider = new(FilePath, EncryptionKey);
+            FileProvider = new(FilePath, EncryptionKey, true);
         }
         else FileProvider = new(FilePath);
-        Data = FileProvider.GetData(UseChecksum);
+        Data = FileProvider.GetData();
     }
 
     /// <summary>Initializes a new instance of the <see cref="NeoIniReader"/> class with custom encryption</summary>
@@ -177,8 +169,23 @@ public class NeoIniReader : IDisposable
             throw new ArgumentException("Encryption password cannot be null or empty.", nameof(encryptionPassword));
         EncryptionKey = NeoIniEncryptionProvider.GetEncryptionKey(encryptionPassword);
         AutoEncryption = CustomEncryptionPassword = true;
-        FileProvider = new(FilePath, EncryptionKey);
-        Data = FileProvider.GetData(UseChecksum);
+        FileProvider = new(FilePath, EncryptionKey, false);
+        Data = FileProvider.GetData();
+    }
+
+    /// <summary>Returns the INI data formatted as it would appear in the file</summary>
+    /// <returns>
+    /// A string containing the serialized INI content of this instance,
+    /// formatted exactly as it would be written to the underlying file.
+    /// </returns>
+    public override string ToString()
+    {
+        ThrowIfDisposed();
+        string content;
+        Lock.EnterReadLock();
+        try { content = NeoIniParser.GetContent(Data); }
+        finally { Lock.ExitReadLock(); }
+        return content;
     }
 
     /// <summary>Releases managed resources and saves changes to the file</summary>
@@ -689,7 +696,7 @@ public class NeoIniReader : IDisposable
     {
         ThrowIfDisposed();
         Lock.EnterWriteLock();
-        try { Data = FileProvider.GetData(UseChecksum); }
+        try { Data = FileProvider.GetData(); }
         finally { Lock.ExitWriteLock(); }
         OnLoad?.Invoke();
     }

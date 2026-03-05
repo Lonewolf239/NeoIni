@@ -11,26 +11,63 @@ namespace NeoIni;
 
 internal sealed class NeoIniFileProvider
 {
-    private readonly string FilePath;
-    private string TempFilePath => FilePath + ".tmp";
-    private string BackupFilePath => FilePath + ".backup";
-    private readonly byte[] EncryptionKey;
-    private readonly bool AutoEncryption = false;
+    internal sealed class MissingEncryptionKeyException : Exception
+    {
+        public MissingEncryptionKeyException()
+            : base("The configuration file is encrypted with a custom password. Please provide a password string to the NeoIniReader constructor.") { }
+    }
+
+    private const byte FileVersion = 1;
+    private const int HeaderSize = 10;
+    private const int ReservedSize = 2;
+    private const int IvSize = 16;
     private const int ChecksumSize = 32;
     private const string WarningText = "; WARNING: This file is auto-generated.\n; Any manual changes will be overwritten and may cause data loss.\n; The original data will be restored from backup.\n";
+
+    private static readonly byte[] FileSignature = { (byte)'N', (byte)'I', (byte)'N', (byte)'I' };
+    private static readonly byte[] WarningBytes = Encoding.UTF8.GetBytes(WarningText);
+    private static readonly string[] LineSeparators = new[] { "\r\n", "\n", "\r" };
+
+    [Flags]
+    private enum HeaderFlags : byte
+    {
+        None = 0,
+        HasChecksum = 1 << 0,
+        IsEncrypted = 1 << 1,
+        AutoMode = 1 << 2,
+        CustomMode = 1 << 3,
+    }
+
+    private readonly string FilePath;
+    private readonly byte[] EncryptionKey;
+    private readonly bool Encryption = false;
+    private readonly bool AutoEncryption = false;
+
+    private string TempFilePath => FilePath + ".tmp";
+    private string BackupFilePath => FilePath + ".backup";
+
     internal Action<Exception> OnError;
     internal Action<byte[], byte[]> OnChecksumMismatch;
 
     internal NeoIniFileProvider(string filePath) => FilePath = filePath;
 
-    internal NeoIniFileProvider(string filePath, byte[] encryptionKey)
+    internal NeoIniFileProvider(string filePath, byte[] encryptionKey, bool autoModeEncryption)
     {
         FilePath = filePath;
         EncryptionKey = encryptionKey;
-        AutoEncryption = true;
+        Encryption = true;
+        AutoEncryption = autoModeEncryption;
     }
 
-    internal Data GetData(bool useChecksum)
+    internal void DeleteBackup() { if (File.Exists(BackupFilePath)) File.Delete(BackupFilePath); }
+
+    internal void DeleteFile()
+    {
+        if (File.Exists(FilePath)) File.Delete(FilePath);
+        if (File.Exists(TempFilePath)) File.Delete(TempFilePath);
+    }
+
+    internal Data GetData()
     {
         var data = new Data();
         string directory = Path.GetDirectoryName(FilePath);
@@ -41,7 +78,7 @@ internal sealed class NeoIniFileProvider
             return data;
         }
         string currentSection = null;
-        var lines = ReadFile(useChecksum);
+        var lines = ReadFile();
         if (lines == null) return data;
         foreach (var line in lines)
         {
@@ -59,99 +96,19 @@ internal sealed class NeoIniFileProvider
         return data;
     }
 
-    internal void DeleteFile()
-    {
-        if (File.Exists(FilePath)) File.Delete(FilePath);
-        if (File.Exists(TempFilePath)) File.Delete(TempFilePath);
-    }
-
-    internal void DeleteBackup() { if (File.Exists(BackupFilePath)) File.Delete(BackupFilePath); }
-
-    private string[] CheckBackup(bool useChecksum)
-    {
-        if (!File.Exists(BackupFilePath)) return null;
-        return ReadFile(BackupFilePath, useChecksum, true);
-    }
-
-    private string[] ReadFile(bool useChecksum) => ReadFile(FilePath, useChecksum, false);
-
-    private string[] ReadFile(string path, bool useChecksum, bool isBackup)
-    {
-        if (!File.Exists(path))
-        {
-            if (isBackup) return null;
-            return CheckBackup(useChecksum);
-        }
-        try
-        {
-            byte[] fileBytes = File.ReadAllBytes(path);
-            int headerLength = useChecksum ? Encoding.UTF8.GetByteCount(WarningText) : 0;
-            if (fileBytes.Length < headerLength + (useChecksum ? ChecksumSize : 0) + (AutoEncryption ? 16 : 0))
-            {
-                if (isBackup) return null;
-                return CheckBackup(useChecksum);
-            }
-            if (!ValidateChecksum(fileBytes, useChecksum))
-            {
-                if (isBackup) return null;
-                return CheckBackup(useChecksum);
-            }
-            string content;
-            int totalDataLength = useChecksum ? fileBytes.Length - ChecksumSize : fileBytes.Length;
-            if (!AutoEncryption)
-            {
-                int contentLength = totalDataLength - headerLength;
-                if (contentLength <= 0) return new string[0];
-                content = Encoding.UTF8.GetString(fileBytes, headerLength, contentLength);
-                return content.Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.None);
-            }
-            else
-            {
-                byte[] iv = new byte[16];
-                Array.Copy(fileBytes, headerLength, iv, 0, 16);
-                int dataStartIndex = headerLength + 16;
-                int encryptedLength = totalDataLength - dataStartIndex;
-                if (encryptedLength <= 0) return new string[0];
-                byte[] encryptedContent = new byte[encryptedLength];
-                Array.Copy(fileBytes, dataStartIndex, encryptedContent, 0, encryptedLength);
-                using var aes = Aes.Create();
-                aes.Key = EncryptionKey;
-                aes.IV = iv;
-                using var decryptor = aes.CreateDecryptor();
-                using var ms = new MemoryStream(encryptedContent);
-                using var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read);
-                using var sr = new StreamReader(cs, Encoding.UTF8);
-                content = sr.ReadToEnd();
-                return content.Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.None);
-            }
-        }
-        catch (CryptographicException ex)
-        {
-            if (isBackup) return null;
-            var data = CheckBackup(useChecksum);
-            if (data != null) return data;
-            throw new InvalidOperationException("Failed to decrypt configuration file.", ex);
-        }
-        catch (Exception ex)
-        {
-            if (isBackup) return null;
-            OnError?.Invoke(ex);
-            return CheckBackup(useChecksum);
-        }
-    }
-
     internal void SaveFile(string content, bool useChecksum, bool useBackup)
     {
         if (string.IsNullOrEmpty(content)) return;
-        byte[] warningBytes = Encoding.UTF8.GetBytes(WarningText);
         byte[] plaintextBytes = Encoding.UTF8.GetBytes(content);
         byte[] dataWithChecksum;
         try
         {
-            if (!AutoEncryption)
+            byte[] header = BuildHeader(useChecksum);
+            if (!Encryption)
             {
-                using var ms = new MemoryStream(plaintextBytes.Length + (useChecksum ? warningBytes.Length : 0));
-                if (useChecksum) ms.Write(warningBytes, 0, warningBytes.Length);
+                using var ms = new MemoryStream(plaintextBytes.Length + (useChecksum ? WarningBytes.Length : 0));
+                ms.Write(header, 0, header.Length);
+                if (useChecksum) ms.Write(WarningBytes, 0, WarningBytes.Length);
                 ms.Write(plaintextBytes, 0, plaintextBytes.Length);
                 dataWithChecksum = AddChecksum(ms.ToArray(), useChecksum);
                 File.WriteAllBytes(TempFilePath, dataWithChecksum);
@@ -161,18 +118,21 @@ internal sealed class NeoIniFileProvider
                 using var aes = Aes.Create();
                 aes.Key = EncryptionKey;
                 aes.GenerateIV();
-                using var encryptor = aes.CreateEncryptor();
                 using var ms = new MemoryStream();
-                if (useChecksum) ms.Write(warningBytes, 0, warningBytes.Length);
+                ms.Write(header, 0, header.Length);
+                if (useChecksum) ms.Write(WarningBytes, 0, WarningBytes.Length);
                 ms.Write(aes.IV, 0, aes.IV.Length);
-                using var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write);
-                cs.Write(plaintextBytes, 0, plaintextBytes.Length);
-                cs.FlushFinalBlock();
+                using var encryptor = aes.CreateEncryptor();
+                using (var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
+                {
+                    cs.Write(plaintextBytes, 0, plaintextBytes.Length);
+                    cs.FlushFinalBlock();
+                }
                 dataWithChecksum = AddChecksum(ms.ToArray(), useChecksum);
                 File.WriteAllBytes(TempFilePath, dataWithChecksum);
             }
-            if (useBackup) File.Replace(TempFilePath, FilePath, BackupFilePath);
-            else File.Replace(TempFilePath, FilePath, null);
+            if (File.Exists(FilePath)) File.Replace(TempFilePath, FilePath, useBackup ? BackupFilePath : null);
+            else File.Move(TempFilePath, FilePath);
         }
         catch (Exception ex) { OnError?.Invoke(ex); }
     }
@@ -180,15 +140,16 @@ internal sealed class NeoIniFileProvider
     internal async Task SaveFileAsync(string content, bool useChecksum, bool useBackup)
     {
         if (string.IsNullOrEmpty(content)) return;
-        byte[] warningBytes = Encoding.UTF8.GetBytes(WarningText);
         byte[] plaintextBytes = Encoding.UTF8.GetBytes(content);
         byte[] dataWithChecksum;
         try
         {
-            if (!AutoEncryption)
+            byte[] header = BuildHeader(useChecksum);
+            if (!Encryption)
             {
-                using var ms = new MemoryStream(plaintextBytes.Length + (useChecksum ? warningBytes.Length : 0));
-                if (useChecksum) await ms.WriteAsync(warningBytes, 0, warningBytes.Length).ConfigureAwait(false);
+                using var ms = new MemoryStream(plaintextBytes.Length + (useChecksum ? WarningBytes.Length : 0));
+                ms.Write(header, 0, header.Length);
+                if (useChecksum) await ms.WriteAsync(WarningBytes, 0, WarningBytes.Length).ConfigureAwait(false);
                 await ms.WriteAsync(plaintextBytes, 0, plaintextBytes.Length).ConfigureAwait(false);
                 dataWithChecksum = AddChecksum(ms.ToArray(), useChecksum);
                 await File.WriteAllBytesAsync(TempFilePath, dataWithChecksum).ConfigureAwait(false);
@@ -198,20 +159,162 @@ internal sealed class NeoIniFileProvider
                 using var aes = Aes.Create();
                 aes.Key = EncryptionKey;
                 aes.GenerateIV();
-                using var encryptor = aes.CreateEncryptor();
                 await using var ms = new MemoryStream();
-                if (useChecksum) await ms.WriteAsync(warningBytes, 0, warningBytes.Length).ConfigureAwait(false);
+                ms.Write(header, 0, header.Length);
+                if (useChecksum) await ms.WriteAsync(WarningBytes, 0, WarningBytes.Length).ConfigureAwait(false);
                 await ms.WriteAsync(aes.IV, 0, aes.IV.Length).ConfigureAwait(false);
-                await using var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write);
-                await cs.WriteAsync(plaintextBytes, 0, plaintextBytes.Length).ConfigureAwait(false);
-                await cs.FlushFinalBlockAsync().ConfigureAwait(false);
+                using var encryptor = aes.CreateEncryptor();
+                await using (var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
+                {
+                    await cs.WriteAsync(plaintextBytes, 0, plaintextBytes.Length).ConfigureAwait(false);
+                    await cs.FlushFinalBlockAsync().ConfigureAwait(false);
+                }
                 dataWithChecksum = AddChecksum(ms.ToArray(), useChecksum);
                 await File.WriteAllBytesAsync(TempFilePath, dataWithChecksum).ConfigureAwait(false);
             }
-            if (useBackup) File.Replace(TempFilePath, FilePath, BackupFilePath);
-            else File.Replace(TempFilePath, FilePath, null);
+            if (File.Exists(FilePath)) File.Replace(TempFilePath, FilePath, useBackup ? BackupFilePath : null);
+            else File.Move(TempFilePath, FilePath);
         }
         catch (Exception ex) { OnError?.Invoke(ex); }
+    }
+
+    private static string[] SplitLines(string content) => content.Split(LineSeparators, StringSplitOptions.None);
+
+    private byte[] AddChecksum(byte[] data, bool useChecksum)
+    {
+        if (!useChecksum) return data;
+        byte[] dataWithChecksum = new byte[data.Length + ChecksumSize];
+        Array.Copy(data, dataWithChecksum, data.Length);
+        byte[] checksum = SHA256.HashData(data);
+        Array.Copy(checksum, 0, dataWithChecksum, data.Length, ChecksumSize);
+        return dataWithChecksum;
+    }
+
+    private byte[] BuildHeader(bool useChecksum)
+    {
+        var flags = HeaderFlags.None;
+        if (useChecksum) flags |= HeaderFlags.HasChecksum;
+        if (Encryption) flags |= HeaderFlags.IsEncrypted;
+        if (AutoEncryption) flags |= HeaderFlags.AutoMode;
+        else flags |= HeaderFlags.CustomMode;
+        byte[] header = new byte[HeaderSize];
+        Array.Copy(FileSignature, 0, header, 0, FileSignature.Length);
+        header[4] = FileVersion;
+        header[5] = (byte)flags;
+        header[6] = 0;
+        header[7] = 0;
+        header[8] = 0x0D;
+        header[9] = 0x0A;
+        return header;
+    }
+
+    private string[] CheckBackup()
+    {
+        if (!File.Exists(BackupFilePath)) return null;
+        return ReadFile(BackupFilePath, true);
+    }
+
+    private byte[] GetEffectiveEncryptionKey(bool autoModeEncryption)
+    {
+        if (EncryptionKey == null)
+        {
+            if (autoModeEncryption) return NeoIniEncryptionProvider.GetEncryptionKey();
+            else throw new MissingEncryptionKeyException();
+        }
+        else return EncryptionKey.Clone() as byte[];
+    }
+
+    private string[] ReadFile() => ReadFile(FilePath, false);
+
+    private string[] ReadFile(string path, bool isBackup)
+    {
+        if (!File.Exists(path))
+        {
+            if (isBackup) return null;
+            return CheckBackup();
+        }
+        try
+        {
+            byte[] fileBytes = File.ReadAllBytes(path);
+            if (!TryParseHeader(fileBytes, out int headerLength, out bool hasChecksum, out bool isEncrypted, out bool autoModeEncryption))
+            {
+                if (isBackup) return null;
+                return CheckBackup();
+            }
+            int minLength = headerLength + (hasChecksum ? WarningBytes.Length + ChecksumSize : 0) + (isEncrypted ? IvSize : 0);
+            if (fileBytes.Length < minLength)
+            {
+                if (isBackup) return null;
+                return CheckBackup();
+            }
+            if (!ValidateChecksum(fileBytes, hasChecksum))
+            {
+                if (isBackup) return null;
+                return CheckBackup();
+            }
+            int index = headerLength;
+            if (hasChecksum) index += WarningBytes.Length;
+            string content;
+            if (!isEncrypted)
+            {
+                int dataLength = fileBytes.Length - index - (hasChecksum ? ChecksumSize : 0);
+                if (dataLength <= 0) return Array.Empty<string>();
+                content = Encoding.UTF8.GetString(fileBytes, index, dataLength);
+                return SplitLines(content);
+            }
+            else
+            {
+                byte[] encryptionKey = GetEffectiveEncryptionKey(autoModeEncryption);
+                byte[] iv = new byte[IvSize];
+                Array.Copy(fileBytes, index, iv, 0, IvSize);
+                index += IvSize;
+                int encryptedLength = fileBytes.Length - index - (hasChecksum ? ChecksumSize : 0);
+                if (encryptedLength <= 0) return Array.Empty<string>();
+                byte[] encryptedContent = new byte[encryptedLength];
+                Array.Copy(fileBytes, index, encryptedContent, 0, encryptedLength);
+                using var aes = Aes.Create();
+                aes.Key = encryptionKey;
+                aes.IV = iv;
+                using var ms = new MemoryStream(encryptedContent);
+                using var decryptor = aes.CreateDecryptor();
+                using var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read);
+                using var sr = new StreamReader(cs, Encoding.UTF8);
+                content = sr.ReadToEnd();
+                return SplitLines(content);
+            }
+        }
+        catch (CryptographicException ex)
+        {
+            if (isBackup) return null;
+            var data = CheckBackup();
+            if (data != null) return data;
+            throw new InvalidOperationException("Failed to decrypt configuration file.", ex);
+        }
+        catch (MissingEncryptionKeyException) { throw; }
+        catch (Exception ex)
+        {
+            if (isBackup) return null;
+            OnError?.Invoke(ex);
+            return CheckBackup();
+        }
+    }
+
+    private bool TryParseHeader(byte[] fileBytes, out int headerLength, out bool hasChecksum, out bool isEncrypted, out bool autoModeEncryption)
+    {
+        headerLength = 0;
+        hasChecksum = false;
+        isEncrypted = false;
+        autoModeEncryption = false;
+        if (fileBytes.Length < HeaderSize) return false;
+        if (!fileBytes.AsSpan(0, FileSignature.Length).SequenceEqual(FileSignature)) return false;
+        byte version = fileBytes[4];
+        if (version != FileVersion) return false;
+        var flags = (HeaderFlags)fileBytes[5];
+        hasChecksum = flags.HasFlag(HeaderFlags.HasChecksum);
+        isEncrypted = flags.HasFlag(HeaderFlags.IsEncrypted);
+        autoModeEncryption = flags.HasFlag(HeaderFlags.AutoMode);
+        headerLength = HeaderSize;
+        return true;
     }
 
     private bool ValidateChecksum(byte[] data, bool useChecksum)
@@ -227,15 +330,5 @@ internal sealed class NeoIniFileProvider
         bool result = checksumFromData.SequenceEqual(calculatedChecksum);
         if (!result) OnChecksumMismatch?.Invoke(calculatedChecksum, checksumFromData);
         return result;
-    }
-
-    private byte[] AddChecksum(byte[] data, bool useChecksum)
-    {
-        if (!useChecksum) return data;
-        byte[] dataWithChecksum = new byte[data.Length + ChecksumSize];
-        Array.Copy(data, dataWithChecksum, data.Length);
-        byte[] checksum = SHA256.HashData(data);
-        Array.Copy(checksum, 0, dataWithChecksum, data.Length, ChecksumSize);
-        return dataWithChecksum;
     }
 }

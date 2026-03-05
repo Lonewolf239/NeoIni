@@ -11,7 +11,7 @@ internal sealed class NeoIniEncryptionProvider
         string userId = Environment.UserName ?? Environment.GetEnvironmentVariable("USER") ?? "unknown";
         string fullSeed = $"{userId}:{Environment.MachineName}:{Environment.UserDomainName ?? "local"}";
         byte[] salt = GenerateDeterministicSalt($"{userId}:{Environment.MachineName}");
-        byte[] key = Rfc2898DeriveBytes.Pbkdf2(fullSeed, salt, 100000, HashAlgorithmName.SHA256, 32);
+        byte[] key = Rfc2898DeriveBytes.Pbkdf2(fullSeed, salt, 320000, HashAlgorithmName.SHA256, 32);
         using var hmac = new HMACSHA256(key);
         byte[] finalSeed = hmac.ComputeHash(Encoding.UTF8.GetBytes(fullSeed + length));
         var password = new StringBuilder(length);
