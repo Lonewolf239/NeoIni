@@ -17,7 +17,7 @@ internal sealed class NeoIniFileProvider
     private readonly byte[] EncryptionKey;
     private readonly bool AutoEncryption = false;
     private const int ChecksumSize = 32;
-    private string WarningText = "; WARNING: This file is auto-generated.\n; Any manual changes will be overwritten and may cause data loss.\n; The original data will be restored from backup.\n";
+    private const string WarningText = "; WARNING: This file is auto-generated.\n; Any manual changes will be overwritten and may cause data loss.\n; The original data will be restored from backup.\n";
     internal Action<Exception> OnError;
     internal Action<byte[], byte[]> OnChecksumMismatch;
 
@@ -85,7 +85,7 @@ internal sealed class NeoIniFileProvider
         try
         {
             byte[] fileBytes = File.ReadAllBytes(path);
-            int headerLength = Encoding.UTF8.GetByteCount(WarningText);
+            int headerLength = useChecksum ? Encoding.UTF8.GetByteCount(WarningText) : 0;
             if (fileBytes.Length < headerLength + (useChecksum ? ChecksumSize : 0) + (AutoEncryption ? 16 : 0))
             {
                 if (isBackup) return null;
@@ -150,9 +150,8 @@ internal sealed class NeoIniFileProvider
         {
             if (!AutoEncryption)
             {
-                dataWithChecksum = AddChecksum(plaintextBytes, useChecksum);
-                using var ms = new MemoryStream(warningBytes.Length + plaintextBytes.Length);
-                ms.Write(warningBytes, 0, warningBytes.Length);
+                using var ms = new MemoryStream(plaintextBytes.Length + (useChecksum ? warningBytes.Length : 0));
+                if (useChecksum) ms.Write(warningBytes, 0, warningBytes.Length);
                 ms.Write(plaintextBytes, 0, plaintextBytes.Length);
                 dataWithChecksum = AddChecksum(ms.ToArray(), useChecksum);
                 File.WriteAllBytes(TempFilePath, dataWithChecksum);
@@ -164,7 +163,7 @@ internal sealed class NeoIniFileProvider
                 aes.GenerateIV();
                 using var encryptor = aes.CreateEncryptor();
                 using var ms = new MemoryStream();
-                ms.Write(warningBytes, 0, warningBytes.Length);
+                if (useChecksum) ms.Write(warningBytes, 0, warningBytes.Length);
                 ms.Write(aes.IV, 0, aes.IV.Length);
                 using var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write);
                 cs.Write(plaintextBytes, 0, plaintextBytes.Length);
@@ -188,12 +187,11 @@ internal sealed class NeoIniFileProvider
         {
             if (!AutoEncryption)
             {
-                dataWithChecksum = AddChecksum(plaintextBytes, useChecksum);
-                using var ms = new MemoryStream(warningBytes.Length + plaintextBytes.Length);
-                await ms.WriteAsync(warningBytes, 0, warningBytes.Length).ConfigureAwait(false);
+                using var ms = new MemoryStream(plaintextBytes.Length + (useChecksum ? warningBytes.Length : 0));
+                if (useChecksum) await ms.WriteAsync(warningBytes, 0, warningBytes.Length).ConfigureAwait(false);
                 await ms.WriteAsync(plaintextBytes, 0, plaintextBytes.Length).ConfigureAwait(false);
                 dataWithChecksum = AddChecksum(ms.ToArray(), useChecksum);
-                File.WriteAllBytes(TempFilePath, dataWithChecksum);
+                await File.WriteAllBytesAsync(TempFilePath, dataWithChecksum).ConfigureAwait(false);
             }
             else
             {
@@ -202,7 +200,7 @@ internal sealed class NeoIniFileProvider
                 aes.GenerateIV();
                 using var encryptor = aes.CreateEncryptor();
                 await using var ms = new MemoryStream();
-                await ms.WriteAsync(warningBytes, 0, warningBytes.Length).ConfigureAwait(false);
+                if (useChecksum) await ms.WriteAsync(warningBytes, 0, warningBytes.Length).ConfigureAwait(false);
                 await ms.WriteAsync(aes.IV, 0, aes.IV.Length).ConfigureAwait(false);
                 await using var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write);
                 await cs.WriteAsync(plaintextBytes, 0, plaintextBytes.Length).ConfigureAwait(false);

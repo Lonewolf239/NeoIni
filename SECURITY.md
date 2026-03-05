@@ -2,15 +2,14 @@
 
 ## Supported Versions
 
-Currently, only the latest release (**1.5.7.8**) is supported with security updates and patches.
+Currently, only the latest release (**1.5.7.9**) is supported with security updates and patches.
 
-Please note that **all previous versions** (`< 1.5.7.7`) are deprecated. They are no longer available for download as they contain known bugs or were incomplete pre-release builds that did not reach final stability standards.
+Please note that **all previous versions** (`< 1.5.7.9`) are deprecated. They are no longer available for download as they contain known bugs or were incomplete pre-release builds that did not reach final stability standards.
 
 | Version | Supported | Notes |
 |---------|-----------|-------|
-| **1.5.7.8** | :white_check_mark: | **Current Stable Release** |
-| **1.5.7.7** | :white_check_mark: | **Stable Release** |
-| < 1.5.7.7 | :x: | Incomplete / Buggy / Deprecated |
+| **1.5.7.9** | :white_check_mark: | **Current Stable Release** |
+| < 1.5.7.9 | :x: | Incomplete / Buggy / Deprecated |
 
 ## Reporting a Vulnerability
 

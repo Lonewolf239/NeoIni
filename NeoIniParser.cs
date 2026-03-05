@@ -10,13 +10,40 @@ internal sealed class NeoIniParser
     internal static string ValueToString<T>(T value)
     {
         string valueString = value?.ToString()?.Trim() ?? string.Empty;
-        return valueString.Replace("\n", "\\n");
+        return valueString.Replace(@"\", @"\\").Replace("\r", "").Replace("\n", @"\\n");
     }
 
     internal static string GetStringRaw(Data data, string section, string keyName)
     {
-        string value = data.TryGetValue(section, out var sec) && sec.TryGetValue(keyName, out var val) ? val.Trim() : null;
-        return value.Replace("\\n", "\n");
+        string raw = data.TryGetValue(section, out var sec) && sec.TryGetValue(keyName, out var val) ? val.Trim() : null;
+        return Unescape(raw);
+    }
+
+    private static string Unescape(string s)
+    {
+        if (string.IsNullOrEmpty(s)) return s;
+        var sb = new StringBuilder(s.Length);
+        for (int i = 0; i < s.Length; i++)
+        {
+            if (s[i] == '\\' && i + 1 < s.Length)
+            {
+                char next = s[i + 1];
+                if (next == 'n')
+                {
+                    sb.Append('\n');
+                    i++;
+                    continue;
+                }
+                if (next == '\\')
+                {
+                    sb.Append('\\');
+                    i++;
+                    continue;
+                }
+            }
+            sb.Append(s[i]);
+        }
+        return sb.ToString();
     }
 
     internal static string GetContent(Data data)
