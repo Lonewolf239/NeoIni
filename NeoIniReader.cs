@@ -13,27 +13,30 @@ namespace NeoIni;
 /// <br/>
 /// <b>Target Framework: .NET 6+</b>
 /// <br/>
-/// <b>Version: 1.5.8.1</b>
+/// <b>Version: 1.5.8.2</b>
 /// <br/>
 /// <b>Black Box Philosophy:</b> This class follows a strict "black box" design principle - users interact only through the public API without needing to understand internal implementation details. Input goes in, processed output comes out, internals remain hidden and abstracted.
 /// </summary>
 public class NeoIniReader : IDisposable
 {
-    private Dictionary<string, Dictionary<string, string>> Data;
+    private readonly NeoIniFileProvider FileProvider;
     private readonly string FilePath;
+
+    private readonly byte[] EncryptionKey;
     private readonly bool AutoEncryption = false;
     private readonly bool CustomEncryptionPassword = false;
-    private readonly byte[] EncryptionKey;
+
+    private Dictionary<string, Dictionary<string, string>> Data;
     private readonly ReaderWriterLockSlim Lock = new(LockRecursionPolicy.NoRecursion);
+
     private bool Disposed = false;
     private int DisposeState = 0;
-    private readonly NeoIniFileProvider FileProvider;
 
     /// <summary>
     /// Determines whether changes are automatically written to the disk after every modification.
 	/// Default is <c>true</c>.
     /// </summary>
-    public bool AutoSave = true;
+    public bool AutoSave;
 
     /// <summary>
     /// Interval (in operations) between automatic saves when <see cref="AutoSave"/> is enabled.
@@ -48,33 +51,33 @@ public class NeoIniReader : IDisposable
             _AutoSaveInterval = value;
         }
     }
-    private int _AutoSaveInterval = 0;
+    private int _AutoSaveInterval;
     private int SaveIterationCounter = 0;
 
     /// <summary>
     /// Determines whether backup files (.backup) are created during save operations.
     /// Default value is <c>true</c>.
     /// </summary>
-    public bool AutoBackup = true;
+    public bool AutoBackup;
 
     /// <summary>
     /// Determines whether missing keys are automatically added to the file with a default value when requested via <see cref="GetValue{T}"/>. 
 	/// Default is <c>true</c>.
     /// </summary>
-    public bool AutoAdd = true;
+    public bool AutoAdd;
 
     /// <summary>
     /// Determines whether a checksum is calculated and verified during file load and save operations to ensure data integrity.
     /// When enabled, the configuration file includes a checksum that detects corruption or tampering.
     /// Default value is <c>true</c>.
     /// </summary>
-    public bool UseChecksum = true;
+    public bool UseChecksum;
 
     /// <summary>
     /// Determines whether the configuration is automatically saved when the instance is disposed.
     /// Default value is <c>true</c>.
     /// </summary>
-    public bool SaveOnDispose = true;
+    public bool SaveOnDispose;
 
     /// <summary>Called before saving a file to disk</summary>
     public Action OnSave;
@@ -139,14 +142,31 @@ public class NeoIniReader : IDisposable
     /// <param>Number of matches found.</param>
     public Action<string, int> OnSearchCompleted;
 
-    /// <summary>Initializes a new instance of the <see cref="NeoIniReader"/> class</summary>
-    /// <param name="path">The absolute or relative path to the INI file.</param>
+    /// <summary>
+    /// Creates a new <see cref="NeoIniReader"/> for the specified file path,
+    /// with optional configuration options.
+    /// </summary>
+    /// <param name="path">Path to the INI file.</param>
+    /// <param name="options">
+    /// Optional reader configuration; if <c>null</c>, <see cref="NeoIniReaderOptions.Default"/> is used.
+    /// </param>
+    public NeoIniReader(string path, NeoIniReaderOptions options = null) : this(path, false, options) { }
+
+    /// <summary>
+    /// Creates a new <see cref="NeoIniReader"/> for the specified file path,
+    /// with optional automatic encryption and configuration options.
+    /// </summary>
+    /// <param name="path">Path to the INI file.</param>
     /// <param name="autoEncryption">
-    /// If set to <c>true</c>, enables automatic encryption of the file content based on the user's environment.
+    /// If <c>true</c>, the file is accessed through an encryption provider
+    /// using an automatically generated encryption key.
     /// <para><b>Warning:</b> Enabling encryption ties the file to the specific machine/user 
     /// environment. The file will be unreadable on other computers due to machine-specific key generation!</para>
     /// </param>
-    public NeoIniReader(string path, bool autoEncryption = false)
+    /// <param name="options">
+    /// Optional reader configuration; if <c>null</c>, <see cref="NeoIniReaderOptions.Default"/> is used.
+    /// </param>
+    public NeoIniReader(string path, bool autoEncryption, NeoIniReaderOptions options = null)
     {
         FilePath = path;
         if (autoEncryption)
@@ -156,17 +176,22 @@ public class NeoIniReader : IDisposable
             FileProvider = new(FilePath, EncryptionKey, true);
         }
         else FileProvider = new(FilePath);
+        ApplyOptions(options);
         Data = FileProvider.GetData();
     }
 
     /// <summary>Initializes a new instance of the <see cref="NeoIniReader"/> class with custom encryption</summary>
     /// <param name="path">The absolute or relative path to the INI file.</param>
     /// <param name="encryptionPassword">The password used to derive the encryption key.</param>
-    public NeoIniReader(string path, string encryptionPassword)
+    /// <param name="options">
+    /// Optional reader configuration; if <c>null</c>, <see cref="NeoIniReaderOptions.Default"/> is used.
+    /// </param>
+    public NeoIniReader(string path, string encryptionPassword, NeoIniReaderOptions options = null)
     {
         FilePath = path;
         if (string.IsNullOrEmpty(encryptionPassword))
             throw new ArgumentException("Encryption password cannot be null or empty.", nameof(encryptionPassword));
+        ApplyOptions(options);
         EncryptionKey = NeoIniEncryptionProvider.GetEncryptionKey(encryptionPassword);
         AutoEncryption = CustomEncryptionPassword = true;
         FileProvider = new(FilePath, EncryptionKey, false);
@@ -209,6 +234,17 @@ public class NeoIniReader : IDisposable
             Lock.Dispose();
         }
         Disposed = true;
+    }
+
+    private void ApplyOptions(NeoIniReaderOptions options)
+    {
+        options ??= new NeoIniReaderOptions();
+        AutoSave = options.AutoSave;
+        AutoSaveInterval = options.AutoSaveInterval;
+        AutoBackup = options.AutoBackup;
+        AutoAdd = options.AutoAdd;
+        UseChecksum = options.UseChecksum;
+        SaveOnDispose = options.SaveOnDispose;
     }
 
     private void ThrowIfDisposed() { if (Disposed) throw new ObjectDisposedException(nameof(NeoIniReader)); }
