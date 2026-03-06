@@ -22,7 +22,7 @@ dotnet add package NeoIni
 - **Checksum**: built-in SHA256 checksum validation to detect corruption/tampering.
 - **Optional AES-256 encryption**: transparent file-level encryption with IV and per-file salt; key is derived from user environment or a custom password.
 - **Full async API**: asynchronous versions for all major operations (`CreateAsync`, `GetValueAsync`, `SetKeyAsync`, `SaveFileAsync`, `AddSectionAsync`, etc.).
-- **TryGet** helpers**: `TryGetValue<T>` / `TryGetValueAsync<T>` to read values **without** modifying the file or auto-creating keys.
+- **TryGet helpers**: `TryGetValue<T>` / `TryGetValueAsync<T>` to read values **without** modifying the file or auto-creating keys.
 - **Convenient API**: for managing sections and keys (create, rename, search, clear, delete).
 - **Events**: hooks for saving, loading, key/section changes, autosave, errors, checksum mismatches, and search completion.
 - **Easy migration**: transfer encrypted configs between machines via `GetEncryptionPassword()` when using auto-encryption.
