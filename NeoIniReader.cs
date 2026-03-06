@@ -13,7 +13,7 @@ namespace NeoIni;
 /// <br/>
 /// <b>Target Framework: .NET 6+</b>
 /// <br/>
-/// <b>Version: 1.6</b>
+/// <b>Version: 1.6.0.1</b>
 /// <br/>
 /// <b>Black Box Philosophy:</b> This class follows a strict "black box" design principle - users interact only through the public API without needing to understand internal implementation details. Input goes in, processed output comes out, internals remain hidden and abstracted.
 /// </summary>
@@ -307,12 +307,21 @@ public class NeoIniReader : IDisposable
     protected virtual void Dispose(bool disposing)
     {
         if (Interlocked.CompareExchange(ref DisposeState, 1, 0) != 0) return;
+        string content = null;
         if (disposing)
         {
-            if (SaveOnDispose) SaveFile();
             Lock.EnterWriteLock();
-            try { Data.Clear(); }
+            try
+            {
+                if (SaveOnDispose) content = NeoIniParser.GetContent(Data);
+                Data.Clear();
+            }
             finally { Lock.ExitWriteLock(); }
+            if (SaveOnDispose && content is not null)
+            {
+                FileProvider.SaveFile(content, UseChecksum, AutoBackup);
+                OnSave?.Invoke();
+            }
             OnDataCleared?.Invoke();
             Lock.Dispose();
         }

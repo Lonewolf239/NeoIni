@@ -21,7 +21,7 @@ dotnet add package NeoIni
 ```
 
 - **Package:** [nuget.org/packages/NeoIni](https://www.nuget.org/packages/NeoIni)
-- **Version:** `1.6` | **.NET 6+**
+- **Version:** `1.6.0.1` | **.NET 6+**
 - **Developer:** [Lonewolf239](https://github.com/Lonewolf239)
 
 ## Features
@@ -344,9 +344,11 @@ using NeoIniReader reader = new("config.ini");
 | `OnSave` | Called after saving a file to disk |
 | `OnLoad` | Called after successfully loading data from a file or reloading |
 | `OnKeyChanged` | Called when the value of an existing key in a section changes |
+| `OnKeyRenamed` | Called when a key is renamed within a section |
 | `OnKeyAdded` | Called when a new key is added to a section |
 | `OnKeyRemoved` | Called when a key is removed from a section |
 | `OnSectionChanged` | Called whenever a section changes (keys are changed/added/removed) |
+| `OnSectionRenamed` | Called when a section is renamed |
 | `OnSectionAdded` | Called when a new section is added |
 | `OnSectionRemoved` | Called when a section is deleted |
 | `OnDataCleared` | Called when the data is completely cleared |

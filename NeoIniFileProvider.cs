@@ -249,8 +249,8 @@ internal sealed class NeoIniFileProvider
     {
         var flags = HeaderFlags.None;
         if (useChecksum) flags |= HeaderFlags.HasChecksum;
-        if (Encryption) flags |= HeaderFlags.IsEncrypted;
-        if (AutoEncryption) flags |= HeaderFlags.AutoMode | HeaderFlags.HasSalt;
+        if (Encryption) flags |= HeaderFlags.IsEncrypted | HeaderFlags.HasSalt;
+        if (AutoEncryption) flags |= HeaderFlags.AutoMode;
         else flags |= HeaderFlags.CustomMode;
         byte[] header = new byte[HeaderSize];
         Array.Copy(FileSignature, 0, header, 0, FileSignature.Length);

@@ -21,7 +21,7 @@ dotnet add package NeoIni
 ```
 
 - **Package:** [nuget.org/packages/NeoIni](https://www.nuget.org/packages/NeoIni)  
-- **Version:** `1.6` | **.NET 6+**  
+- **Version:** `1.6.0.1` | **.NET 6+**  
 - **Developer:** [Lonewolf239](https://github.com/Lonewolf239)
 
 ## Features
@@ -344,9 +344,11 @@ using NeoIniReader reader = new("config.ini");
 | `OnSave` | Вызывается после сохранения файла на диск |
 | `OnLoad` | Вызывается после успешной загрузки данных из файла или повторной загрузки |
 | `OnKeyChanged` | Вызывается при изменении значения существующего ключа |
+| `OnKeyRenamed` | Вызывается при переименовании ключа внутри раздела |
 | `OnKeyAdded` | Вызывается при добавлении нового ключа в секцию |
 | `OnKeyRemoved` | Вызывается при удалении ключа из секции |
 | `OnSectionChanged` | Вызывается при изменении секции (изменение/добавление/удаление ключей) |
+| `OnSectionRenamed` | Вызывается при переименовании раздела |
 | `OnSectionAdded` | Вызывается при добавлении новой секции |
 | `OnSectionRemoved` | Вызывается при удалении секции |
 | `OnDataCleared` | Вызывается при полном очищении данных |
