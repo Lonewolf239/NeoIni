@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Data = System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<string, string>>;
@@ -53,7 +54,7 @@ internal sealed class NeoIniReaderCore
 
     internal static string[] GetAllKeys(Data data, string section)
     {
-        if (!SectionExists(data, section)) return new string[1] { "" };
+        if (!SectionExists(data, section)) return Array.Empty<string>();
         return data[section].Keys.ToArray();
     }
 

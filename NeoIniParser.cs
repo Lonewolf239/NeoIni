@@ -7,9 +7,12 @@ namespace NeoIni;
 
 internal sealed class NeoIniParser
 {
+    internal static string FormatInvariant<T>(T value) =>
+        value is IFormattable formattable ? formattable.ToString(null, CultureInfo.InvariantCulture) : value?.ToString() ?? string.Empty;
+
     internal static string ValueToString<T>(T value)
     {
-        var s = value?.ToString() ?? string.Empty;
+        var s = FormatInvariant(value);
         if (s.Length == 0) return s;
         var sb = new StringBuilder(s.Length * 2);
         for (int i = 0; i < s.Length; i++)
@@ -28,7 +31,7 @@ internal sealed class NeoIniParser
             if (c == '\n') { sb.Append("\\n"); continue; }
             sb.Append(c);
         }
-        return sb.ToString().Trim();
+        return FormatInvariant(sb);
     }
 
     internal static string GetStringRaw(Data data, string section, string keyName)
@@ -66,17 +69,25 @@ internal sealed class NeoIniParser
             }
             sb.Append(c);
         }
-        return sb.ToString();
+        return FormatInvariant(sb);
     }
 
     internal static string GetContent(Data data)
     {
-        var content = new StringBuilder();
+        if (data == null || data.Count == 0) return string.Empty;
+        var estimatedSize = 0;
         foreach (var section in data)
         {
-            content.AppendLine($"[{section.Key}]");
+            estimatedSize += section.Key.Length + 4;
             foreach (var kvp in section.Value)
-                content.AppendLine($"{kvp.Key} = {kvp.Value}");
+                estimatedSize += kvp.Key.Length + (kvp.Value?.Length ?? 0) + 5;
+        }
+        var content = new StringBuilder(estimatedSize);
+        foreach (var section in data)
+        {
+            content.Append('[').Append(section.Key).Append(']').AppendLine();
+            foreach (var kvp in section.Value)
+                content.Append(kvp.Key).Append(" = ").AppendLine(kvp.Value);
             content.AppendLine();
         }
         return content.ToString();

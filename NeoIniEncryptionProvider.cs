@@ -6,39 +6,40 @@ namespace NeoIni;
 
 internal sealed class NeoIniEncryptionProvider
 {
-    private static string GeneratePasswordFromUserId(int length = 16)
+    private const int Pbkdf2Iterations = 320000;
+    private const int KeySizeBytes = 32;
+
+    private static byte[] DeriveKeyFromString(string password, byte[] salt, int keySize = KeySizeBytes)
     {
-        string userId = Environment.UserName ?? Environment.GetEnvironmentVariable("USER") ?? "unknown";
-        string fullSeed = $"{userId}:{Environment.MachineName}:{Environment.UserDomainName ?? "local"}";
-        byte[] salt = GenerateDeterministicSalt($"{userId}:{Environment.MachineName}");
-        byte[] key = Rfc2898DeriveBytes.Pbkdf2(fullSeed, salt, 320000, HashAlgorithmName.SHA256, 32);
-        using var hmac = new HMACSHA256(key);
-        byte[] finalSeed = hmac.ComputeHash(Encoding.UTF8.GetBytes(fullSeed + length));
-        var password = new StringBuilder(length);
-        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;:,.<>?";
-        for (int i = 0; i < length; i++)
-        {
-            int index = (finalSeed[i % finalSeed.Length] + (i * 17)) % chars.Length;
-            password.Append(chars[index]);
-        }
-        return password.ToString();
+        if (password is null) throw new ArgumentNullException(nameof(password));
+        if (salt is null) throw new ArgumentNullException(nameof(salt));
+        return Rfc2898DeriveBytes.Pbkdf2(password, salt, Pbkdf2Iterations, HashAlgorithmName.SHA256, keySize);
     }
 
-    private static byte[] GenerateDeterministicSalt(string seed)
+    private static byte[] GenerateRandomSalt(int size = 16)
     {
-        using var sha256 = SHA256.Create();
-        byte[] hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(seed));
-        byte[] salt = new byte[16];
-        Array.Copy(hash, salt, 16);
+        if (size <= 0) throw new ArgumentOutOfRangeException(nameof(size), "Salt size must be positive.");
+        var salt = new byte[size];
+        RandomNumberGenerator.Fill(salt);
         return salt;
     }
 
-    internal static byte[] GetEncryptionKey(string password = null)
+    private static string GeneratePasswordFromUserId(byte[] salt)
     {
-        if (password == null)
-            return SHA256.HashData(Encoding.UTF8.GetBytes(GeneratePasswordFromUserId()))[..32];
-        return SHA256.HashData(Encoding.UTF8.GetBytes(password))[..32];
+        string userId = Environment.UserName ?? Environment.GetEnvironmentVariable("USER") ?? "unknown";
+        string envSeed = $"{userId}:{Environment.MachineName}:{Environment.UserDomainName ?? "local"}";
+        byte[] passwordBytes = DeriveKeyFromString(envSeed, salt, KeySizeBytes);
+        var sb = new StringBuilder(passwordBytes.Length * 2);
+        foreach (byte b in passwordBytes) sb.Append(b.ToString("x2"));
+        return NeoIniParser.FormatInvariant(sb.ToString());
     }
 
-    internal static string GetEncryptionPassword() => GeneratePasswordFromUserId();
+    internal static (byte[], byte[]) GetEncryptionKeyAndSalt(string password = null, byte[] salt = null)
+    {
+        salt ??= GenerateRandomSalt();
+        password ??= GeneratePasswordFromUserId(salt);
+        return (DeriveKeyFromString(password, salt, KeySizeBytes), salt);
+    }
+
+    internal static string GetEncryptionPassword(byte[] salt) => GeneratePasswordFromUserId(salt);
 }
