@@ -361,4 +361,5 @@ using NeoIniReader reader = new("config.ini");
 
 ## Philosophy
 
-**Black Box Design**: all internal logic is hidden behind the simple public API of the `NeoIniReader` class. You work only with methods and events, without thinking about implementation details.
+**Black Box Design**: all internal logic is hidden behind the simple public API of the `NeoIniReader` class. You work only with methods and events, without thinking about implementation details.  
+NeoIni config files are meant to be owned and managed by the library, not by humans editing them in Notepad — human comments are intentionally not preserved, and the warning header clearly signals this.
