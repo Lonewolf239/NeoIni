@@ -7,7 +7,7 @@
 [![Downloads](https://img.shields.io/nuget/dt/NeoIni?style=for-the-badge&logo=download&logoColor=FFFFFF)](https://www.nuget.org/packages/NeoIni)
 
 ## Languages
-[![EN](https://img.shields.io/badge/README-EN-2D2D2D?style=for-the-badge&logo=google-translate&logoColor=FFFFFF)](./README.md)
+[![EN](https://img.shields.io/badge/README-EN-2D2D2D?style=for-the-badge&logo=github&logoColor=FFFFFF)](./README.md)
 [![RU](https://img.shields.io/badge/README-RU-2D2D2D?style=for-the-badge&logo=google-translate&logoColor=FFFFFF)](./README-RU.md)
 
 # NeoIni
