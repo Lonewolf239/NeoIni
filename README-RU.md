@@ -34,7 +34,7 @@ dotnet add package NeoIni
 - **Checksum**: встроенная проверка контрольной суммы SHA256 для обнаружения повреждений/подмены.
 - **Optional AES-256 encryption**: прозрачное шифрование файла с IV и солью на файл; ключ выводится из окружения пользователя или пользовательского пароля.
 - **Full async API**: асинхронные версии всех основных операций (`CreateAsync`, `GetValueAsync`, `SetKeyAsync`, `SaveFileAsync`, `AddSectionAsync` и т.д.).
-- **TryGet helpers**: `TryGetValue<T>` / `TryGetValueAsync<T>` для чтения значений **без** модификации файла и без авто‑создания ключей.
+- **TryGet helpers**: `TryGetValue<T>` для чтения значений **без** модификации файла и без авто‑создания ключей.
 - **Convenient API**: удобные методы для управления секциями и ключами (создание, переименование, поиск, очистка, удаление).
 - **Events**: события для сохранения, загрузки, изменения ключей/секций, автосохранения, ошибок, несовпадения контрольной суммы и завершения поиска.
 - **Easy migration**: перенос зашифрованных конфигов между машинами через `GetEncryptionPassword()` при использовании авто‑шифрования.
@@ -105,14 +105,10 @@ DateTime when = await reader.GetValueAsync("Log", "LastRun", DateTime.Now, cance
 
 ### TryGet (without AutoAdd or file modification)
 
-Если нужно просто прочитать значение **без** авто‑создания ключей и любых изменений файла, используйте `TryGetValue` / `TryGetValueAsync`:
+Если нужно просто прочитать значение **без** авто‑создания ключей и любых изменений файла, используйте `TryGetValue`:
 
 ```csharp
-// Синхронно
 int level = reader.TryGetValue("Game", "Level", defaultValue: 1);
-
-// Асинхронно
-int levelAsync = reader.TryGetValueAsync("Game", "Level", defaultValue: 1, cancellationToken);
 ```
 
 - Эти методы **никогда** не пишут в файл и не зависят от `AutoAdd`: если секция или ключ отсутствуют, просто возвращается `defaultValue`.
@@ -307,7 +303,7 @@ using NeoIniReader reader = new("config.ini");
 |--------|-------------|---------------|
 | `GetValue<T>` | Чтение типизированного значения с значением по умолчанию (при желании с авто‑созданием) | `GetValueAsync<T>` |
 | `GetValueClamp<T>` | Чтение значения и ограничение его диапазоном min/max | `GetValueClampAsync<T>` |
-| `TryGetValue<T>` | Чтение значения без модификации файла и без AutoAdd | `TryGetValueAsync<T>` |
+| `TryGetValue<T>` | Чтение значения без модификации файла и без AutoAdd | - |
 | `SetKey<T>` | Установка/создание пары ключ‑значение | `SetKeyAsync<T>` |
 | `AddSection` | Создание секции, если её нет | `AddSectionAsync` |
 | `AddKeyInSection<T>` | Добавление нового ключа‑значения | `AddKeyInSectionAsync<T>` |
@@ -361,5 +357,5 @@ using NeoIniReader reader = new("config.ini");
 
 ## Philosophy
 
-**Black Box Design**: вся внутренняя логика скрыта за простым публичным API класса `NeoIniReader`. Вы работаете только с методами и событиями, не задумываясь о деталях реализации.  
+**Black Box Design**: вся внутренняя логика скрыта за простым публичным API класса `NeoIniReader`. Вы работаете только с методами и событиями, не задумываясь о деталях реализации.
 Конфигурационные файлы NeoIni принадлежат и управляются самой библиотекой, а не людьми, правящими их в блокноте — пользовательские комментарии намеренно не сохраняются, а предупреждающий заголовок прямо об этом говорит.

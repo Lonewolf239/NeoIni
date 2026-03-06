@@ -22,7 +22,7 @@ dotnet add package NeoIni
 - **Checksum**: built-in SHA256 checksum validation to detect corruption/tampering.
 - **Optional AES-256 encryption**: transparent file-level encryption with IV and per-file salt; key is derived from user environment or a custom password.
 - **Full async API**: asynchronous versions for all major operations (`CreateAsync`, `GetValueAsync`, `SetKeyAsync`, `SaveFileAsync`, `AddSectionAsync`, etc.).
-- **TryGet helpers**: `TryGetValue<T>` / `TryGetValueAsync<T>` to read values **without** modifying the file or auto-creating keys.
+- **TryGet helpers**: `TryGetValue<T>` to read values **without** modifying the file or auto-creating keys.
 - **Convenient API**: for managing sections and keys (create, rename, search, clear, delete).
 - **Events**: hooks for saving, loading, key/section changes, autosave, errors, checksum mismatches, and search completion.
 - **Easy migration**: transfer encrypted configs between machines via `GetEncryptionPassword()` when using auto-encryption.
@@ -93,14 +93,10 @@ DateTime when = await reader.GetValueAsync("Log", "LastRun", DateTime.Now, cance
 
 ### TryGet (without AutoAdd or file modification)
 
-If you want pure read without auto-creation of keys and without touching the file, use `TryGetValue` / `TryGetValueAsync`:
+If you want pure read without auto-creation of keys and without touching the file, use `TryGetValue`:
 
 ```csharp
-// Synchronous
-int level = reader.TryGetValue("Game", "Level", defaultValue: 1);
-
-// Asynchronous
-int levelAsync = reader.TryGetValueAsync("Game", "Level", defaultValue: 1, cancellationToken);
+int level = reader.TryGetValue("Game", "Level", 1);
 ```
 
 - These methods **never** write to the file and do not depend on `AutoAdd`: if the section or key does not exist, they simply return `defaultValue`.
@@ -295,7 +291,7 @@ using NeoIniReader reader = new("config.ini");
 |--------|-------------|---------------|
 | `GetValue<T>` | Read typed value with default fallback (optionally auto-adding) | `GetValueAsync<T>` |
 | `GetValueClamp<T>` | Read typed value and clamp it between min/max | `GetValueClampAsync<T>` |
-| `TryGetValue<T>` | Read typed value without modifying the file and without AutoAdd | `TryGetValueAsync<T>` |
+| `TryGetValue<T>` | Read typed value without modifying the file and without AutoAdd | - |
 | `SetKey<T>` | Set/create key-value | `SetKeyAsync<T>` |
 | `AddSection` | Create section if missing | `AddSectionAsync` |
 | `AddKeyInSection<T>` | Add unique key-value | `AddKeyInSectionAsync<T>` |
@@ -349,5 +345,5 @@ using NeoIniReader reader = new("config.ini");
 
 ## Philosophy
 
-**Black Box Design**: all internal logic is hidden behind the simple public API of the `NeoIniReader` class. You work only with methods and events, without thinking about implementation details.  
+**Black Box Design**: all internal logic is hidden behind the simple public API of the `NeoIniReader` class. You work only with methods and events, without thinking about implementation details.
 NeoIni config files are meant to be owned and managed by the library, not by humans editing them in Notepad — human comments are intentionally not preserved, and the warning header clearly signals this.

@@ -497,32 +497,6 @@ public class NeoIniReader : IDisposable
     }
 
     /// <summary>
-    /// Attempts to retrieve a value of the specified type from the INI data
-    /// in an asynchronous context, without modifying the file or adding missing keys.
-    /// </summary>
-    /// <typeparam name="T">The expected type of the value (e.g., bool, int, double, string, etc.).</typeparam>
-    /// <param name="section">The section containing the key.</param>
-    /// <param name="key">The name of the key to retrieve.</param>
-    /// <param name="defaultValue">The value to return if the key or section does not exist, or if parsing fails.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A task that represents the asynchronous operation. The task result contains the parsed value, or <paramref name="defaultValue"/> if retrieval fails.</returns>
-    public T TryGetValueAsync<T>(string section, string key, T defaultValue = default, CancellationToken cancellationToken = default)
-    {
-        ThrowIfDisposed();
-        cancellationToken.ThrowIfCancellationRequested();
-        string stringValue;
-        Lock.EnterUpgradeableReadLock();
-        try
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            stringValue = NeoIniParser.GetStringRaw(Data, section, key);
-        }
-        finally { Lock.ExitUpgradeableReadLock(); }
-        if (stringValue == null) return defaultValue;
-        return NeoIniParser.TryParseValue<T>(stringValue, defaultValue, OnError);
-    }
-
-    /// <summary>
     /// Retrieves a value of a specified type from the INI file.
     /// Automatically parses the string value to the target type.
     /// </summary>
