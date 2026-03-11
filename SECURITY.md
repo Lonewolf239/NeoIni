@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-Currently, only the latest release (**1.6.0.1*) is supported with security updates and patches.
+Currently, only the latest release (**1.6.0.1**) is supported with security updates and patches.
 
 Please note that **all previous versions** (`< 1.6.0.1`) are deprecated. They are no longer available for download as they contain known bugs or were incomplete pre-release builds that did not reach final stability standards.
 
