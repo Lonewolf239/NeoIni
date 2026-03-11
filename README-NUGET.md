@@ -191,13 +191,14 @@ reader.DeleteFileWithData();  // file + clear Data
 ### Options
 
 ```csharp
-reader.UseAutoSave = true;     // enable autosave
-reader.AutoSaveInterval = 3;   // save every 3 write operations (if AutoSave is true)
+reader.UseAutoSave = true;        // enable autosave
+reader.AutoSaveInterval = 3;      // save every 3 write operations (if AutoSave is true)
 
-reader.UseAutoBackup = true;   // enable .backup
-reader.UseAutoAdd = true;      // auto-create keys on GetValue
-reader.UseChecksum = true;     // enable checksum
-reader.SaveOnDispose = true;   // save when Dispose() is called
+reader.UseAutoBackup = true;      // enable .backup
+reader.UseAutoAdd = true;         // auto-create keys on GetValue
+reader.UseChecksum = true;        // enable checksum
+reader.SaveOnDispose = true;      // save when Dispose() is called
+reader.AllowEmptyValues = true;   // allow empty values
 ```
 
 You can also use presets via `NeoIniReaderOptions` when constructing the reader (e.g. `Default`, `Safe`, `Performance`, `ReadOnly`, `BufferedAutoSave(interval)`).
