@@ -21,7 +21,7 @@ dotnet add package NeoIni
 ```
 
 - **Package:** [nuget.org/packages/NeoIni](https://www.nuget.org/packages/NeoIni)
-- **Version:** `1.6.0.1` | **.NET 6+**
+- **Version:** `1.6.1-pre1` | **.NET 6+**
 - **Developer:** [Lonewolf239](https://github.com/Lonewolf239)
 
 ## Features
@@ -29,11 +29,11 @@ dotnet add package NeoIni
 - **Typed Get**: read values as `bool`, `int`, `double`, `DateTime`, `enum`, `string` and others with automatic parsing and defaults.
 - **AutoAdd**: when reading via `GetValue<T>`, missing keys/sections can be automatically created with a default value.
 - **Thread-safe**: uses `ReaderWriterLockSlim` for safe access from multiple threads.
-- **AutoSave**: automatic saving after changes or at intervals (`AutoSave`, `AutoSaveInterval`).
+- **AutoSave**: automatic saving after changes or at intervals (`UseAutoSave`, `AutoSaveInterval`).
 - **AutoBackup**: creates a `.backup` file when saving to protect against corruption.
 - **Checksum**: built-in SHA256 checksum validation to detect corruption/tampering.
 - **Optional AES-256 encryption**: transparent file-level encryption with IV and per-file salt; key is derived from user environment or a custom password.
-- **Full async API**: asynchronous versions for all major operations (`CreateAsync`, `GetValueAsync`, `SetKeyAsync`, `SaveFileAsync`, `AddSectionAsync`, etc.).
+- **Full async API**: asynchronous versions for all major operations (`CreateAsync`, `GetValueAsync`, `SetValueAsync`, `SaveFileAsync`, `AddSectionAsync`, etc.).
 - **TryGet helpers**: `TryGetValue<T>` to read values **without** modifying the file or auto-creating keys.
 - **Convenient API**: for managing sections and keys (create, rename, search, clear, delete).
 - **Events**: hooks for saving, loading, key/section changes, autosave, errors, checksum mismatches, and search completion.
@@ -41,7 +41,7 @@ dotnet add package NeoIni
 
 ## Security Features
 
-- **Checksum (SHA256)**: when saving, a 32-byte checksum computed via SHA256 is appended to file contents; when reading it is verified, and if mismatched, you can handle the `OnChecksumMismatch` event or fall back to `.backup`.
+- **Checksum (SHA256)**: when saving, a 32-byte checksum computed via SHA256 is appended to file contents; when reading it is verified, and if mismatched, you can handle the `ChecksumMismatch` event or fall back to `.backup`.
 - **AES-256**: when encryption is enabled, data is encrypted with AES in CBC mode using a 16-byte IV and a 32-byte key derived from a password (environment-based or custom) and a random 16-byte salt stored in the file.
 - **Environment-based key**: in auto-encryption mode, the key is deterministically derived from `Environment.UserName`, `Environment.MachineName`, and `Environment.UserDomainName` plus a per-file salt, making the file unreadable on another host without a special password.
 - **Backup fallback**: on read errors, checksum mismatch, or decryption errors, the library can automatically attempt to read the `.backup` file first.
@@ -83,24 +83,24 @@ NeoIniReader customEncrypted = await NeoIniReader.CreateAsync("config.ini", "MyS
 ### Reading Values
 
 ```csharp
-string text = reader.GetValue<string>("Section1", "Key1", "default");
-int number = reader.GetValue<int>("Section1", "Number", 0);
-bool flag = reader.GetValue<bool>("Section1", "Enabled", false);
-double value = reader.GetValue<double>("Section1", "Value", 0.0);
-DateTime when = reader.GetValue<DateTime>("Log", "LastRun", DateTime.Now);
+string text = reader.GetValue("Section1", "Key1", "default");
+int number = reader.GetValue("Section1", "Number", 0);
+bool flag = reader.GetValue("Section1", "Enabled", false);
+double value = reader.GetValue("Section1", "Value", 0.0);
+DateTime when = reader.GetValue("Log", "LastRun", DateTime.Now);
 ```
 
 Async:
 
 ```csharp
-string text = await reader.GetValueAsync("Section1", "Key1", "default");
+string text = await reader.GetValueAsync("Section1", "Key1", "default", cancellationToken);
 int number = await reader.GetValueAsync("Section1", "Number", 0);
-bool flag = await reader.GetValueAsync("Section1", "Enabled", false);
+bool flag = await reader.GetValueAsync("Section1", "Enabled", false, cancellationToken);
 double value = await reader.GetValueAsync("Section1", "Value", 0.0);
 DateTime when = await reader.GetValueAsync("Log", "LastRun", DateTime.Now, cancellationToken);
 ```
 
-- If a section/key is missing, `defaultValue` is returned; with `AutoAdd` enabled, the key may be automatically created in the file with that default.
+- If a section/key is missing, `defaultValue` is returned; with `UseAutoAdd` enabled, the key may be automatically created in the file with that default.
 - Reading `enum` and `DateTime` is supported via `Enum.TryParse`, `DateTime.TryParse`, and `Convert.ChangeType` (invariant culture).
 
 ### TryGet (without AutoAdd or file modification)
@@ -111,25 +111,25 @@ If you want pure read without auto-creation of keys and without touching the fil
 int level = reader.TryGetValue("Game", "Level", 1);
 ```
 
-- These methods **never** write to the file and do not depend on `AutoAdd`: if the section or key does not exist, they simply return `defaultValue`.
+- These methods **never** write to the file and do not depend on `UseAutoAdd`: if the section or key does not exist, they simply return `defaultValue`.
 
 ### Writing Values
 
 ```csharp
-reader.SetKey("Section1", "Key1", "Value1");
-reader.SetKey("Section1", "Number", 42);
-reader.SetKey("Section1", "Enabled", true);
-reader.SetKey("Section1", "LastUpdate", DateTime.Now);
+reader.SetValue("Section1", "Key1", "Value1");
+reader.SetValue("Section1", "Number", 42);
+reader.SetValue("Section1", "Enabled", true);
+reader.SetValue("Section1", "LastUpdate", DateTime.Now);
 ```
 
 Async:
 
 ```csharp
-await reader.SetKeyAsync("Section1", "Key1", "Value1");
-await reader.SetKeyAsync("Section1", "Number", 42, cancellationToken);
+await reader.SetValueAsync("Section1", "Key1", "Value1");
+await reader.SetValueAsync("Section1", "Number", 42, cancellationToken);
 ```
 
-- If a section/key doesn't exist, it will be created; changes trigger `OnKeyAdded` / `OnKeyChanged` and may trigger autosave.
+- If a section/key doesn't exist, it will be created; changes trigger `KeyAdded` / `KeyChanged` and may trigger autosave.
 
 ### Example
 
@@ -139,9 +139,9 @@ using NeoIni;
 using NeoIniReader reader = new("config.ini");
 
 // Initialize database settings
-reader.SetKey("Database", "Host", "localhost");
-reader.SetKey("Database", "Port", 5432);
-reader.SetKey("Settings", "AutoSave", true);
+reader.SetValue("Database", "Host", "localhost");
+reader.SetValue("Database", "Port", 5432);
+reader.SetValue("Settings", "AutoSave", true);
 
 // Read
 string host = reader.GetValue<string>("Database", "Host", "127.0.0.1");
@@ -194,20 +194,20 @@ await reader.SaveFileAsync();
 reader.ReloadFromFile();
 
 // Delete file
-reader.DeleteFile();         // file only
-reader.DeleteFileWithData(); // file + clear Data
+reader.DeleteFile();          // file only
+reader.DeleteFileWithData();  // file + clear Data
 ```
 
-- When saving, an intermediate `.tmp` file is used, and if `AutoBackup` is enabled, a `.backup` is created and used as a fallback on read errors.
+- When saving, an intermediate `.tmp` file is used, and if `UseAutoBackup` is enabled, a `.backup` is created and used as a fallback on read errors.
 
 ### Options
 
 ```csharp
-reader.AutoSave = true;        // enable autosave
+reader.UseAutoSave = true;     // enable autosave
 reader.AutoSaveInterval = 3;   // save every 3 write operations (if AutoSave is true)
 
-reader.AutoBackup = true;      // enable .backup
-reader.AutoAdd = true;         // auto-create keys on GetValue
+reader.UseAutoBackup = true;   // enable .backup
+reader.UseAutoAdd = true;      // auto-create keys on GetValue
 reader.UseChecksum = true;     // enable checksum
 reader.SaveOnDispose = true;   // save when Dispose() is called
 ```
@@ -217,46 +217,46 @@ You can also use presets via `NeoIniReaderOptions` when constructing the reader 
 ### Events (Callbacks)
 
 ```csharp
-reader.OnSave += () => Console.WriteLine("Saved");
-reader.OnLoad += () => Console.WriteLine("Loaded");
+reader.Saved += (_, _) => Console.WriteLine("Saved");
+reader.Loaded += (_, _) => Console.WriteLine("Loaded");
 
-reader.OnKeyChanged += (section, key, value) =>
-    Console.WriteLine($"[{section}] {key} changed to {value}");
+reader.KeyChanged += (_, e) =>
+    Console.WriteLine($"[{e.Section}] {e.Key} changed to {e.Value}");
 
-reader.OnKeyAdded += (section, key, value) =>
-    Console.WriteLine($"[{section}] {key} added: {value}");
+reader.KeyAdded += (_, e) =>
+    Console.WriteLine($"[{e.Section}] {e.Key} added: {e.Value}");
 
-reader.OnKeyRemoved += (section, key) =>
+reader.KeyRemoved += (_, e) =>
     Console.WriteLine($"[{section}] {key} removed");
 
-reader.OnSectionAdded += section =>
-    Console.WriteLine($"Section added: {section}");
+reader.SectionAdded += (_, e) =>
+    Console.WriteLine($"Section added: {e.Section}");
 
-reader.OnSectionRemoved += section =>
-    Console.WriteLine($"Section removed: {section}");
+reader.SectionRemoved += (_, e) =>
+    Console.WriteLine($"Section removed: {e.Section}");
 
-reader.OnSectionChanged += section =>
-    Console.WriteLine($"Section changed: {section}");
+reader.SectionChanged += (_, e) =>
+    Console.WriteLine($"Section changed: {e.Section}");
 
-reader.OnChecksumMismatch += (expected, actual) =>
+reader.ChecksumMismatch += (_, _) =>
     Console.WriteLine("Checksum mismatch detected!");
 
-reader.OnAutoSave += () =>
+reader.AutoSave += (_, _) =>
     Console.WriteLine("AutoSave triggered");
 
-reader.OnError += ex =>
-    Console.WriteLine($"Error: {ex.Message}");
+reader.Error += (_, e) =>
+    Console.WriteLine($"Error: {e.Exception.Message}");
 ```
 
 ### Search
 
 ```csharp
 var results = reader.Search("token");
-foreach (var (section, key, value) in results)
-    Console.WriteLine($"[{section}] {key} = {value}");
+foreach (var item in results)
+    Console.WriteLine($"[{item.Section}] {item.Key} = {item.Value}");
 ```
 
-- Search is performed on keys and values (case-insensitive); result is a list of tuples `(section, key, value)`. After search, `OnSearchCompleted` is called with the pattern and match count.
+- Search is performed on keys and values (case-insensitive); result is a list of `SearchResult`. After search, `SearchCompleted` is called with the pattern and match count.
 
 ### Encryption & Migration
 
@@ -304,16 +304,18 @@ using NeoIniReader reader = new("config.ini");
 | `GetValue<T>` | Read typed value with default fallback (optionally auto-adding) | `GetValueAsync<T>` |
 | `GetValueClamp<T>` | Read typed value and clamp it between min/max | `GetValueClampAsync<T>` |
 | `TryGetValue<T>` | Read typed value without modifying the file and without AutoAdd | - |
-| `SetKey<T>` | Set/create key-value | `SetKeyAsync<T>` |
+| `SetValue<T>` | Set/create key-value | `SetValueAsync<T>` |
+| `SetValueClamped<T>` | Set/create key-value and clamp it within range | `SetValueClampedAsync<T>` |
 | `AddSection` | Create section if missing | `AddSectionAsync` |
-| `AddKeyInSection<T>` | Add unique key-value | `AddKeyInSectionAsync<T>` |
+| `AddKey<T>` | Add unique key-value | `AddKeyAsync<T>` |
+| `AddKeyClamped<T>` | Add unique key-value and clamp it within range | `AddKeyClampedAsync<T>` |
 | `RemoveKey` | Delete specific key | `RemoveKeyAsync` |
 | `RemoveSection` | Delete entire section | `RemoveSectionAsync` |
 | `ClearSection` | Remove all keys from section | `ClearSectionAsync` |
-| `RenameKey` | Rename key in section | `RenameKeyAsync` |
-| `RenameSection` | Rename entire section | `RenameSectionAsync` |
+| `RenameKey` | Rename key in section | `RenameKeyAsync ` |
+| `RenameSection` | Rename entire section | `RenameSectionAsync ` |
 | `Search` | Search keys/values by pattern | – |
-| `FindKeyInAllSections` | Search a key across all sections | – |
+| `FindKey` | Search a key across all sections | – |
 | `GetAllSections` | List all sections | – |
 | `GetAllKeys` | List keys in section | – |
 | `GetSection` | Get all key-value pairs in section | – |
@@ -324,41 +326,44 @@ using NeoIniReader reader = new("config.ini");
 | `ReloadFromFile` | Reload data from file | – |
 | `DeleteFile` | Delete file from disk | – |
 | `DeleteFileWithData` | Delete file and clear data | – |
+| `DeleteBackup` | Delete the backup file from disk | – |
+| `Clear` | Clear internal data structure completely | – |
 | `GetEncryptionPassword` | Get the encryption password (or status) | – |
+| `CreateAsync` | Asynchronously create and initialize reader (static factory) | `CreateAsync (only async)` |
 
 ### Options (NeoIniReaderOptions)
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `AutoSave` | Automatically saves changes to disk after modifications | `true` |
+| `UseAutoSave` | Automatically saves changes to disk after modifications | `true` |
 | `AutoSaveInterval` | Number of operations between automatic saves when AutoSave is enabled | `0` (every change) |
-| `AutoBackup` | Creates `.backup` files during save operations for safety | `true` |
-| `AutoAdd` | Automatically creates missing sections/keys with default values when reading via `GetValue<T>` | `true` |
+| `UseAutoBackup` | Creates `.backup` files during save operations for safety | `true` |
+| `UseAutoAdd` | Automatically creates missing sections/keys with default values when reading via `GetValue<T>` | `true` |
 | `UseChecksum` | Calculates and verifies checksums during load/save operations | `true` |
 | `SaveOnDispose` | Automatically saves the configuration when the instance is disposed | `true` |
+| `AllowEmptyValues` | Permits configuration keys to be saved with empty or null values | `true` |
 
 ### Events
 
-| Action | Description |
+| Event | Description |
 |--------|-------------|
-| `OnSave` | Called after saving a file to disk |
-| `OnLoad` | Called after successfully loading data from a file or reloading |
-| `OnKeyChanged` | Called when the value of an existing key in a section changes |
-| `OnKeyRenamed` | Called when a key is renamed within a section |
-| `OnKeyAdded` | Called when a new key is added to a section |
-| `OnKeyRemoved` | Called when a key is removed from a section |
-| `OnSectionChanged` | Called whenever a section changes (keys are changed/added/removed) |
-| `OnSectionRenamed` | Called when a section is renamed |
-| `OnSectionAdded` | Called when a new section is added |
-| `OnSectionRemoved` | Called when a section is deleted |
-| `OnDataCleared` | Called when the data is completely cleared |
-| `OnAutoSave` | Called before automatic saving |
-| `OnChecksumMismatch` | Called when the checksum does not match while loading a file |
-| `OnSearchCompleted` | Called after each search with the pattern and match count |
-| `OnError` | Called when errors occur (parsing, saving, reading a file, etc.) |
+| `Saved` | Called after saving a file to disk |
+| `Loaded` | Called after successfully loading data from a file or reloading |
+| `KeyChanged` | Called when the value of an existing key in a section changes |
+| `KeyRenamed` | Called when a key is renamed within a section |
+| `KeyAdded` | Called when a new key is added to a section |
+| `KeyRemoved` | Called when a key is removed from a section |
+| `SectionChanged` | Called whenever a section changes (keys are changed/added/removed) |
+| `SectionRenamed` | Called when a section is renamed |
+| `SectionAdded` | Called when a new section is added |
+| `SectionRemoved` | Called when a section is deleted |
+| `DataCleared` | Called when the data is completely cleared |
+| `AutoSave` | Called before automatic saving |
+| `ChecksumMismatch` | Called when the checksum does not match while loading a file |
+| `SearchCompleted` | Called after each search with the pattern and match count |
+| `Error` | Called when errors occur (parsing, saving, reading a file, etc.) |
 
 ## Philosophy
 
 **Black Box Design**: all internal logic is hidden behind the simple public API of the `NeoIniReader` class. You work only with methods and events, without thinking about implementation details.
 NeoIni config files are meant to be owned and managed by the library, not by humans editing them in Notepad — human comments are intentionally not preserved, and the warning header clearly signals this.
-

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using Data = System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<string, string>>;
@@ -14,7 +15,7 @@ internal sealed class NeoIniParser
     {
         var s = FormatInvariant(value);
         if (s.Length == 0) return s;
-        var sb = new StringBuilder(s.Length * 2);
+        StringBuilder sb = new(s.Length * 2);
         for (int i = 0; i < s.Length; i++)
         {
             char c = s[i];
@@ -43,7 +44,7 @@ internal sealed class NeoIniParser
     private static string Unescape(string s)
     {
         if (string.IsNullOrEmpty(s)) return s;
-        var sb = new StringBuilder(s.Length);
+        StringBuilder sb = new(s.Length);
         for (int i = 0; i < s.Length; i++)
         {
             char c = s[i];
@@ -82,7 +83,7 @@ internal sealed class NeoIniParser
             foreach (var kvp in section.Value)
                 estimatedSize += kvp.Key.Length + (kvp.Value?.Length ?? 0) + 5;
         }
-        var content = new StringBuilder(estimatedSize);
+        StringBuilder content = new(estimatedSize);
         foreach (var section in data)
         {
             content.Append('[').Append(section.Key).Append(']').AppendLine();
@@ -93,7 +94,7 @@ internal sealed class NeoIniParser
         return content.ToString();
     }
 
-    internal static T TryParseValue<T>(string value, T defaultValue, Action<Exception> onError)
+    internal static T TryParseValue<T>(string value, T defaultValue, EventHandler<ErrorEventArgs> onError)
     {
         if (string.IsNullOrWhiteSpace(value)) return defaultValue;
         Type targetType = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
@@ -110,7 +111,7 @@ internal sealed class NeoIniParser
         }
         catch (Exception ex)
         {
-            onError?.Invoke(ex);
+            onError?.Invoke(null, new(ex));
             return defaultValue;
         }
     }
@@ -126,5 +127,15 @@ internal sealed class NeoIniParser
         key = keySpan.ToString();
         value = valueSpan.ToString();
         return true;
+    }
+
+    internal static T Clamp<T>(T value, T minValue, T maxValue) where T : IComparable<T>
+    {
+        var comparer = Comparer<T>.Default;
+        if (comparer.Compare(minValue, maxValue) > 0)
+            throw new ArgumentException($"'{nameof(minValue)}' cannot be greater than '{nameof(maxValue)}'.");
+        if (comparer.Compare(value, minValue) < 0) return minValue;
+        if (comparer.Compare(value, maxValue) > 0) return maxValue;
+        return value;
     }
 }

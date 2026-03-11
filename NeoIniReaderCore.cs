@@ -15,58 +15,39 @@ internal sealed class NeoIniReaderCore
         return data[section].ContainsKey(key);
     }
 
-    internal static void AddSection(Data data, string section)
-    {
-        if (SectionExists(data, section)) return;
-        data[section] = new Dictionary<string, string>();
-    }
+    internal static void AddSection(Data data, string section) => data.TryAdd(section, new());
 
     internal static void AddKeyInSection(Data data, string section, string key, string value)
     {
         AddSection(data, section);
-        if (KeyExists(data, section, key)) return;
-        data[section][key] = value;
+        data[section].TryAdd(key, value);
     }
 
     internal static bool SetKey(Data data, string section, string key, string value)
     {
-        bool keyExists = true;
-        if (!SectionExists(data, section))
+        if (!data.TryGetValue(section, out var sectionData))
         {
-            AddSection(data, section);
-            keyExists = false;
+            data[section] = new Dictionary<string, string> { { key, value } };
+            return false;
         }
-        data[section][key] = value;
-        return keyExists;
+        bool exists = sectionData.ContainsKey(key);
+        sectionData[key] = value;
+        return exists;
     }
 
-    internal static void RemoveKey(Data data, string section, string key)
-    {
-        if (!KeyExists(data, section, key)) return;
-        data[section].Remove(key);
-    }
+    internal static void RemoveKey(Data data, string section, string key) { if (KeyExists(data, section, key)) data[section].Remove(key); }
 
-    internal static void RemoveSection(Data data, string section)
-    {
-        if (!SectionExists(data, section)) return;
-        data.Remove(section);
-    }
+    internal static void RemoveSection(Data data, string section) { if (SectionExists(data, section)) data.Remove(section); }
 
-    internal static string[] GetAllKeys(Data data, string section)
-    {
-        if (!SectionExists(data, section)) return Array.Empty<string>();
-        return data[section].Keys.ToArray();
-    }
+    internal static string[] GetAllKeys(Data data, string section) =>
+        data.TryGetValue(section, out var sec) ? sec.Keys.ToArray() : Array.Empty<string>();
 
-    internal static Dictionary<string, string> GetSection(Data data, string section)
-    {
-        if (!SectionExists(data, section)) return new Dictionary<string, string>();
-        return new Dictionary<string, string>(data[section]);
-    }
+    internal static Dictionary<string, string> GetSection(Data data, string section) =>
+        data.TryGetValue(section, out var sec) ? new(sec) : new();
 
     internal static Dictionary<string, string> FindKeyInAllSections(Data data, string key)
     {
-        var results = new Dictionary<string, string>();
+        Dictionary<string, string> results = new();
         foreach (var section in data)
         {
             if (section.Value.TryGetValue(key, out var value))
@@ -75,11 +56,7 @@ internal sealed class NeoIniReaderCore
         return results;
     }
 
-    internal static void ClearSection(Data data, string section)
-    {
-        if (!SectionExists(data, section)) return;
-        data[section].Clear();
-    }
+    internal static void ClearSection(Data data, string section) { if (SectionExists(data, section)) data[section].Clear(); }
 
     internal static void RenameKey(Data data, string section, string oldKey, string newKey)
     {
@@ -95,18 +72,17 @@ internal sealed class NeoIniReaderCore
         data.Remove(oldSection);
     }
 
-    internal static List<(string section, string key, string value)> Search(Data data, string pattern)
+    internal static List<SearchResult> Search(Data data, string pattern)
     {
-        var results = new List<(string, string, string)>();
+        List<SearchResult> results = new();
         if (string.IsNullOrEmpty(pattern)) return results;
-        var searchPattern = pattern.ToLowerInvariant();
         foreach (var section in data)
         {
             foreach (var kvp in section.Value)
             {
-                if ((kvp.Key?.ToLowerInvariant().Contains(searchPattern) == true) ||
-                        (kvp.Value?.ToLowerInvariant().Contains(searchPattern) == true))
-                    results.Add((section.Key, kvp.Key, kvp.Value));
+                if ((kvp.Key?.Contains(pattern, StringComparison.OrdinalIgnoreCase) == true) ||
+                    (kvp.Value?.Contains(pattern, StringComparison.OrdinalIgnoreCase) == true))
+                    results.Add(new(section.Key, kvp.Key, kvp.Value));
             }
         }
         return results;

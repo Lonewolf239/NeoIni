@@ -1,6 +1,5 @@
 using System;
 using System.Security.Cryptography;
-using System.Text;
 
 namespace NeoIni;
 
@@ -29,16 +28,14 @@ internal sealed class NeoIniEncryptionProvider
         string userId = Environment.UserName ?? Environment.GetEnvironmentVariable("USER") ?? "unknown";
         string envSeed = $"{userId}:{Environment.MachineName}:{Environment.UserDomainName ?? "local"}";
         byte[] passwordBytes = DeriveKeyFromString(envSeed, salt, KeySizeBytes);
-        var sb = new StringBuilder(passwordBytes.Length * 2);
-        foreach (byte b in passwordBytes) sb.Append(b.ToString("x2"));
-        return NeoIniParser.FormatInvariant(sb.ToString());
+        return Convert.ToHexString(passwordBytes).ToLowerInvariant();
     }
 
-    internal static (byte[], byte[]) GetEncryptionKeyAndSalt(string password = null, byte[] salt = null)
+    internal static EncryptionParameters GetEncryptionParameters(string password = null, byte[] salt = null)
     {
         salt ??= GenerateRandomSalt();
         password ??= GeneratePasswordFromUserId(salt);
-        return (DeriveKeyFromString(password, salt, KeySizeBytes), salt);
+        return new(DeriveKeyFromString(password, salt, KeySizeBytes), salt);
     }
 
     internal static string GetEncryptionPassword(byte[] salt) => GeneratePasswordFromUserId(salt);

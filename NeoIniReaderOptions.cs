@@ -16,10 +16,10 @@ public sealed class NeoIniReaderOptions
     /// Determines whether changes are automatically written to the disk after every modification.
 	/// Default is <c>true</c>.
     /// </summary>
-    public bool AutoSave { get; set; } = true;
+    public bool UseAutoSave { get; set; } = true;
 
     /// <summary>
-    /// Interval (in operations) between automatic saves when <see cref="AutoSave"/> is enabled.
+    /// Interval (in operations) between automatic saves when <see cref="UseAutoSave"/> is enabled.
     /// Default value is 0.
     /// </summary>
     public int AutoSaveInterval { get; set; } = 0;
@@ -28,13 +28,13 @@ public sealed class NeoIniReaderOptions
     /// Determines whether backup files (.backup) are created during save operations.
     /// Default value is <c>true</c>.
     /// </summary>
-    public bool AutoBackup { get; set; } = true;
+    public bool UseAutoBackup { get; set; } = true;
 
     /// <summary>
     /// Determines whether missing keys are automatically added to the file with a default value when requested via <see cref="NeoIniReader.GetValue{T}"/>. 
 	/// Default is <c>true</c>.
     /// </summary>
-    public bool AutoAdd { get; set; } = true;
+    public bool UseAutoAdd { get; set; } = true;
 
     /// <summary>
     /// Determines whether a checksum is calculated and verified during file load and save operations to ensure data integrity.
@@ -50,6 +50,12 @@ public sealed class NeoIniReaderOptions
     public bool SaveOnDispose { get; set; } = true;
 
     /// <summary>
+    /// Determines whether empty strings or null values are permitted for configuration keys.
+    /// Default value is <c>true</c>.
+    /// </summary>
+    public bool AllowEmptyValues { get; set; } = true;
+
+    /// <summary>
     /// Default behavior: automatic saving and backups enabled, checksum validation on,
     /// missing keys are added automatically and configuration is saved on dispose.
     /// </summary>
@@ -59,7 +65,7 @@ public sealed class NeoIniReaderOptions
     /// Safe behavior: keeps the file structure strict by not adding missing keys automatically.
     /// Other options are the same as <see cref="Default"/>.
     /// </summary>
-    public static NeoIniReaderOptions Safe => new() { AutoAdd = false };
+    public static NeoIniReaderOptions Safe => new() { UseAutoAdd = false };
 
     /// <summary>
     /// High-performance behavior: disables automatic saving, backups, checksum validation,
@@ -68,9 +74,9 @@ public sealed class NeoIniReaderOptions
     /// </summary>
     public static NeoIniReaderOptions Performance => new()
     {
-        AutoSave = false,
-        AutoBackup = false,
-        AutoAdd = false,
+        UseAutoSave = false,
+        UseAutoBackup = false,
+        UseAutoAdd = false,
         UseChecksum = false,
         SaveOnDispose = false
     };
@@ -92,9 +98,9 @@ public sealed class NeoIniReaderOptions
     /// </summary>
     public static NeoIniReaderOptions ReadOnly => new()
     {
-        AutoSave = false,
-        AutoBackup = false,
-        AutoAdd = false,
+        UseAutoSave = false,
+        UseAutoBackup = false,
+        UseAutoAdd = false,
         SaveOnDispose = false
     };
 }

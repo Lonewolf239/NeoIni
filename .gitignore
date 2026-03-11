@@ -4,6 +4,7 @@
 ## Get latest from `dotnet new gitignore`
 
 NeoIniTest/
+NeoIniDemo/demo_config.ini*
 
 # dotenv files
 .env

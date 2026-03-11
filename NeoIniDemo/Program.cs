@@ -80,9 +80,9 @@ class NeoIniDemo
 
         Console.WriteLine($"File created: {TestFile}");
         Console.WriteLine("All features use default settings:");
-        Console.WriteLine($"- AutoAdd: {ini.AutoAdd}");
-        Console.WriteLine($"- AutoSave: {ini.AutoSave}");
-        Console.WriteLine($"- AutoBackup: {ini.AutoBackup}");
+        Console.WriteLine($"- AutoAdd: {ini.UseAutoAdd}");
+        Console.WriteLine($"- AutoSave: {ini.UseAutoSave}");
+        Console.WriteLine($"- AutoBackup: {ini.UseAutoBackup}");
         Console.WriteLine($"- UseChecksum: {ini.UseChecksum}");
         Console.WriteLine($"- AutoSaveInterval: {ini.AutoSaveInterval}");
         Console.WriteLine($"- SaveOnDispose: {ini.SaveOnDispose}");
@@ -131,11 +131,11 @@ class NeoIniDemo
         Console.WriteLine("3. KEYS AND VALUES");
         using var ini = CreateReaderDefault();
 
-        ini.AddKeyInSection("User", "Name", "John Doe");
-        ini.AddKeyInSection("User", "Age", 30);
-        ini.AddKeyInSection("User", "IsAdmin", true);
-        ini.AddKeyInSection("User", "Salary", 75000.50);
-        ini.AddKeyInSection("User", "Bio", "Line1\r\nLine2\r\nLine3");
+        ini.AddKey("User", "Name", "John Doe");
+        ini.AddKey("User", "Age", 30);
+        ini.AddKey("User", "IsAdmin", true);
+        ini.AddKey("User", "Salary", 75000.50);
+        ini.AddKey("User", "Bio", "Line1\r\nLine2\r\nLine3");
         Console.WriteLine("Added keys to User section (including multiline Bio)");
 
         string name = ini.GetValue("User", "Name", "Unknown");
@@ -151,7 +151,7 @@ class NeoIniDemo
         Console.WriteLine("Bio (with line breaks preserved):");
         Console.WriteLine(bio);
 
-        ini.SetKey("User", "Age", 31);
+        ini.SetValue("User", "Age", 31);
         Console.WriteLine("Age updated to 31");
 
         Console.WriteLine($"Key 'Name' exists: {ini.KeyExists("User", "Name")}");
@@ -186,17 +186,17 @@ class NeoIniDemo
         using var ini = CreateReaderDefault();
 
         Console.WriteLine("Writing values out of allowed range:");
-        ini.SetKey("ClampDemo", "Volume", 200);
-        ini.SetKey("ClampDemo", "Brightness", -10);
+        ini.SetValueClamped("ClampDemo", "Volume", 0, 100, 200);
+        ini.SetValueClamped("ClampDemo", "Brightness", 0, 100, -10);
 
-        int clampedVolume = ini.GetValueClamp("ClampDemo", "Volume", 0, 100, 50);
-        int clampedBrightness = ini.GetValueClamp("ClampDemo", "Brightness", 0, 100, 50);
+        int clampedVolume = ini.GetValue("ClampDemo", "Volume", 50);
+        int clampedBrightness = ini.GetValue("ClampDemo", "Brightness", 50);
         Console.WriteLine($"Clamped Volume [0..100]: {clampedVolume}");
         Console.WriteLine($"Clamped Brightness [0..100]: {clampedBrightness}");
 
         Console.WriteLine("\nDemonstrating AutoAdd= false (Safe preset):");
         using var safeIni = CreateReaderWithOptions(NeoIniReaderOptions.Safe);
-        Console.WriteLine($"Safe.AutoAdd: {safeIni.AutoAdd}");
+        Console.WriteLine($"Safe.AutoAdd: {safeIni.UseAutoAdd}");
         int missingValue = safeIni.GetValue("NonExisting", "Key", 123);
         Console.WriteLine($"GetValue on missing key (AutoAdd=false): {missingValue}");
         Console.WriteLine($"SectionExists('NonExisting'): {safeIni.SectionExists("NonExisting")}");
@@ -211,9 +211,9 @@ class NeoIniDemo
         Console.WriteLine("3.2. SEARCH & RENAME DEMO");
         using var ini = CreateReaderDefault();
 
-        ini.SetKey("SearchDemo", "Path", @"C:\Games\MyGame");
-        ini.SetKey("SearchDemo", "Mode", "Debug");
-        ini.SetKey("SearchDemo", "Description", "Game config for debug mode");
+        ini.SetValue("SearchDemo", "Path", @"C:\Games\MyGame");
+        ini.SetValue("SearchDemo", "Mode", "Debug");
+        ini.SetValue("SearchDemo", "Description", "Game config for debug mode");
 
         var results = ini.Search("game");
         Console.WriteLine($"Search for 'game' found {results.Count} entries:");
@@ -221,7 +221,7 @@ class NeoIniDemo
             Console.WriteLine($"  [{section}] {key} = {value}");
 
         Console.WriteLine("\nFind key 'Mode' in all sections:");
-        var found = ini.FindKeyInAllSections("Mode");
+        var found = ini.FindKey("Mode");
         foreach (var kv in found)
             Console.WriteLine($"  Section [{kv.Key}] -> Mode = {kv.Value}");
 
@@ -270,9 +270,9 @@ class NeoIniDemo
 
     private static void PrintOptions(NeoIniReader ini)
     {
-        Console.WriteLine($"- AutoAdd: {ini.AutoAdd}");
-        Console.WriteLine($"- AutoSave: {ini.AutoSave}");
-        Console.WriteLine($"- AutoBackup: {ini.AutoBackup}");
+        Console.WriteLine($"- AutoAdd: {ini.UseAutoAdd}");
+        Console.WriteLine($"- AutoSave: {ini.UseAutoSave}");
+        Console.WriteLine($"- AutoBackup: {ini.UseAutoBackup}");
         Console.WriteLine($"- UseChecksum: {ini.UseChecksum}");
         Console.WriteLine($"- AutoSaveInterval: {ini.AutoSaveInterval}");
         Console.WriteLine($"- SaveOnDispose: {ini.SaveOnDispose}");
@@ -300,15 +300,15 @@ class NeoIniDemo
         using var ini = await CreateReaderAsync();
 
         await ini.AddSectionAsync("Settings");
-        await ini.SetKeyAsync("Settings", "Theme", "Dark");
-        await ini.SetKeyAsync("Settings", "Volume", 80);
+        await ini.SetValueAsync("Settings", "Theme", "Dark");
+        await ini.SetValueAsync("Settings", "Volume", 80);
         Console.WriteLine("Settings section added asynchronously");
 
         string theme = await ini.GetValueAsync("Settings", "Theme", "Light");
         int volume = await ini.GetValueAsync("Settings", "Volume", 50);
         Console.WriteLine($"Theme: {theme}, Volume: {volume}%");
 
-        int clampedVolume = await ini.GetValueClampAsync("Settings", "Volume", 0, 100, 50);
+        int clampedVolume = await ini.GetValueClampedAsync("Settings", "Volume", 0, 100, 50);
         Console.WriteLine($"Clamped Volume [0..100]: {clampedVolume}");
 
         Console.WriteLine("Press any key to continue...");
@@ -321,8 +321,8 @@ class NeoIniDemo
         Console.WriteLine("6. AUTOMATIC FEATURES");
         using var ini = CreateReaderDefault();
 
-        ini.SetKey("Database", "Host", "localhost");
-        ini.SetKey("Database", "Port", 5432);
+        ini.SetValue("Database", "Host", "localhost");
+        ini.SetValue("Database", "Port", 5432);
         ini.SaveFile();
         Console.WriteLine("Manual save completed");
 
@@ -334,10 +334,10 @@ class NeoIniDemo
         Console.WriteLine($"Auto-save every {ini.AutoSaveInterval} operations");
 
         Console.Write("Adding logs: ");
-        ini.OnAutoSave += () => Console.Write("SAVED ");
+        ini.AutoSave += (_, _) => Console.Write("SAVED ");
         for (int i = 1; i <= 6; i++)
         {
-            ini.SetKey("Logs", $"Entry{i}", $"Log message {i}");
+            ini.SetValue("Logs", $"Entry{i}", $"Log message {i}");
             if (i % 3 != 0) Console.Write(".");
         }
         Console.WriteLine("Auto-save triggered");
@@ -351,10 +351,10 @@ class NeoIniDemo
         Console.Clear();
         Console.WriteLine("7. FILE ERROR RECOVERY");
         using var ini = CreateReaderDefault();
-        ini.OnChecksumMismatch += (expected, actual) =>
+        ini.ChecksumMismatch += (sender, e) =>
         {
-            var expectedHex = BitConverter.ToString(expected);
-            var actualHex = BitConverter.ToString(actual);
+            var expectedHex = BitConverter.ToString(e.Expected);
+            var actualHex = BitConverter.ToString(e.Actual);
             Console.WriteLine($"Checksum mismatch: expected {expectedHex}, actual {actualHex}");
         };
 
@@ -383,18 +383,18 @@ class NeoIniDemo
         Console.WriteLine("8. EVENTS AND ACTIONS DEMONSTRATION");
         using var ini = CreateReaderDefault();
 
-        ini.OnKeyAdded += (section, key, value) => Console.WriteLine($"NEW KEY ADDED: [{section}] {key} = '{value}'");
-        ini.OnKeyChanged += (section, key, value) => Console.WriteLine($"KEY CHANGED: [{section}] {key} = '{value}'");
-        ini.OnKeyRemoved += (section, key) => Console.WriteLine($"KEY REMOVED: [{section}] {key}");
+        ini.KeyAdded += (_, key) => Console.WriteLine($"NEW KEY ADDED: [{key.Section}] {key.Key} = '{key.Value}'");
+        ini.KeyChanged += (sender, e) => Console.WriteLine($"KEY CHANGED: [{e.Section}] {e.Key} = '{e.Value}'");
+        ini.KeyRemoved += (section, key) => Console.WriteLine($"KEY REMOVED: [{section}] {key}");
 
-        ini.OnSectionAdded += section => Console.WriteLine($"NEW SECTION: [{section}]");
-        ini.OnSectionRemoved += section => Console.WriteLine($"SECTION REMOVED: [{section}]");
-        ini.OnSectionRenamed += (oldSection, newSection) => Console.WriteLine($"SECTION RENAMED: [{oldSection}] -> [{newSection}]");
-        ini.OnDataCleared += () => Console.WriteLine("ALL DATA CLEARED");
-        ini.OnAutoSave += () => Console.WriteLine("AUTO-SAVING FILE...");
-        ini.OnSave += () => Console.WriteLine("SAVING FILE...");
-        ini.OnLoad += () => Console.WriteLine("FILE LOADED!");
-        ini.OnSearchCompleted += (pattern, count) => Console.WriteLine($"SEARCH COMPLETED: '{pattern}' -> {count} matches");
+        ini.SectionAdded += (_, section) => Console.WriteLine($"NEW SECTION: [{section.Section}]");
+        ini.SectionRemoved += (_, section) => Console.WriteLine($"SECTION REMOVED: [{section.Section}]");
+        ini.SectionRenamed += (oldSection, newSection) => Console.WriteLine($"SECTION RENAMED: [{oldSection}] -> [{newSection}]");
+        ini.DataCleared += (_, _) => Console.WriteLine("ALL DATA CLEARED");
+        ini.AutoSave += (_, _) => Console.WriteLine("AUTO-SAVING FILE...");
+        ini.Saved += (_, _) => Console.WriteLine("SAVING FILE...");
+        ini.Loaded += (_, _) => Console.WriteLine("FILE LOADED!");
+        ini.SearchCompleted += (pattern, count) => Console.WriteLine($"SEARCH COMPLETED: '{pattern}' -> {count} matches");
 
         Console.WriteLine("Demonstrating Events/Actions:");
 
@@ -402,13 +402,13 @@ class NeoIniDemo
         ini.AddSection("EventsDemo");
 
         Console.WriteLine("2. Added Counter key");
-        ini.AddKeyInSection("EventsDemo", "Counter", 0);
+        ini.AddKey("EventsDemo", "Counter", 0);
 
         Console.WriteLine("3. Changed Counter value");
-        ini.SetKey("EventsDemo", "Counter", 42);
+        ini.SetValue("EventsDemo", "Counter", 42);
 
         Console.WriteLine("4. Added Status key");
-        ini.AddKeyInSection("EventsDemo", "Status", "Active");
+        ini.AddKey("EventsDemo", "Status", "Active");
 
         Console.WriteLine("5. Removed Status key");
         ini.RemoveKey("EventsDemo", "Status");
@@ -447,7 +447,7 @@ class NeoIniDemo
         {
             Console.WriteLine("- Writing several values without autosave/checksum/backup:");
             for (int i = 0; i < 5; i++)
-                perf.SetKey("Perf", $"Key{i}", i);
+                perf.SetValue("Perf", $"Key{i}", i);
 
             Console.WriteLine("- Data not on disk until SaveFile() is called explicitly.");
             perf.SaveFile();

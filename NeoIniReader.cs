@@ -13,11 +13,11 @@ namespace NeoIni;
 /// <br/>
 /// <b>Target Framework: .NET 6+</b>
 /// <br/>
-/// <b>Version: 1.6.0.1</b>
+/// <b>Version: 1.6.1</b>
 /// <br/>
 /// <b>Black Box Philosophy:</b> This class follows a strict "black box" design principle - users interact only through the public API without needing to understand internal implementation details. Input goes in, processed output comes out, internals remain hidden and abstracted.
 /// </summary>
-public class NeoIniReader : IDisposable
+public class NeoIniReader : IDisposable, IAsyncDisposable
 {
     private readonly NeoIniFileProvider FileProvider;
     private readonly string FilePath;
@@ -35,10 +35,10 @@ public class NeoIniReader : IDisposable
     /// Determines whether changes are automatically written to the disk after every modification.
 	/// Default is <c>true</c>.
     /// </summary>
-    public bool AutoSave;
+    public bool UseAutoSave { get; set; }
 
     /// <summary>
-    /// Interval (in operations) between automatic saves when <see cref="AutoSave"/> is enabled.
+    /// Interval (in operations) between automatic saves when <see cref="UseAutoSave"/> is enabled.
     /// Default value is 0.
     /// </summary>
     public int AutoSaveInterval
@@ -57,108 +57,93 @@ public class NeoIniReader : IDisposable
     /// Determines whether backup files (.backup) are created during save operations.
     /// Default value is <c>true</c>.
     /// </summary>
-    public bool AutoBackup;
+    public bool UseAutoBackup { get; set; }
 
     /// <summary>
     /// Determines whether missing keys are automatically added to the file with a default value when requested via <see cref="GetValue{T}"/>. 
 	/// Default is <c>true</c>.
     /// </summary>
-    public bool AutoAdd;
+    public bool UseAutoAdd { get; set; }
 
     /// <summary>
     /// Determines whether a checksum is calculated and verified during file load and save operations to ensure data integrity.
     /// When enabled, the configuration file includes a checksum that detects corruption or tampering.
     /// Default value is <c>true</c>.
     /// </summary>
-    public bool UseChecksum;
+    public bool UseChecksum { get; set; }
 
     /// <summary>
     /// Determines whether the configuration is automatically saved when the instance is disposed.
     /// Default value is <c>true</c>.
     /// </summary>
-    public bool SaveOnDispose;
+    public bool SaveOnDispose { get; set; }
+
+    /// <summary>
+    /// Determines whether empty strings or null values are permitted for configuration keys.
+    /// Default value is <c>true</c>.
+    /// </summary>
+    public bool AllowEmptyValues { get; set; }
 
     /// <summary>Called before saving a file to disk</summary>
-    public Action OnSave;
+    public event EventHandler Saved;
 
     /// <summary>Called after successfully loading data from a file or reloading</summary>
-    public Action OnLoad;
+    public event EventHandler Loaded;
 
     /// <summary>Called when the value of an existing key in a section changes</summary>
-    /// <param>Name of the section where the change occurred.</param>
-    /// <param>Name of the changed key.</param>
-    /// <param>New value of the key.</param>
-    public Action<string, string, string> OnKeyChanged;
+    public event EventHandler<KeyEventArgs> KeyChanged;
 
     /// <summary>Called when a key is renamed within a specific section.</summary>
-    /// <param>The name of the section that contains the key.</param>
-    /// <param>The original name of the key before renaming.</param>
-    /// <param>The new name assigned to the key.</param>
-    public Action<string, string, string> OnKeyRenamed;
+    public event EventHandler<KeyRenamedEventArgs> KeyRenamed;
 
     /// <summary>Called when a new key is added to a section</summary>
-    /// <param>Name of the section to which the key was added.</param>
-    /// <param>Name of the added key.</param>
-    /// <param>Value of the added key.</param>
-    public Action<string, string, string> OnKeyAdded;
+    public event EventHandler<KeyEventArgs> KeyAdded;
 
     /// <summary>Called when a key is removed from a section</summary>
-    /// <param>The name of the section from which the key was removed.</param>
-    /// <param>The name of the removed key.</param>
-    public Action<string, string> OnKeyRemoved;
+    public event EventHandler<KeyRemovedEventArgs> KeyRemoved;
 
     /// <summary>Called whenever a section changes (keys are changed/added/removed)</summary>
-    /// <param>Name of the modified section.</param>
-    public Action<string> OnSectionChanged;
+    public event EventHandler<SectionEventArgs> SectionChanged;
 
     /// <summary>Called when a section is renamed.</summary>
-    /// <param>The original name of the section.</param>
-    /// <param>The new name assigned to the section.</param>
-    public Action<string, string> OnSectionRenamed;
+    public event EventHandler<SectionRenamedEventArgs> SectionRenamed;
 
     /// <summary>Called when a new section is added</summary>
-    /// <param>The name of the added section.</param>
-    public Action<string> OnSectionAdded;
+    public event EventHandler<SectionEventArgs> SectionAdded;
 
     /// <summary>Called when a section is deleted</summary>
-    /// <param>Name of the deleted section.</param>
-    public Action<string> OnSectionRemoved;
+    public event EventHandler<SectionEventArgs> SectionRemoved;
 
     /// <summary>Called when the data is completely cleared</summary>
-    public Action OnDataCleared;
+    public event EventHandler DataCleared;
 
     /// <summary>Called before automatic saving</summary>
-    public Action OnAutoSave;
+    public event EventHandler AutoSave;
 
     /// <summary>Called when errors occur (parsing, saving, reading a file, etc.)</summary>
-    /// <param>An exception containing information about the error.</param>
-    public Action<Exception> OnError
+    public event EventHandler<ErrorEventArgs> Error
     {
-        get => FileProvider?.OnError;
-        set => FileProvider.OnError = value;
+        add => FileProvider.Error += value;
+        remove => FileProvider.Error -= value;
     }
 
     /// <summary>Called when the checksum does not match when loading a file</summary>
-    /// <param>Expected checksum.</param>
-    /// <param>Actual checksum.</param>
-    public Action<byte[], byte[]> OnChecksumMismatch
+    public event EventHandler<ChecksumMismatchEventArgs> ChecksumMismatch
     {
-        get => FileProvider?.OnChecksumMismatch;
-        set => FileProvider.OnChecksumMismatch = value;
+        add => FileProvider.ChecksumMismatch += value;
+        remove => FileProvider.ChecksumMismatch -= value;
     }
 
     /// <summary>Called after each search</summary>
-    /// <param>Search pattern.</param>
-    /// <param>Number of matches found.</param>
-    public Action<string, int> OnSearchCompleted;
+    public event EventHandler<SearchCompletedEventArgs> SearchCompleted;
 
-    private NeoIniReader(string path, (byte[] key, byte[] salt) encryptionData, bool autoEncryption, NeoIniReaderOptions options)
+    private NeoIniReader(string path, EncryptionParameters encryptionParameters, bool autoEncryption, NeoIniReaderOptions options)
     {
         FilePath = path;
         AutoEncryption = autoEncryption;
-        if (encryptionData.key != null && encryptionData.salt != null)
-            FileProvider = new NeoIniFileProvider(FilePath, encryptionData, autoEncryption);
-        else FileProvider = new NeoIniFileProvider(FilePath);
+        if (encryptionParameters.Key != null && encryptionParameters.Salt != null)
+            FileProvider = new(FilePath, encryptionParameters, autoEncryption);
+        else FileProvider = new(FilePath);
         ApplyOptions(options);
     }
 
@@ -170,7 +155,7 @@ public class NeoIniReader : IDisposable
     /// <param name="options">
     /// Optional reader configuration; if <c>null</c>, <see cref="NeoIniReaderOptions.Default"/> is used.
     /// </param>
-    public NeoIniReader(string path, NeoIniReaderOptions options = null) : this(path, (null, null), false, options) => Data = FileProvider.GetData();
+    public NeoIniReader(string path, NeoIniReaderOptions options = null) : this(path, new(null, null), false, options) => Data = FileProvider.GetData();
 
     /// <summary>
     /// Creates a new <see cref="NeoIniReader"/> for the specified file path,
@@ -187,7 +172,7 @@ public class NeoIniReader : IDisposable
     /// Optional reader configuration; if <c>null</c>, <see cref="NeoIniReaderOptions.Default"/> is used.
     /// </param>
     public NeoIniReader(string path, bool autoEncryption, NeoIniReaderOptions options = null) :
-        this(path, autoEncryption ? NeoIniEncryptionProvider.GetEncryptionKeyAndSalt(salt: NeoIniFileProvider.GetSalt(path)) : (null, null), autoEncryption, options) => Data = FileProvider.GetData();
+        this(path, autoEncryption ? NeoIniEncryptionProvider.GetEncryptionParameters(salt: NeoIniFileProvider.GetSalt(path)) : new(null, null), autoEncryption, options) => Data = FileProvider.GetData();
 
     /// <summary>Initializes a new instance of the <see cref="NeoIniReader"/> class with custom encryption</summary>
     /// <param name="path">The absolute or relative path to the INI file.</param>
@@ -196,7 +181,7 @@ public class NeoIniReader : IDisposable
     /// Optional reader configuration; if <c>null</c>, <see cref="NeoIniReaderOptions.Default"/> is used.
     /// </param>
     public NeoIniReader(string path, string encryptionPassword, NeoIniReaderOptions options = null) :
-        this(path, NeoIniEncryptionProvider.GetEncryptionKeyAndSalt(encryptionPassword, NeoIniFileProvider.GetSalt(path)), false, options)
+        this(path, NeoIniEncryptionProvider.GetEncryptionParameters(encryptionPassword, NeoIniFileProvider.GetSalt(path)), false, options)
     {
         CustomEncryptionPassword = true;
         Data = FileProvider.GetData();
@@ -210,9 +195,7 @@ public class NeoIniReader : IDisposable
     /// <param name="options">
     /// Optional reader configuration; if <c>null</c>, <see cref="NeoIniReaderOptions.Default"/> is used.
     /// </param>
-    /// <param name="cancellationToken">
-    /// Token used to cancel the asynchronous initialization.
-    /// </param>
+    /// <param name="cancellationToken">Token used to cancel the asynchronous initialization.</param>
     /// <returns>
     /// A task that represents the asynchronous creation operation,
     /// containing the initialized <see cref="NeoIniReader"/>.
@@ -220,7 +203,7 @@ public class NeoIniReader : IDisposable
     public static async Task<NeoIniReader> CreateAsync(string path, NeoIniReaderOptions options = null,
             CancellationToken cancellationToken = default)
     {
-        var reader = new NeoIniReader(path, (null, null), false, options);
+        NeoIniReader reader = new(path, new(null, null), false, options);
         reader.Data = await reader.FileProvider.GetDataAsync(cancellationToken).ConfigureAwait(false);
         return reader;
     }
@@ -239,9 +222,7 @@ public class NeoIniReader : IDisposable
     /// <param name="options">
     /// Optional reader configuration; if <c>null</c>, <see cref="NeoIniReaderOptions.Default"/> is used.
     /// </param>
-    /// <param name="cancellationToken">
-    /// Token used to cancel the asynchronous initialization.
-    /// </param>
+    /// <param name="cancellationToken">Token used to cancel the asynchronous initialization.</param>
     /// <returns>
     /// A task that represents the asynchronous creation operation,
     /// containing the initialized <see cref="NeoIniReader"/>.
@@ -249,8 +230,8 @@ public class NeoIniReader : IDisposable
     public static async Task<NeoIniReader> CreateAsync(string path, bool autoEncryption, NeoIniReaderOptions options = null,
         CancellationToken cancellationToken = default)
     {
-        var reader = new NeoIniReader(path, autoEncryption ?
-                NeoIniEncryptionProvider.GetEncryptionKeyAndSalt(salt: NeoIniFileProvider.GetSalt(path)) : (null, null), autoEncryption, options);
+        NeoIniReader reader = new(path, autoEncryption ?
+                NeoIniEncryptionProvider.GetEncryptionParameters(salt: NeoIniFileProvider.GetSalt(path)) : new(null, null), autoEncryption, options);
         reader.Data = await reader.FileProvider.GetDataAsync(cancellationToken).ConfigureAwait(false);
         return reader;
     }
@@ -264,9 +245,7 @@ public class NeoIniReader : IDisposable
     /// <param name="options">
     /// Optional reader configuration; if <c>null</c>, <see cref="NeoIniReaderOptions.Default"/> is used.
     /// </param>
-    /// <param name="cancellationToken">
-    /// Token used to cancel the asynchronous initialization.
-    /// </param>
+    /// <param name="cancellationToken">Token used to cancel the asynchronous initialization.</param>
     /// <returns>
     /// A task that represents the asynchronous creation operation,
     /// containing the initialized <see cref="NeoIniReader"/>.
@@ -274,8 +253,8 @@ public class NeoIniReader : IDisposable
     public static async Task<NeoIniReader> CreateAsync(string path, string encryptionPassword, NeoIniReaderOptions options = null,
         CancellationToken cancellationToken = default)
     {
-        var reader = new NeoIniReader(path,
-                NeoIniEncryptionProvider.GetEncryptionKeyAndSalt(encryptionPassword, NeoIniFileProvider.GetSalt(path)), false, options);
+        NeoIniReader reader = new(path,
+                NeoIniEncryptionProvider.GetEncryptionParameters(encryptionPassword, NeoIniFileProvider.GetSalt(path)), false, options);
         reader.CustomEncryptionPassword = true;
         reader.Data = await reader.FileProvider.GetDataAsync(cancellationToken).ConfigureAwait(false);
         return reader;
@@ -297,32 +276,52 @@ public class NeoIniReader : IDisposable
     }
 
     /// <summary>Releases managed resources and saves changes to the file</summary>
-    public void Dispose()
+    public void Dispose() { Dispose(true); GC.SuppressFinalize(this); }
+
+    /// <summary>Asynchronously releases managed resources and saves changes to the file</summary>
+    public async ValueTask DisposeAsync() { await DisposeAsync(true); GC.SuppressFinalize(this); }
+
+    private string ExtractContent()
     {
-        Dispose(true);
-        GC.SuppressFinalize(this);
+        Lock.EnterWriteLock();
+        try
+        {
+            string content = SaveOnDispose ? NeoIniParser.GetContent(Data) : null;
+            Data.Clear();
+            return content;
+        }
+        finally { Lock.ExitWriteLock(); }
     }
 
     /// <summary>Releases managed resources and saves changes to the file</summary>
     protected virtual void Dispose(bool disposing)
     {
         if (Interlocked.CompareExchange(ref DisposeState, 1, 0) != 0) return;
-        string content = null;
         if (disposing)
         {
-            Lock.EnterWriteLock();
-            try
+            if (ExtractContent() is string content)
             {
-                if (SaveOnDispose) content = NeoIniParser.GetContent(Data);
-                Data.Clear();
+                FileProvider.SaveFile(content, UseChecksum, UseAutoBackup);
+                Saved?.Invoke(this, EventArgs.Empty);
             }
-            finally { Lock.ExitWriteLock(); }
-            if (SaveOnDispose && content is not null)
+            DataCleared?.Invoke(this, EventArgs.Empty);
+            Lock.Dispose();
+        }
+        Disposed = true;
+    }
+
+    /// <summary>Asynchronously releases managed resources and saves changes to the file</summary>
+    protected virtual async Task DisposeAsync(bool disposing)
+    {
+        if (Interlocked.CompareExchange(ref DisposeState, 1, 0) != 0) return;
+        if (disposing)
+        {
+            if (ExtractContent() is string content)
             {
-                FileProvider.SaveFile(content, UseChecksum, AutoBackup);
-                OnSave?.Invoke();
+                await FileProvider.SaveFileAsync(content, UseChecksum, UseAutoBackup, CancellationToken.None).ConfigureAwait(false);
+                Saved?.Invoke(this, EventArgs.Empty);
             }
-            OnDataCleared?.Invoke();
+            DataCleared?.Invoke(this, EventArgs.Empty);
             Lock.Dispose();
         }
         Disposed = true;
@@ -330,20 +329,27 @@ public class NeoIniReader : IDisposable
 
     private void ApplyOptions(NeoIniReaderOptions options)
     {
-        options ??= new NeoIniReaderOptions();
-        AutoSave = options.AutoSave;
+        options ??= new();
+        UseAutoSave = options.UseAutoSave;
         AutoSaveInterval = options.AutoSaveInterval;
-        AutoBackup = options.AutoBackup;
-        AutoAdd = options.AutoAdd;
+        UseAutoBackup = options.UseAutoBackup;
+        UseAutoAdd = options.UseAutoAdd;
         UseChecksum = options.UseChecksum;
         SaveOnDispose = options.SaveOnDispose;
+        AllowEmptyValues = options.AllowEmptyValues;
     }
 
     private void ThrowIfDisposed() { if (Disposed) throw new ObjectDisposedException(nameof(NeoIniReader)); }
 
+    private void ThrowIfEmpty(string value)
+    {
+        if (!AllowEmptyValues && string.IsNullOrEmpty(value))
+            throw new ArgumentException("The key value cannot be empty or null because AllowEmptyValues = false.", nameof(value));
+    }
+
     private bool ShouldAutoSave()
     {
-        if (!AutoSave) return false;
+        if (!UseAutoSave) return false;
         if (AutoSaveInterval == 0) return true;
         return Interlocked.Increment(ref SaveIterationCounter) % AutoSaveInterval == 0;
     }
@@ -351,7 +357,7 @@ public class NeoIniReader : IDisposable
     private void DoAutoSave()
     {
         if (!ShouldAutoSave()) return;
-        OnAutoSave?.Invoke();
+        AutoSave?.Invoke(this, EventArgs.Empty);
         SaveFile();
     }
 
@@ -359,7 +365,7 @@ public class NeoIniReader : IDisposable
     {
         ct.ThrowIfCancellationRequested();
         if (!ShouldAutoSave()) return;
-        OnAutoSave?.Invoke();
+        AutoSave?.Invoke(this, EventArgs.Empty);
         await SaveFileAsync(ct).ConfigureAwait(false);
     }
 
@@ -373,8 +379,8 @@ public class NeoIniReader : IDisposable
         Lock.EnterReadLock();
         try { content = NeoIniParser.GetContent(Data); }
         finally { Lock.ExitReadLock(); }
-        FileProvider.SaveFile(content, UseChecksum, AutoBackup);
-        OnSave?.Invoke();
+        FileProvider.SaveFile(content, UseChecksum, UseAutoBackup);
+        Saved?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>Asynchronously saves the current data to the INI file</summary>
@@ -390,8 +396,8 @@ public class NeoIniReader : IDisposable
             content = NeoIniParser.GetContent(Data);
         }
         finally { Lock.ExitReadLock(); }
-        await FileProvider.SaveFileAsync(content, UseChecksum, AutoBackup, cancellationToken).ConfigureAwait(false);
-        OnSave?.Invoke();
+        await FileProvider.SaveFileAsync(content, UseChecksum, UseAutoBackup, cancellationToken).ConfigureAwait(false);
+        Saved?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>Determines whether a specific section exists in the loaded data</summary>
@@ -425,7 +431,7 @@ public class NeoIniReader : IDisposable
         Lock.EnterWriteLock();
         try { NeoIniReaderCore.AddSection(Data, section); }
         finally { Lock.ExitWriteLock(); }
-        OnSectionAdded?.Invoke(section);
+        SectionAdded?.Invoke(this, new(section));
         DoAutoSave();
     }
 
@@ -443,7 +449,7 @@ public class NeoIniReader : IDisposable
             NeoIniReaderCore.AddSection(Data, section);
         }
         finally { Lock.ExitWriteLock(); }
-        OnSectionAdded?.Invoke(section);
+        SectionAdded?.Invoke(this, new(section));
         await DoAutoSaveAsync(cancellationToken).ConfigureAwait(false);
     }
 
@@ -452,14 +458,15 @@ public class NeoIniReader : IDisposable
     /// <param name="section">The name of the target section.</param>
     /// <param name="key">The name of the key to create.</param>
     /// <param name="value">The value to assign to the key.</param>
-    public void AddKeyInSection<T>(string section, string key, T value)
+    public void AddKey<T>(string section, string key, T value)
     {
         ThrowIfDisposed();
         string valueString = NeoIniParser.ValueToString(value);
+        ThrowIfEmpty(valueString);
         Lock.EnterWriteLock();
         try { NeoIniReaderCore.AddKeyInSection(Data, section, key, valueString); }
         finally { Lock.ExitWriteLock(); }
-        OnKeyAdded?.Invoke(section, key, valueString);
+        KeyAdded?.Invoke(this, new(section, key, valueString));
         DoAutoSave();
     }
 
@@ -469,11 +476,12 @@ public class NeoIniReader : IDisposable
     /// <param name="key">The name of the key to create.</param>
     /// <param name="value">The value to assign to the key.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    public async Task AddKeyInSectionAsync<T>(string section, string key, T value, CancellationToken cancellationToken = default)
+    public async Task AddKeyAsync<T>(string section, string key, T value, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
         cancellationToken.ThrowIfCancellationRequested();
         string valueString = NeoIniParser.ValueToString(value);
+        ThrowIfEmpty(valueString);
         Lock.EnterWriteLock();
         try
         {
@@ -481,28 +489,68 @@ public class NeoIniReader : IDisposable
             NeoIniReaderCore.AddKeyInSection(Data, section, key, valueString);
         }
         finally { Lock.ExitWriteLock(); }
-        OnKeyAdded?.Invoke(section, key, valueString);
+        KeyAdded?.Invoke(this, new(section, key, valueString));
         await DoAutoSaveAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
-    /// Attempts to retrieve a value of the specified type from the INI data
-    /// without modifying the underlying file or adding missing keys.
+    /// Adds a new key-value pair to a specified section and clamps its value within the specified range.
     /// </summary>
-    /// <typeparam name="T">The expected type of the value (e.g., bool, int, double, string, etc.).</typeparam>
-    /// <param name="section">The section containing the key.</param>
-    /// <param name="key">The name of the key to retrieve.</param>
-    /// <param name="defaultValue">The value to return if the key or section does not exist, or if parsing fails.</param>
-    /// <returns>The parsed value, or <paramref name="defaultValue"/> if retrieval fails.</returns>
-    public T TryGetValue<T>(string section, string key, T defaultValue = default)
+    /// <typeparam name="T">The comparable type of the value (e.g., <see cref="int"/>, <see cref="double"/>, <see cref="float"/>, etc.).</typeparam>
+    /// <param name="section">The name of the target section.</param>
+    /// <param name="key">The name of the key to create.</param>
+    /// <param name="minValue">The minimum allowed value.</param>
+    /// <param name="maxValue">The maximum allowed value.</param>
+    /// <param name="value">The value to assign to the key before clamping.</param>
+    public void AddKeyClamped<T>(string section, string key, T minValue, T maxValue, T value) where T : IComparable<T>
+    {
+        T clampedValue = NeoIniParser.Clamp(value, minValue, maxValue);
+        AddKey(section, key, clampedValue);
+    }
+
+    /// <summary>
+    /// Asynchronously adds a new key-value pair to a specified section and clamps its value within the specified range.
+    /// </summary>
+    /// <typeparam name="T">The comparable type of the value (e.g., <see cref="int"/>, <see cref="double"/>, <see cref="float"/>, etc.).</typeparam>
+    /// <param name="section">The name of the target section.</param>
+    /// <param name="key">The name of the key to create.</param>
+    /// <param name="minValue">The minimum allowed value.</param>
+    /// <param name="maxValue">The maximum allowed value.</param>
+    /// <param name="value">The value to assign to the key before clamping.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    public async Task AddKeyClampedAsync<T>(string section, string key, T minValue, T maxValue, T value,
+            CancellationToken cancellationToken = default) where T : IComparable<T>
+    {
+        T clampedValue = NeoIniParser.Clamp(value, minValue, maxValue);
+        await AddKeyAsync(section, key, clampedValue);
+    }
+
+
+    /// <summary>Attempts to retrieve a value of the specified type from the configuration data.</summary>
+    /// <typeparam name="T">The expected type of the value to retrieve.</typeparam>
+    /// <param name="section">The name of the section containing the key.</param>
+    /// <param name="key">The specific key to look up.</param>
+    /// <param name="value">
+    /// When this method returns, contains the parsed value if the key is found,
+    /// or the default value for <typeparamref name="T"/> if it is not.
+    /// </param>
+    /// <returns><c>true</c> if the key is found and read successfully; otherwise, <c>false</c>.</returns>
+    public bool TryGetValue<T>(string section, string key, out T value)
     {
         ThrowIfDisposed();
-        string stringValue;
-        Lock.EnterUpgradeableReadLock();
-        try { stringValue = NeoIniParser.GetStringRaw(Data, section, key); }
-        finally { Lock.ExitUpgradeableReadLock(); }
-        if (stringValue == null) return defaultValue;
-        return NeoIniParser.TryParseValue<T>(stringValue, defaultValue, OnError);
+        Lock.EnterReadLock();
+        try
+        {
+            string stringValue = NeoIniParser.GetStringRaw(Data, section, key);
+            if (stringValue == null)
+            {
+                value = default;
+                return false;
+            }
+            value = NeoIniParser.TryParseValue(stringValue, default(T), FileProvider.RaiseError);
+            return true;
+        }
+        finally { Lock.ExitReadLock(); }
     }
 
     /// <summary>
@@ -523,7 +571,7 @@ public class NeoIniReader : IDisposable
         try
         {
             stringValue = NeoIniParser.GetStringRaw(Data, section, key);
-            if (stringValue == null && AutoAdd)
+            if (stringValue == null && UseAutoAdd)
             {
                 Lock.EnterWriteLock();
                 try
@@ -531,7 +579,9 @@ public class NeoIniReader : IDisposable
                     stringValue = NeoIniParser.GetStringRaw(Data, section, key);
                     if (stringValue == null)
                     {
-                        NeoIniReaderCore.AddKeyInSection(Data, section, key, NeoIniParser.ValueToString(defaultValue));
+                        string defaultValueString = NeoIniParser.ValueToString(defaultValue);
+                        ThrowIfEmpty(defaultValueString);
+                        NeoIniReaderCore.AddKeyInSection(Data, section, key, defaultValueString);
                         valueAdded = true;
                     }
                 }
@@ -541,7 +591,7 @@ public class NeoIniReader : IDisposable
         finally { Lock.ExitUpgradeableReadLock(); }
         if (valueAdded) DoAutoSave();
         if (stringValue == null) return defaultValue;
-        return NeoIniParser.TryParseValue<T>(stringValue, defaultValue, OnError);
+        return NeoIniParser.TryParseValue<T>(stringValue, defaultValue, FileProvider.RaiseError);
     }
 
     /// <summary>
@@ -565,7 +615,7 @@ public class NeoIniReader : IDisposable
         {
             cancellationToken.ThrowIfCancellationRequested();
             stringValue = NeoIniParser.GetStringRaw(Data, section, key);
-            if (stringValue == null && AutoAdd)
+            if (stringValue == null && UseAutoAdd)
             {
                 Lock.EnterWriteLock();
                 try
@@ -574,7 +624,9 @@ public class NeoIniReader : IDisposable
                     stringValue = NeoIniParser.GetStringRaw(Data, section, key);
                     if (stringValue == null)
                     {
-                        NeoIniReaderCore.AddKeyInSection(Data, section, key, NeoIniParser.ValueToString(defaultValue));
+                        string defaultValueString = NeoIniParser.ValueToString(defaultValue);
+                        ThrowIfEmpty(defaultValueString);
+                        NeoIniReaderCore.AddKeyInSection(Data, section, key, defaultValueString);
                         valueAdded = true;
                     }
                 }
@@ -584,7 +636,7 @@ public class NeoIniReader : IDisposable
         finally { Lock.ExitUpgradeableReadLock(); }
         if (valueAdded) await DoAutoSaveAsync(cancellationToken).ConfigureAwait(false);
         if (stringValue == null) return defaultValue;
-        return NeoIniParser.TryParseValue<T>(stringValue, defaultValue, OnError);
+        return NeoIniParser.TryParseValue<T>(stringValue, defaultValue, FileProvider.RaiseError);
     }
 
     /// <summary>
@@ -603,13 +655,10 @@ public class NeoIniReader : IDisposable
     /// <returns>
     /// The parsed and clamped value. If retrieval or parsing fails, returns <paramref name="defaultValue"/>.
     /// </returns>
-    public T GetValueClamp<T>(string section, string key, T minValue, T maxValue, T defaultValue = default(T)) where T : IComparable<T>
+    public T GetValueClamped<T>(string section, string key, T minValue, T maxValue, T defaultValue = default(T)) where T : IComparable<T>
     {
         T value = GetValue<T>(section, key, defaultValue);
-        var comparer = Comparer<T>.Default;
-        if (comparer.Compare(value, minValue) < 0) return minValue;
-        if (comparer.Compare(value, maxValue) > 0) return maxValue;
-        return value;
+        return NeoIniParser.Clamp(value, minValue, maxValue);
     }
 
     /// <summary>
@@ -630,14 +679,11 @@ public class NeoIniReader : IDisposable
     /// A task that represents the asynchronous operation. The task result contains the parsed and clamped value,
     /// or <paramref name="defaultValue"/> if retrieval fails.
     /// </returns>
-    public async Task<T> GetValueClampAsync<T>(string section, string key, T minValue, T maxValue, T defaultValue,
+    public async Task<T> GetValueClampedAsync<T>(string section, string key, T minValue, T maxValue, T defaultValue,
             CancellationToken cancellationToken = default) where T : IComparable<T>
     {
         T value = await GetValueAsync(section, key, defaultValue, cancellationToken).ConfigureAwait(false);
-        var comparer = Comparer<T>.Default;
-        if (comparer.Compare(value, minValue) < 0) return minValue;
-        if (comparer.Compare(value, maxValue) > 0) return maxValue;
-        return value;
+        return NeoIniParser.Clamp(value, minValue, maxValue);
     }
 
     /// <summary>Updates or creates a key-value pair in the specified section</summary>
@@ -645,16 +691,17 @@ public class NeoIniReader : IDisposable
     /// <param name="section">The name of the section where the value will be written.</param>
     /// <param name="key">The key to update or create.</param>
     /// <param name="value">The value to write to the file.</param>
-    public void SetKey<T>(string section, string key, T value)
+    public void SetValue<T>(string section, string key, T value)
     {
         ThrowIfDisposed();
         bool keyExists = false;
         string valueString = NeoIniParser.ValueToString(value);
+        ThrowIfEmpty(valueString);
         Lock.EnterWriteLock();
         try { keyExists = NeoIniReaderCore.SetKey(Data, section, key, valueString); }
         finally { Lock.ExitWriteLock(); }
-        if (keyExists) OnKeyChanged?.Invoke(section, key, valueString);
-        else OnKeyAdded?.Invoke(section, key, valueString);
+        if (keyExists) KeyChanged?.Invoke(this, new(section, key, valueString));
+        else KeyAdded?.Invoke(this, new(section, key, valueString));
         DoAutoSave();
     }
 
@@ -664,12 +711,13 @@ public class NeoIniReader : IDisposable
     /// <param name="key">The key to update or create.</param>
     /// <param name="value">The value to write to the file.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    public async Task SetKeyAsync<T>(string section, string key, T value, CancellationToken cancellationToken = default)
+    public async Task SetValueAsync<T>(string section, string key, T value, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
         cancellationToken.ThrowIfCancellationRequested();
         bool keyExists = false;
         string valueString = NeoIniParser.ValueToString(value);
+        ThrowIfEmpty(valueString);
         Lock.EnterWriteLock();
         try
         {
@@ -677,9 +725,41 @@ public class NeoIniReader : IDisposable
             keyExists = NeoIniReaderCore.SetKey(Data, section, key, valueString);
         }
         finally { Lock.ExitWriteLock(); }
-        if (keyExists) OnKeyChanged?.Invoke(section, key, valueString);
-        else OnKeyAdded?.Invoke(section, key, valueString);
+        if (keyExists) KeyChanged?.Invoke(this, new(section, key, valueString));
+        else KeyAdded?.Invoke(this, new(section, key, valueString));
         await DoAutoSaveAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Updates or creates a key-value pair in the specified section, clamping its value within the specified range.
+    /// </summary>
+    /// <typeparam name="T">The comparable type of the value (e.g., <see cref="int"/>, <see cref="double"/>, <see cref="float"/>, etc.).</typeparam>
+    /// <param name="section">The name of the section where the value will be written.</param>
+    /// <param name="key">The key to update or create.</param>
+    /// <param name="minValue">The minimum allowed value.</param>
+    /// <param name="maxValue">The maximum allowed value.</param>
+    /// <param name="value">The value to write to the file before clamping.</param>
+    public void SetValueClamped<T>(string section, string key, T minValue, T maxValue, T value) where T : IComparable<T>
+    {
+        T clampedValue = NeoIniParser.Clamp(value, minValue, maxValue);
+        SetValue(section, key, clampedValue);
+    }
+
+    /// <summary>
+    /// Asynchronously updates or creates a key-value pair in the specified section, clamping its value within the specified range.
+    /// </summary>
+    /// <typeparam name="T">The comparable type of the value (e.g., <see cref="int"/>, <see cref="double"/>, <see cref="float"/>, etc.).</typeparam>
+    /// <param name="section">The name of the section where the value will be written.</param>
+    /// <param name="key">The key to update or create.</param>
+    /// <param name="minValue">The minimum allowed value.</param>
+    /// <param name="maxValue">The maximum allowed value.</param>
+    /// <param name="value">The value to write to the file before clamping.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    public async Task SetValueClampedAsync<T>(string section, string key, T minValue, T maxValue, T value,
+            CancellationToken cancellationToken = default) where T : IComparable<T>
+    {
+        T clampedValue = NeoIniParser.Clamp(value, minValue, maxValue);
+        await SetValueAsync(section, key, clampedValue);
     }
 
     /// <summary>Removes a specific key from a section in the INI file</summary>
@@ -691,8 +771,8 @@ public class NeoIniReader : IDisposable
         Lock.EnterWriteLock();
         try { NeoIniReaderCore.RemoveKey(Data, section, key); }
         finally { Lock.ExitWriteLock(); }
-        OnKeyRemoved?.Invoke(section, key);
-        OnSectionChanged?.Invoke(section);
+        KeyRemoved?.Invoke(this, new(section, key));
+        SectionChanged?.Invoke(this, new(section));
         DoAutoSave();
     }
 
@@ -711,8 +791,8 @@ public class NeoIniReader : IDisposable
             NeoIniReaderCore.RemoveKey(Data, section, key);
         }
         finally { Lock.ExitWriteLock(); }
-        OnKeyRemoved?.Invoke(section, key);
-        OnSectionChanged?.Invoke(section);
+        KeyRemoved?.Invoke(this, new(section, key));
+        SectionChanged?.Invoke(this, new(section));
         await DoAutoSaveAsync(cancellationToken).ConfigureAwait(false);
     }
 
@@ -724,7 +804,7 @@ public class NeoIniReader : IDisposable
         Lock.EnterWriteLock();
         try { NeoIniReaderCore.RemoveSection(Data, section); }
         finally { Lock.ExitWriteLock(); }
-        OnSectionRemoved?.Invoke(section);
+        SectionRemoved?.Invoke(this, new(section));
         DoAutoSave();
     }
 
@@ -742,7 +822,7 @@ public class NeoIniReader : IDisposable
             NeoIniReaderCore.RemoveSection(Data, section);
         }
         finally { Lock.ExitWriteLock(); }
-        OnSectionRemoved?.Invoke(section);
+        SectionRemoved?.Invoke(this, new(section));
         await DoAutoSaveAsync(cancellationToken).ConfigureAwait(false);
     }
 
@@ -781,7 +861,7 @@ public class NeoIniReader : IDisposable
     /// <summary>Searches for a specific key across all sections and returns a dictionary mapping section names to their corresponding values</summary>
     /// <param name="key">The key name to search for across all sections.</param>
     /// <returns>A dictionary where keys are section names and values are the corresponding key values found, or an empty dictionary if no matches are found.</returns>
-    public Dictionary<string, string> FindKeyInAllSections(string key)
+    public Dictionary<string, string> FindKey(string key)
     {
         ThrowIfDisposed();
         Dictionary<string, string> results;
@@ -799,7 +879,7 @@ public class NeoIniReader : IDisposable
         Lock.EnterWriteLock();
         try { NeoIniReaderCore.ClearSection(Data, section); }
         finally { Lock.ExitWriteLock(); }
-        OnSectionChanged?.Invoke(section);
+        SectionChanged?.Invoke(this, new(section));
         DoAutoSave();
     }
 
@@ -817,7 +897,7 @@ public class NeoIniReader : IDisposable
             NeoIniReaderCore.ClearSection(Data, section);
         }
         finally { Lock.ExitWriteLock(); }
-        OnSectionChanged?.Invoke(section);
+        SectionChanged?.Invoke(this, new(section));
         await DoAutoSaveAsync(cancellationToken).ConfigureAwait(false);
     }
 
@@ -831,7 +911,7 @@ public class NeoIniReader : IDisposable
         Lock.EnterWriteLock();
         try { NeoIniReaderCore.RenameKey(Data, section, oldKey, newKey); }
         finally { Lock.ExitWriteLock(); }
-        OnKeyRenamed?.Invoke(section, oldKey, newKey);
+        KeyRenamed?.Invoke(this, new(section, oldKey, newKey));
         DoAutoSave();
     }
 
@@ -851,7 +931,7 @@ public class NeoIniReader : IDisposable
             NeoIniReaderCore.RenameKey(Data, section, oldKey, newKey);
         }
         finally { Lock.ExitWriteLock(); }
-        OnKeyRenamed?.Invoke(section, oldKey, newKey);
+        KeyRenamed?.Invoke(this, new(section, oldKey, newKey));
         await DoAutoSaveAsync(cancellationToken).ConfigureAwait(false);
     }
 
@@ -864,7 +944,7 @@ public class NeoIniReader : IDisposable
         Lock.EnterWriteLock();
         try { NeoIniReaderCore.RenameSection(Data, oldSection, newSection); }
         finally { Lock.ExitWriteLock(); }
-        OnSectionRenamed?.Invoke(oldSection, newSection);
+        SectionRenamed?.Invoke(this, new(oldSection, newSection));
         DoAutoSave();
     }
 
@@ -883,21 +963,21 @@ public class NeoIniReader : IDisposable
             NeoIniReaderCore.RenameSection(Data, oldSection, newSection);
         }
         finally { Lock.ExitWriteLock(); }
-        OnSectionRenamed?.Invoke(oldSection, newSection);
+        SectionRenamed?.Invoke(this, new(oldSection, newSection));
         await DoAutoSaveAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>Searches for keys or values matching a pattern across all sections and returns matching entries</summary>
     /// <param name="pattern">The search pattern to match against keys and values (case-insensitive)</param>
-    /// <returns>A list of tuples containing (section, key, value) for all matches found</returns>
-    public List<(string section, string key, string value)> Search(string pattern)
+    /// <returns>A list of <see cref="SearchResult"/> objects representing all matches found</returns>
+    public List<SearchResult> Search(string pattern)
     {
         ThrowIfDisposed();
-        List<(string, string, string)> results;
+        List<SearchResult> results;
         Lock.EnterReadLock();
         try { results = NeoIniReaderCore.Search(Data, pattern); }
         finally { Lock.ExitReadLock(); }
-        OnSearchCompleted?.Invoke(pattern, results.Count);
+        SearchCompleted?.Invoke(this, new(pattern, results.Count));
         return results;
     }
 
@@ -908,7 +988,7 @@ public class NeoIniReader : IDisposable
         Lock.EnterWriteLock();
         try { Data = FileProvider.GetData(); }
         finally { Lock.ExitWriteLock(); }
-        OnLoad?.Invoke();
+        Loaded?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>Removes the INI file from disk</summary>
@@ -925,7 +1005,7 @@ public class NeoIniReader : IDisposable
         Lock.EnterWriteLock();
         try { Data.Clear(); }
         finally { Lock.ExitWriteLock(); }
-        OnDataCleared?.Invoke();
+        DataCleared?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>Deletes the backup file from disk</summary>
@@ -938,7 +1018,7 @@ public class NeoIniReader : IDisposable
         Lock.EnterWriteLock();
         try { Data.Clear(); }
         finally { Lock.ExitWriteLock(); }
-        OnDataCleared?.Invoke();
+        DataCleared?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>
