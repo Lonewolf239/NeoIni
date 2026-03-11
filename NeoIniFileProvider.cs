@@ -270,7 +270,12 @@ internal sealed class NeoIniFileProvider
             if (autoModeEncryption) return NeoIniEncryptionProvider.GetEncryptionParameters(salt: GetSalt(path));
             else throw new MissingEncryptionKeyException();
         }
-        else return new(EncryptionKey.Clone() as byte[], Salt.Clone() as byte[]);
+        else
+        {
+            if (!AutoEncryption && autoModeEncryption)
+                return NeoIniEncryptionProvider.GetEncryptionParameters(salt: GetSalt(path));
+            return new(EncryptionKey.Clone() as byte[], Salt.Clone() as byte[]);
+        }
     }
 
     private string[] ReadFile() => ReadFile(FilePath, false);
@@ -290,7 +295,9 @@ internal sealed class NeoIniFileProvider
                 if (isBackup) return null;
                 return CheckBackup();
             }
-            int minLength = headerParameters.HeaderLength + (headerParameters.HasChecksum ? WarningBytes.Length + ChecksumSize : 0) + (headerParameters.IsEncrypted ? IvSize : 0);
+            int minLength = headerParameters.HeaderLength +
+                (headerParameters.HasChecksum ? WarningBytes.Length + ChecksumSize : 0) +
+                (headerParameters.IsEncrypted ? IvSize + SaltSize : 0);
             if (fileBytes.Length < minLength)
             {
                 if (isBackup) return null;
@@ -376,7 +383,9 @@ internal sealed class NeoIniFileProvider
                 if (isBackup) return null;
                 return await CheckBackupAsync(ct).ConfigureAwait(false);
             }
-            int minLength = headerParameters.HeaderLength + (headerParameters.HasChecksum ? WarningBytes.Length + ChecksumSize : 0) + (headerParameters.IsEncrypted ? IvSize : 0);
+            int minLength = headerParameters.HeaderLength +
+                (headerParameters.HasChecksum ? WarningBytes.Length + ChecksumSize : 0) +
+                (headerParameters.IsEncrypted ? IvSize + SaltSize : 0);
             if (fileBytes.Length < minLength)
             {
                 if (isBackup) return null;
