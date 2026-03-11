@@ -30,6 +30,7 @@ internal sealed class NeoIniParser
                 continue;
             }
             if (c == '\n') { sb.Append("\\n"); continue; }
+            if (c == '\\') { sb.Append("\\\\"); continue; }
             sb.Append(c);
         }
         return FormatInvariant(sb);
@@ -66,6 +67,7 @@ internal sealed class NeoIniParser
                         }
                         continue;
                     case 'n': sb.Append('\n'); i++; continue;
+                    case '\\': sb.Append('\\'); i++; continue;
                 }
             }
             sb.Append(c);
@@ -123,7 +125,7 @@ internal sealed class NeoIniParser
         if (eqIndex == -1) return false;
         ReadOnlySpan<char> keySpan = line[..eqIndex].Trim();
         ReadOnlySpan<char> valueSpan = line[(eqIndex + 1)..].Trim();
-        if (keySpan.IsEmpty || valueSpan.IsEmpty) return false;
+        if (keySpan.IsEmpty) return false;
         key = keySpan.ToString();
         value = valueSpan.ToString();
         return true;

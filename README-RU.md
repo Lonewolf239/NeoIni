@@ -21,7 +21,7 @@ dotnet add package NeoIni
 ```
 
 - **Пакет:** [nuget.org/packages/NeoIni](https://www.nuget.org/packages/NeoIni)
-- **Версия:** `1.6.1-pre2` | **.NET 6+**
+- **Версия:** `1.6.1` | **.NET 6+**
 - **Разработчик:** [Lonewolf239](https://github.com/Lonewolf239)
 
 ## Features

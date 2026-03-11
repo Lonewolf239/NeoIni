@@ -122,8 +122,7 @@ internal sealed class NeoIniFileProvider
 
     internal void SaveFile(string content, bool useChecksum, bool useBackup)
     {
-        if (string.IsNullOrEmpty(content)) return;
-        byte[] plaintextBytes = Encoding.UTF8.GetBytes(content);
+        byte[] plaintextBytes = Encoding.UTF8.GetBytes(content ?? string.Empty);
         byte[] dataWithChecksum;
         try
         {
@@ -150,7 +149,7 @@ internal sealed class NeoIniFileProvider
                 ms.Write(aes.IV, 0, aes.IV.Length);
                 ms.Write(Salt, 0, Salt.Length);
                 using var encryptor = aes.CreateEncryptor();
-                using (CryptoStream cs = new(ms, encryptor, CryptoStreamMode.Write))
+                using (CryptoStream cs = new(ms, encryptor, CryptoStreamMode.Write, leaveOpen: true))
                 {
                     cs.Write(plaintextBytes, 0, plaintextBytes.Length);
                     cs.FlushFinalBlock();
@@ -170,9 +169,8 @@ internal sealed class NeoIniFileProvider
 
     internal async Task SaveFileAsync(string content, bool useChecksum, bool useBackup, CancellationToken ct)
     {
-        if (string.IsNullOrEmpty(content)) return;
         ct.ThrowIfCancellationRequested();
-        byte[] plaintextBytes = Encoding.UTF8.GetBytes(content);
+        byte[] plaintextBytes = Encoding.UTF8.GetBytes(content ?? string.Empty);
         byte[] dataWithChecksum;
         try
         {
@@ -201,7 +199,7 @@ internal sealed class NeoIniFileProvider
                 await ms.WriteAsync(aes.IV, 0, aes.IV.Length, ct).ConfigureAwait(false);
                 await ms.WriteAsync(Salt, 0, Salt.Length, ct).ConfigureAwait(false);
                 using var encryptor = aes.CreateEncryptor();
-                await using (CryptoStream cs = new(ms, encryptor, CryptoStreamMode.Write))
+                await using (CryptoStream cs = new(ms, encryptor, CryptoStreamMode.Write, leaveOpen: true))
                 {
                     await cs.WriteAsync(plaintextBytes, 0, plaintextBytes.Length, ct).ConfigureAwait(false);
                     await cs.FlushFinalBlockAsync().ConfigureAwait(false);
