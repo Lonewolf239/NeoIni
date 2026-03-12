@@ -8,8 +8,8 @@ Please note that **all previous versions** (`< 1.6.1`) are deprecated. They are 
 
 | Version | Supported | Notes |
 |---------|-----------|-------|
-| 1.7 | :white_check_mark: | Current Stable Release — actively maintained with new features and updates. |
-| 1.6.1 | :white_check_mark: | Legacy Stable Release — fully stable and safe to use; no further updates or new features planned. |
+| 1.7 | :white_check_mark: | **Current Stable Release** — actively maintained with new features and updates. |
+| 1.6.1 | :white_check_mark: | **Legacy Stable Release** — fully stable and safe to use; no further updates or new features planned. |
 | < 1.6.1 | :x: | Incomplete, buggy, or deprecated versions. |
 
 ## Reporting a Vulnerability
