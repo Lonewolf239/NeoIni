@@ -9,6 +9,7 @@ Please note that **all previous versions** (`< 1.6.1`) are deprecated. They are 
 | Version | Supported | Notes |
 |---------|-----------|-------|
 | **1.6.1** | :white_check_mark: | **Current Stable Release** |
+| **1.7-pre1** | :construction:    | **Preview (Generator API)** |
 | < 1.6.1 | :x: | Incomplete / Buggy / Deprecated |
 
 ## Reporting a Vulnerability
