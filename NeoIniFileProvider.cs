@@ -494,5 +494,11 @@ internal sealed class NeoIniFileProvider
         return isValid;
     }
 
+    internal byte[] GetFileChecksum()
+    {
+        var data = NeoIniIO.ReadAllBytes(FilePath);
+        return NeoIniEncryptionProvider.HashData(data);
+    }
+
     internal void RaiseError(object sender, ErrorEventArgs e) => Error?.Invoke(sender ?? this, e);
 }

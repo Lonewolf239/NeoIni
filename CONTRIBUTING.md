@@ -7,7 +7,7 @@ This document outlines the process for contributing to the project.
 ## Bug Reports
 
 Before creating an Issue, please:
-1.  **Check the version.** Ensure you are using the current version of the library (1.7). We do not support older versions.
+1.  **Check the version.** Ensure you are using the current version of the library (1.7.1). We do not support older versions.
 2.  **Use search.** It is possible that this problem has already been discussed or resolved.
 
 If you have found a new bug, create an Issue and include:

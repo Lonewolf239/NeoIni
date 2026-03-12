@@ -38,5 +38,7 @@ internal sealed class NeoIniEncryptionProvider
         return new(DeriveKeyFromString(password, salt, KeySizeBytes), salt);
     }
 
+    internal static byte[] HashData(byte[] data) => SHA256.HashData(data);
+
     internal static string GetEncryptionPassword(byte[] salt) => GeneratePasswordFromUserId(salt);
 }

@@ -13,7 +13,7 @@ namespace NeoIni;
 /// <br/>
 /// <b>Target Framework: .NET 6+</b>
 /// <br/>
-/// <b>Version: 1.7</b>
+/// <b>Version: 1.7.1</b>
 /// <br/>
 /// <b>Black Box Philosophy:</b> This class follows a strict "black box" design principle - users interact only through the public API without needing to understand internal implementation details. Input goes in, processed output comes out, internals remain hidden and abstracted.
 /// </summary>
@@ -30,6 +30,11 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
 
     private bool Disposed = false;
     private int DisposeState = 0;
+
+    private int HotReloadState = 0;
+    private CancellationTokenSource HotReloadCts;
+    private byte[] PrevHotReloadChecksum;
+    private ManualResetEventSlim PauseHotReload = new(true);
 
     /// <summary>
     /// Determines whether changes are automatically written to the disk after every modification.
@@ -299,6 +304,7 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
         if (Interlocked.CompareExchange(ref DisposeState, 1, 0) != 0) return;
         if (disposing)
         {
+            StopHotReload();
             if (ExtractContent() is string content)
             {
                 FileProvider.SaveFile(content, UseChecksum, UseAutoBackup);
@@ -316,6 +322,7 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
         if (Interlocked.CompareExchange(ref DisposeState, 1, 0) != 0) return;
         if (disposing)
         {
+            StopHotReload();
             if (ExtractContent() is string content)
             {
                 await FileProvider.SaveFileAsync(content, UseChecksum, UseAutoBackup, CancellationToken.None).ConfigureAwait(false);
@@ -371,15 +378,82 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
 
     #region API
 
+    /// <summary>Starts automatic hot reload monitoring for the underlying INI file.</summary>
+    /// <param name="delayMs">The polling interval in milliseconds. Must be 1000 ms or greater.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown if <paramref name="delayMs"/> is less than 1000.</exception>
+    public void StartHotReload(int delayMs)
+    {
+        ThrowIfDisposed();
+        if (delayMs < 1000)
+            throw new ArgumentOutOfRangeException(nameof(delayMs), "Delay must be at least 1000 ms for hot reload polling.");
+        if (Interlocked.CompareExchange(ref HotReloadState, 1, 0) != 0) return;
+        Lock.EnterWriteLock();
+        try
+        {
+            HotReloadCts = new();
+            PauseHotReload.Set();
+        }
+        finally { Lock.ExitWriteLock(); }
+        PrevHotReloadChecksum = FileProvider.GetFileChecksum();
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                while (!HotReloadCts.IsCancellationRequested)
+                {
+                    PauseHotReload.Wait(HotReloadCts.Token);
+                    var checksum = FileProvider.GetFileChecksum();
+                    if (!PrevHotReloadChecksum.SequenceEqual(checksum))
+                    {
+                        ReloadFromFile();
+                        Lock.EnterWriteLock();
+                        try { PrevHotReloadChecksum = checksum; }
+                        finally { Lock.ExitWriteLock(); }
+                    }
+                    await Task.Delay(delayMs, HotReloadCts.Token).ConfigureAwait(false);
+                }
+            }
+            catch (OperationCanceledException) { }
+            finally { Interlocked.Exchange(ref HotReloadState, 0); }
+        }, HotReloadCts.Token);
+    }
+
+    /// <summary>Stops the hot reload monitoring if it is currently active.</summary>
+    public void StopHotReload()
+    {
+        ThrowIfDisposed();
+        if (Interlocked.CompareExchange(ref HotReloadState, 0, 1) != 1) return;
+        HotReloadCts.Cancel();
+    }
+
     /// <summary>Saves the current data to an INI file with checksums and encryption applied, if enabled</summary>
     public void SaveFile()
     {
         ThrowIfDisposed();
         string content;
-        Lock.EnterReadLock();
-        try { content = NeoIniParser.GetContent(Data); }
-        finally { Lock.ExitReadLock(); }
+        Lock.EnterUpgradeableReadLock();
+        try
+        {
+            if (HotReloadState == 1)
+            {
+                Lock.EnterWriteLock();
+                try { PauseHotReload.Reset(); }
+                finally { Lock.ExitWriteLock(); }
+            }
+            content = NeoIniParser.GetContent(Data);
+        }
+        finally { Lock.ExitUpgradeableReadLock(); }
         FileProvider.SaveFile(content, UseChecksum, UseAutoBackup);
+        if (HotReloadState == 1)
+        {
+            Lock.EnterWriteLock();
+            try
+            {
+                PrevHotReloadChecksum = FileProvider.GetFileChecksum();
+                PauseHotReload.Set();
+            }
+            finally { Lock.ExitWriteLock(); }
+        }
         Saved?.Invoke(this, EventArgs.Empty);
     }
 
@@ -389,14 +463,30 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
         ThrowIfDisposed();
         cancellationToken.ThrowIfCancellationRequested();
         string content;
-        Lock.EnterReadLock();
+        Lock.EnterUpgradeableReadLock();
         try
         {
             cancellationToken.ThrowIfCancellationRequested();
+            if (HotReloadState == 1)
+            {
+                Lock.EnterWriteLock();
+                try { PauseHotReload.Reset(); }
+                finally { Lock.ExitWriteLock(); }
+            }
             content = NeoIniParser.GetContent(Data);
         }
-        finally { Lock.ExitReadLock(); }
+        finally { Lock.ExitUpgradeableReadLock(); }
         await FileProvider.SaveFileAsync(content, UseChecksum, UseAutoBackup, cancellationToken).ConfigureAwait(false);
+        if (HotReloadState == 1)
+        {
+            Lock.EnterWriteLock();
+            try
+            {
+                PrevHotReloadChecksum = FileProvider.GetFileChecksum();
+                PauseHotReload.Set();
+            }
+            finally { Lock.ExitWriteLock(); }
+        }
         Saved?.Invoke(this, EventArgs.Empty);
     }
 
