@@ -6,4 +6,4 @@ NeoIni 1.7.x focuses on bringing the library closer to enterprise-grade configur
 |----------|---------|--------|-------------|
 | 1 | 1.7.0 | Planned | Object mapping API (`Get<T>`, `Set<T>`) |
 | 2 | 1.7.1 | Planned | Hot‑reload via file watcher |
-| 3 | 1.7.3 | Planned | Pluggable provider abstraction (`INeoIniProvider`) |
+| 3 | 1.7.2 | Planned | Pluggable provider abstraction (`INeoIniProvider`) |
