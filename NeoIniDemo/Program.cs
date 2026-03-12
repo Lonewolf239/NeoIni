@@ -1,4 +1,14 @@
 ﻿using NeoIni;
+using NeoIni.Annotations;
+
+public class NeoIniKeyTest
+{
+    [NeoIniKey("User", "Age")]
+    public int Age { get; set; }
+
+    [NeoIniKey("User", "IsAdmin")]
+    public bool IsAdmin { get; set; }
+}
 
 class NeoIniDemo
 {
@@ -40,6 +50,7 @@ class NeoIniDemo
         FileErrorRecoveryDemo();
         EventsDemo();
         ReadOnlyAndPerformanceDemo();
+        AttributeAndGeneratorDemo();
 
         Console.Write("Press Y to cleanup file: ");
         if (Console.ReadKey().Key == ConsoleKey.Y)
@@ -453,6 +464,33 @@ class NeoIniDemo
             perf.SaveFile();
             Console.WriteLine("- Manual SaveFile() completed.");
         }
+
+        Console.WriteLine("Press any key to continue...");
+        Console.ReadKey(true);
+    }
+
+    private static void AttributeAndGeneratorDemo()
+    {
+        Console.Clear();
+        Console.WriteLine("9.1. ATTRIBUTE & SOURCE GENERATOR DEMO");
+
+        using var ini = CreateReaderDefault();
+
+        ini.SetValue("User", "Age", 25);
+
+        Console.WriteLine("Before generator-based Get/Set:");
+        Console.WriteLine(ini.ToString());
+
+        NeoIniKeyTest cfg = ini.Get<NeoIniKeyTest>();
+        Console.WriteLine($"\nLoaded via NeoIniKeyTest (Get<T>):\nUser/Age = {cfg.Age}\nUser/IsAdmin = {cfg.IsAdmin}");
+        cfg.Age += 5;
+        cfg.IsAdmin = false;
+        ini.Set(cfg);
+
+        Console.WriteLine($"Updated cfg.Age to {cfg.Age}, cfg.IsAdmin to {cfg.IsAdmin} and saved via Set<T>().");
+
+        Console.WriteLine("\nAfter generator-based Set<T>:");
+        Console.WriteLine(ini.ToString());
 
         Console.WriteLine("Press any key to continue...");
         Console.ReadKey(true);

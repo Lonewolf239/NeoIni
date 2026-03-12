@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
@@ -12,6 +13,27 @@ namespace NeoIni.Generators
     [Generator]
     public sealed class NeoIniMappingGenerator : IIncrementalGenerator
     {
+        private sealed class PropertyMeta
+        {
+            public string ContainingTypeName { get; private set; }
+            public string PropertyName { get; private set; }
+            public string PropertyTypeName { get; private set; }
+            public string Section { get; private set; }
+            public string Key { get; private set; }
+            public string? DefaultValueLiteral { get; private set; }
+
+            public PropertyMeta(string containingTypeName, string propertyName, string propertyTypeName,
+                    string section, string key, string? defaultValueLiteral)
+            {
+                ContainingTypeName = containingTypeName;
+                PropertyName = propertyName;
+                PropertyTypeName = propertyTypeName;
+                Section = section;
+                Key = key;
+                DefaultValueLiteral = defaultValueLiteral;
+            }
+        }
+
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
             var propertyDeclarations = context.SyntaxProvider
@@ -38,84 +60,14 @@ namespace NeoIni.Generators
                 });
             context.RegisterSourceOutput(groupedByType, static (spc, grouped) =>
             {
-                if (grouped == null || grouped.Count == 0) return;
+                if (grouped.Count == 0) return;
                 GenerateExtensions(spc, grouped);
             });
         }
 
-        private static bool IsCandidateProperty(SyntaxNode node)
-        {
-            var property = node as PropertyDeclarationSyntax;
-            if (property == null) return false;
-            if (property.AttributeLists == null || property.AttributeLists.Count == 0) return false;
-            return true;
-        }
-
-        private sealed class PropertyMeta
-        {
-            public string ContainingTypeName { get; private set; }
-            public string PropertyName { get; private set; }
-            public string PropertyTypeName { get; private set; }
-            public string Section { get; private set; }
-            public string Key { get; private set; }
-            public string? DefaultValueLiteral { get; private set; }
-
-            public PropertyMeta(string containingTypeName, string propertyName, string propertyTypeName,
-                    string section, string key, string? defaultValueLiteral)
-            {
-                ContainingTypeName = containingTypeName;
-                PropertyName = propertyName;
-                PropertyTypeName = propertyTypeName;
-                Section = section;
-                Key = key;
-                DefaultValueLiteral = defaultValueLiteral;
-            }
-        }
-
-        private static PropertyMeta? GetPropertyInfo(GeneratorSyntaxContext context)
-        {
-            var propertySyntax = context.Node as PropertyDeclarationSyntax;
-            if (propertySyntax == null) return null;
-            var model = context.SemanticModel;
-            var propertySymbol = model.GetDeclaredSymbol(propertySyntax) as IPropertySymbol;
-            if (propertySymbol == null) return null;
-            var attr = propertySymbol.GetAttributes()
-                .FirstOrDefault(a => a.AttributeClass != null && a.AttributeClass.ToDisplayString() == "NeoIni.Annotations.NeoIniKeyAttribute");
-            if (attr == null) return null;
-            string section = "";
-            string key = "";
-            string? defaultValueLiteral = null;
-            if (attr.ConstructorArguments.Length >= 2)
-            {
-                var argSection = attr.ConstructorArguments[0];
-                var argKey = attr.ConstructorArguments[1];
-                if (argSection.Value is string s1) section = s1;
-                if (argKey.Value is string s2) key = s2;
-            }
-            var defaultValueArg = attr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "DefaultValue");
-            if (defaultValueArg.Value.Value != null)
-            {
-                object dv = defaultValueArg.Value.Value;
-                if (dv is string)
-                    defaultValueLiteral = "@\"" + ((string)dv).Replace("\"", "\"\"") + "\"";
-                else if (dv is bool)
-                    defaultValueLiteral = ((bool)dv) ? "true" : "false";
-                else if (dv is char)
-                    defaultValueLiteral = "'" + dv.ToString().Replace("'", "\\'") + "'";
-                else if (dv is IFormattable)
-                    defaultValueLiteral = ((IFormattable)dv).ToString(null, System.Globalization.CultureInfo.InvariantCulture);
-                else
-                    defaultValueLiteral = dv.ToString();
-            }
-            var containingType = propertySymbol.ContainingType;
-            string typeName = containingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-            string propTypeName = propertySymbol.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-            return new PropertyMeta(typeName, propertySymbol.Name, propTypeName, section, key, defaultValueLiteral);
-        }
-
         private static void GenerateExtensions(SourceProductionContext context, Dictionary<string, List<PropertyMeta>> grouped)
         {
-            var sb = new StringBuilder();
+            StringBuilder sb = new();
             sb.AppendLine("// <auto-generated />");
             sb.AppendLine("using System;");
             sb.AppendLine();
@@ -168,21 +120,55 @@ namespace NeoIni.Generators
                 sb.AppendLine("                return;");
                 sb.AppendLine("            }");
             }
-
             sb.AppendLine("            throw new NotSupportedException($\"Type {t.FullName} is not registered in NeoIni source generator.\");");
             sb.AppendLine("        }");
             sb.AppendLine("    }");
             sb.AppendLine("}");
-
             context.AddSource("NeoIniReaderExtensions.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
         }
 
-        private static string EscapeStringLiteral(string value)
+        private static string EscapeStringLiteral(string? value)
         {
             if (value == null) return "null";
             return "@\"" + value.Replace("\"", "\"\"") + "\"";
         }
 
         private static string GetDefaultLiteralForType(string fullyQualifiedTypeName) => "default(" + fullyQualifiedTypeName + ")";
+
+        private static bool IsCandidateProperty(SyntaxNode node) => node is PropertyDeclarationSyntax { AttributeLists.Count: > 0 };
+
+        private static PropertyMeta? GetPropertyInfo(GeneratorSyntaxContext context)
+        {
+            var propertySyntax = context.Node as PropertyDeclarationSyntax;
+            if (propertySyntax == null) return null;
+            var model = context.SemanticModel;
+            var propertySymbol = model.GetDeclaredSymbol(propertySyntax) as IPropertySymbol;
+            if (propertySymbol == null) return null;
+            var attr = propertySymbol.GetAttributes()
+                .FirstOrDefault(a => a.AttributeClass != null && a.AttributeClass.ToDisplayString() == "NeoIni.Annotations.NeoIniKeyAttribute");
+            if (attr == null) return null;
+            string section = "";
+            string key = "";
+            string? defaultValueLiteral = null;
+            if (attr.ConstructorArguments.Length >= 2)
+            {
+                section = (string?)attr.ConstructorArguments[0].Value ?? "";
+                key = (string?)attr.ConstructorArguments[1].Value ?? "";
+            }
+            var defaultValueArg = attr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "DefaultValue");
+            if (defaultValueArg.Value.Value != null)
+            {
+                object dv = defaultValueArg.Value.Value;
+                if (dv is string) defaultValueLiteral = EscapeStringLiteral((string)dv);
+                else if (dv is bool) defaultValueLiteral = ((bool)dv) ? "true" : "false";
+                else if (dv is char) defaultValueLiteral = "'" + dv.ToString().Replace("'", "\\'") + "'";
+                else if (dv is IFormattable) defaultValueLiteral = ((IFormattable)dv).ToString(null, CultureInfo.InvariantCulture);
+                else defaultValueLiteral = dv.ToString();
+            }
+            var containingType = propertySymbol.ContainingType;
+            string typeName = containingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+            string propTypeName = propertySymbol.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+            return new(typeName, propertySymbol.Name, propTypeName, section, key, defaultValueLiteral);
+        }
     }
 }
