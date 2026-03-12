@@ -2,7 +2,7 @@
 	<PropertyGroup>
 		<TargetFrameworks>net6.0;net7.0;net8.0;net9.0;net10.0</TargetFrameworks>
 		<PackageId>NeoIni</PackageId>
-		<Version>1.6.1</Version>
+		<Version>1.7-pre1</Version>
 		<Authors>Lonewolf239</Authors>
 		<Description>Modern INI reader/writer for .NET 6+. AES encryption, thread-safe.</Description>
 		<PackageTags>ini;config;encryption;ini-parser;configuration;secure-config;aes-ini;.NET6;.NET7;.NET8;.NET9;.NET10</PackageTags>
@@ -18,9 +18,14 @@
 		<EnablePackageValidation>true</EnablePackageValidation>
 	</PropertyGroup>
 	<ItemGroup>
-		<None Include="icon.png" Pack="true" PackagePath="\" />
-		<None Include="README-NUGET.md" Pack="true" PackagePath="\" />
-		<None Include="LICENSE" Pack="true" PackagePath="\" />
+		<Compile Remove="Generators\**" />
+		<Content Remove="Generators\**" />
+		<None Remove="Generators\**" />
+		<EmbeddedResource Remove="Generators\**" />
+		<Compile Remove="Annotations\**" />
+		<Content Remove="Annotations\**" />
+		<None Remove="Annotations\**" />
+		<EmbeddedResource Remove="Annotations\**" />
 		<Compile Remove="NeoIniDemo\**" />
 		<Content Remove="NeoIniDemo\**" />
 		<None Remove="NeoIniDemo\**" />
@@ -29,5 +34,24 @@
 		<Content Remove="NeoIniTest\**" />
 		<None Remove="NeoIniTest\**" />
 		<EmbeddedResource Remove="NeoIniTest\**" />
+	</ItemGroup>
+	<ItemGroup>
+		<Compile Include="Annotations\**\*.cs" Exclude="Annotations\bin\**;Annotations\obj\**" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="Generators\NeoIni.Generators.csproj" 
+						  OutputItemType="Analyzer" 
+						  ReferenceOutputAssembly="false" />
+	</ItemGroup>
+	<ItemGroup>
+		<None Include="Generators\bin\$(Configuration)\netstandard2.0\NeoIni.Generators.dll" 
+			  Pack="true" 
+			  PackagePath="analyzers/dotnet/cs" 
+			  Visible="false" />
+	</ItemGroup>
+	<ItemGroup>
+		<None Include="icon.png" Pack="true" PackagePath="\" />
+		<None Include="README-NUGET.md" Pack="true" PackagePath="\" />
+		<None Include="LICENSE" Pack="true" PackagePath="\" />
 	</ItemGroup>
 </Project>
