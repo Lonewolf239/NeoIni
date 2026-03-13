@@ -44,101 +44,6 @@ internal sealed class NeoIniParser
         return Unescape(raw);
     }
 
-    private static string Unescape(string s)
-    {
-        if (string.IsNullOrEmpty(s)) return s;
-        StringBuilder sb = new(s.Length);
-        for (int i = 0; i < s.Length; i++)
-        {
-            char c = s[i];
-            if (c == '\\' && i + 1 < s.Length)
-            {
-                char next = s[i + 1];
-                switch (next)
-                {
-                    case 'r':
-                        if (i + 3 < s.Length && s[i + 2] == '\\' && s[i + 3] == 'n')
-                        {
-                            sb.Append('\r').Append('\n');
-                            i += 3;
-                        }
-                        else
-                        {
-                            sb.Append('\r');
-                            i++;
-                        }
-                        continue;
-                    case 'n': sb.Append('\n'); i++; continue;
-                    case '\\': sb.Append('\\'); i++; continue;
-                }
-            }
-            sb.Append(c);
-        }
-        return FormatInvariant(sb);
-    }
-
-    internal static string GetContent(Data data, Comments commentsData, bool humanization)
-    {
-        if (data == null || data.Count == 0) return string.Empty;
-        var estimatedSize = Environment.NewLine.Length;
-        Comments comments = new(commentsData);
-        foreach (var section in data)
-        {
-            estimatedSize += section.Key.Length + 2 + Environment.NewLine.Length;
-            foreach (var kvp in section.Value)
-                estimatedSize += kvp.Key.Length + (kvp.Value?.Length ?? 0) + 3 + Environment.NewLine.Length;
-            estimatedSize += Environment.NewLine.Length;
-        }
-        if (comments != null && comments.Count > 0)
-        {
-            foreach (var comment in comments)
-                estimatedSize += (comment.Content?.Length ?? 0) + 3 + Environment.NewLine.Length;
-        }
-        var content = new StringBuilder(estimatedSize);
-        content.AppendLine();
-        foreach (var section in data)
-        {
-            var sectionLine = $"[{section.Key}]";
-            content.AppendLine(GetContentHelper(section.Key, sectionLine, comments));
-            foreach (var kvp in section.Value)
-            {
-                var keyValueLine = $"{kvp.Key} = {kvp.Value}";
-                content.AppendLine(GetContentHelper(kvp.Key, keyValueLine, comments));
-            }
-            content.AppendLine();
-        }
-        if (comments != null && comments.Count > 0)
-        {
-            var remainingComments = comments.Where(c => c.CommentType == CommentType.FreeSpace &&
-                    !string.IsNullOrEmpty(c.Content)).Select(c => $"; {c.Content}");
-            var prefix = new StringBuilder();
-            foreach (var line in remainingComments) prefix.AppendLine(line);
-            if (prefix.Length > 0) content.Insert(0, prefix.ToString());
-        }
-        return content.ToString();
-    }
-
-    private static string GetContentHelper(string key, string lineContent, Comments comments)
-    {
-        if (comments == null || comments.Count == 0) return lineContent;
-        Comment matched = null;
-        foreach (var item in comments)
-        {
-            if (item.Line != key) continue;
-            matched = item;
-            break;
-        }
-        if (matched == null || string.IsNullOrEmpty(matched.Content)) return lineContent;
-        comments.Remove(matched);
-        return matched.CommentType switch
-        {
-            CommentType.Up => $"; {matched.Content}{Environment.NewLine}{lineContent}",
-            CommentType.Right => $"{lineContent} ; {matched.Content}",
-            CommentType.Down => $"{lineContent}{Environment.NewLine}; {matched.Content}",
-            _ => $"; {matched.Content}{Environment.NewLine}"
-        };
-    }
-
     internal static T TryParseValue<T>(string value, T defaultValue, EventHandler<ErrorEventArgs> onError)
     {
         if (string.IsNullOrWhiteSpace(value)) return defaultValue;
@@ -186,6 +91,47 @@ internal sealed class NeoIniParser
         return value;
     }
 
+    internal static string GetContent(Data data, Comments commentsData, bool humanization)
+    {
+        if (data == null || data.Count == 0) return string.Empty;
+        var estimatedSize = Environment.NewLine.Length;
+        Comments comments = new(commentsData);
+        foreach (var section in data)
+        {
+            estimatedSize += section.Key.Length + 2 + Environment.NewLine.Length;
+            foreach (var kvp in section.Value)
+                estimatedSize += kvp.Key.Length + (kvp.Value?.Length ?? 0) + 3 + Environment.NewLine.Length;
+            estimatedSize += Environment.NewLine.Length;
+        }
+        if (comments != null && comments.Count > 0)
+        {
+            foreach (var comment in comments)
+                estimatedSize += (comment.Content?.Length ?? 0) + 3 + Environment.NewLine.Length;
+        }
+        var content = new StringBuilder(estimatedSize);
+        content.AppendLine();
+        foreach (var section in data)
+        {
+            var sectionLine = $"[{section.Key}]";
+            content.AppendLine(GetContentHelper(section.Key, sectionLine, comments));
+            foreach (var kvp in section.Value)
+            {
+                var keyValueLine = $"{kvp.Key} = {kvp.Value}";
+                content.AppendLine(GetContentHelper(kvp.Key, keyValueLine, comments));
+            }
+            content.AppendLine();
+        }
+        if (comments != null && comments.Count > 0)
+        {
+            var remainingComments = comments.Where(c => c.CommentType == CommentType.FreeSpace &&
+                    !string.IsNullOrEmpty(c.Content)).Select(c => $"; {c.Content}");
+            var prefix = new StringBuilder();
+            foreach (var line in remainingComments) prefix.AppendLine(line);
+            if (prefix.Length > 0) content.Insert(0, prefix.ToString());
+        }
+        return content.ToString();
+    }
+
     internal static bool IsCommentLine(string trimmed) => !string.IsNullOrEmpty(trimmed) && trimmed[0] == ';';
 
     internal static bool IsSectionLine(string trimmed)
@@ -225,12 +171,6 @@ internal sealed class NeoIniParser
         comments.Add(new Comment(nearestString, commentType, commentText));
     }
 
-    private static string ParseNearestLine(string line)
-    {
-        if (TryMatchKey(line.AsSpan(), out var key, out _)) return key;
-        return line.Trim('[', ']');
-    }
-
     internal static string HandleSectionLine(string trimmed, bool humanization, Data data, Comments comments)
     {
         TryParseLine(trimmed, out var sectionPart, out var comment);
@@ -247,6 +187,66 @@ internal sealed class NeoIniParser
         if (!humanization || comments == null) return;
         if (!TryParseLine(trimmed, out _, out var afterSemicolon)) return;
         if (!string.IsNullOrEmpty(afterSemicolon)) comments.Add(new Comment(key, CommentType.Right, afterSemicolon));
+    }
+
+    private static string Unescape(string s)
+    {
+        if (string.IsNullOrEmpty(s)) return s;
+        StringBuilder sb = new(s.Length);
+        for (int i = 0; i < s.Length; i++)
+        {
+            char c = s[i];
+            if (c == '\\' && i + 1 < s.Length)
+            {
+                char next = s[i + 1];
+                switch (next)
+                {
+                    case 'r':
+                        if (i + 3 < s.Length && s[i + 2] == '\\' && s[i + 3] == 'n')
+                        {
+                            sb.Append('\r').Append('\n');
+                            i += 3;
+                        }
+                        else
+                        {
+                            sb.Append('\r');
+                            i++;
+                        }
+                        continue;
+                    case 'n': sb.Append('\n'); i++; continue;
+                    case '\\': sb.Append('\\'); i++; continue;
+                }
+            }
+            sb.Append(c);
+        }
+        return FormatInvariant(sb);
+    }
+
+    private static string GetContentHelper(string key, string lineContent, Comments comments)
+    {
+        if (comments == null || comments.Count == 0) return lineContent;
+        Comment matched = null;
+        foreach (var item in comments)
+        {
+            if (item.Line != key) continue;
+            matched = item;
+            break;
+        }
+        if (matched == null || string.IsNullOrEmpty(matched.Content)) return lineContent;
+        comments.Remove(matched);
+        return matched.CommentType switch
+        {
+            CommentType.Up => $"; {matched.Content}{Environment.NewLine}{lineContent}",
+            CommentType.Right => $"{lineContent} ; {matched.Content}",
+            CommentType.Down => $"{lineContent}{Environment.NewLine}; {matched.Content}",
+            _ => $"; {matched.Content}{Environment.NewLine}"
+        };
+    }
+
+    private static string ParseNearestLine(string line)
+    {
+        if (TryMatchKey(line.AsSpan(), out var key, out _)) return key;
+        return line.Trim('[', ']');
     }
 
     private static bool TryParseLine(string trimmed, out string beforeSemicolon, out string afterSemicolon)

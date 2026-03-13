@@ -12,12 +12,6 @@ namespace NeoIni;
 
 internal sealed class NeoIniFileProvider
 {
-    internal sealed class MissingEncryptionKeyException : Exception
-    {
-        public MissingEncryptionKeyException()
-            : base("The configuration file is encrypted with a custom password. Please provide a password string to the NeoIniReader constructor.") { }
-    }
-
     private const byte FileVersion = 1;
     private const int HeaderSize = 10;
     private const int ReservedSize = 2;
@@ -354,8 +348,7 @@ internal sealed class NeoIniFileProvider
             if (isBackup) return null;
             var data = CheckBackup();
             if (data != null) return data;
-            throw new InvalidOperationException("Failed to decrypt configuration file.\n" +
-                    "Check that you are using the same encryption password or environment as during file creation", ex);
+            throw new InvalidEncryptionKeyException(ex);
         }
         catch (MissingEncryptionKeyException)
         {
@@ -445,8 +438,7 @@ internal sealed class NeoIniFileProvider
             if (isBackup) return null;
             var data = await CheckBackupAsync(ct).ConfigureAwait(false);
             if (data != null) return data;
-            throw new InvalidOperationException("Failed to decrypt configuration file.\n" +
-                    "Check that you are using the same encryption password or environment as during file creation", ex);
+            throw new InvalidEncryptionKeyException(ex);
         }
         catch (MissingEncryptionKeyException)
         {

@@ -22,7 +22,7 @@ dotnet add package NeoIni
 ```
 
 - **Пакет:** [nuget.org/packages/NeoIni](https://www.nuget.org/packages/NeoIni)
-- **Версия:** `1.7.1` | **.NET 6+**
+- **Версия:** `1.7.2` | **.NET 6+**
 - **Разработчик:** [Lonewolf239](https://github.com/Lonewolf239)
 
 ## Features
@@ -299,92 +299,11 @@ using NeoIniReader reader = new("config.ini");
 
 - После вызова Dispose любая попытка использовать экземпляр вызовет исключение `ObjectDisposedException`.
 
-## Attribute‑based mapping & Source Generator (1.7+)
+## Advanced features
 
-Начиная с версии 1.7, NeoIni включает в себя:
-
-- **NeoIni.Annotations.NeoIniKeyAttribute** — атрибут, который присваивается свойствам классов конфигурации.
-- **Генератор исходного кода Roslyn (NeoIni.Generators.NeoIniMappingGenerator)**, который генерирует:
-  - `NeoIni.NeoIniReaderExtensions.Get<T>(this NeoIniReader reader) where T : new()`
-  - `NeoIni.NeoIniReaderExtensions.Set<T>(this NeoIniReader reader, T config)`
-
-Это позволяет описывать конфигурацию в виде обычного C#‑класса и привязывать её к INI без ручного копирования и вызовов `GetValue` / `SetValue`.
-
-### Defining a config model
-
-Используйте **NeoIniKeyAttribute** для указания соответствия секций и ключей.
-Атрибут принимает два обязательных параметра конструктора (Section и Key) и одно необязательное свойство (DefaultValue).
-
-```csharp
-using NeoIni.Annotations;
-
-namespace MyApp.Config;
-
-public sealed class AppConfig
-{
-    // Обязательные параметры: Section ("General"), Key ("AppName")
-    // Необязательное свойство: DefaultValue ("MyApp")
-    [NeoIniKey("General", "AppName", DefaultValue = "MyApp")]
-    public string AppName { get; set; }
-
-    [NeoIniKey("General", "LogLevel", DefaultValue = "Info")]
-    public string LogLevel { get; set; }
-
-    [NeoIniKey("Database", "Host", DefaultValue = "localhost")]
-    public string DbHost { get; set; }
-
-    [NeoIniKey("Database", "Port", DefaultValue = "5432")]
-    public int DbPort { get; set; }
-
-    [NeoIniKey("Features", "EnableMetrics", DefaultValue = "true")]
-    public bool EnableMetrics { get; set; }
-}
-```
-
-### Read the entire configuration
-
-Генератор исходного кода автоматически создаёт высокоэффективный метод расширения `Get<T>()`.
-
-```csharp
-using NeoIni;
-using MyApp.Config;
-
-NeoIniReader reader = new("config.ini");
-
-// Создаёт экземпляр AppSettings и заполняет его значениями из INI‑файла.
-// Отсутствующие ключи используют DefaultValue из атрибута (или стандартные значения по умолчанию).
-AppSettings settings = reader.Get<AppSettings>();
-
-Console.WriteLine($"App: {settings.AppName}, DB: {settings.DbHost}:{settings.DbPort}");
-```
-
-### Save the entire configuration
-
-Используйте сгенерированный метод `Set<T>()`, чтобы записать все сопоставленные свойства обратно в INI‑файл.
-
-```csharp
-using NeoIni;
-using MyApp.Config;
-
-NeoIniReader reader = new("config.ini");
-
-AppSettings newSettings = new()
-{
-    AppName = "My Super App",
-    LogLevel = "Debug",
-    DbHost = "192.168.1.100",
-    DbPort = 5432,
-    EnableMetrics = false
-};
-
-// Записывает все свойства, помеченные [NeoIniKey], в объект reader
-reader.Set(newSettings);
-
-// Сохраняет изменения на диск
-reader.SaveFile();
-```
-
-> **Примечание:** генератор исходного кода преобразует ваши атрибуты прямо в безопасные, строго типизированные вызовы `GetValue<T>` и `SetValue<T>` ещё во время компиляции, поэтому **никаких затрат на рефлексию в рантайме нет**.
+- Attribute‑based mapping & source generator (1.7+) — [detailed guide](./docs/ATTRIBUTE-MAPPING-RU.md)
+- Hot Reload (1.7.1+) — [usage & caveats](./docs/HOT-RELOAD-RU.md)
+- Human‑editable INI mode (1.7.2+) — [experimental mode](./docs/HUMAN-MODE-RU.md)
 
 ## API Reference
 

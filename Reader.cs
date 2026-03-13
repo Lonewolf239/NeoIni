@@ -13,7 +13,7 @@ namespace NeoIni;
 /// <br/>
 /// <b>Target Framework: .NET 6+</b>
 /// <br/>
-/// <b>Version: 1.7.2-pre1</b>
+/// <b>Version: 1.7.2</b>
 /// <br/>
 /// <b>Black Box Philosophy:</b> This class follows a strict "black box" design principle - users interact only through the public API without needing to understand internal implementation details. Input goes in, processed output comes out, internals remain hidden and abstracted.
 /// </summary>
@@ -428,10 +428,29 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
 
     private void ThrowIfDisposed() { if (Disposed) throw new ObjectDisposedException(nameof(NeoIniReader)); }
 
-    private void ThrowIfEmpty(string value)
+    private void ThrowIfEmpty(string value, bool useAEVRule = true) => ThrowIfEmpty(new[] { value }, useAEVRule);
+
+    private void ThrowIfEmpty(string[] values, bool useAEVRule = true)
     {
-        if (!AllowEmptyValues && string.IsNullOrEmpty(value))
-            throw new ArgumentException("The key value cannot be empty or null because AllowEmptyValues = false.", nameof(value));
+        if (useAEVRule && AllowEmptyValues) return;
+        foreach (var value in values)
+        {
+            if (string.IsNullOrEmpty(value))
+                throw new EmptyValueNotAllowedException(nameof(value));
+        }
+    }
+
+    private static void ThrowIfContainsUnsupportedChars(string value) => ThrowIfContainsUnsupportedChars(new[] { value });
+
+    private static void ThrowIfContainsUnsupportedChars(string[] values)
+    {
+        if (values is null) return;
+        ReadOnlySpan<char> invalid = ";\"=".AsSpan();
+        foreach (var value in values)
+        {
+            if (value is null) continue;
+            if (value.AsSpan().IndexOfAny(invalid) >= 0) throw new UnsupportedIniCharacterException();
+        }
     }
 
     private bool ShouldAutoSave()
@@ -465,7 +484,7 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
     {
         ThrowIfDisposed();
         if (delayMs < 1000)
-            throw new ArgumentOutOfRangeException(nameof(delayMs), "Delay must be at least 1000 ms for hot reload polling.");
+            throw new InvalidHotReloadDelayException(nameof(delayMs));
         if (Interlocked.CompareExchange(ref HotReloadState, 1, 0) != 0) return;
         Lock.EnterWriteLock();
         try
@@ -598,6 +617,8 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
     public void AddSection(string section)
     {
         ThrowIfDisposed();
+        ThrowIfEmpty(section, false);
+        ThrowIfContainsUnsupportedChars(section);
         Lock.EnterWriteLock();
         try { NeoIniReaderCore.AddSection(Data, section); }
         finally { Lock.ExitWriteLock(); }
@@ -611,6 +632,8 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
     public async Task AddSectionAsync(string section, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
+        ThrowIfEmpty(section, false);
+        ThrowIfContainsUnsupportedChars(section);
         cancellationToken.ThrowIfCancellationRequested();
         Lock.EnterWriteLock();
         try
@@ -631,8 +654,10 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
     public void AddKey<T>(string section, string key, T value)
     {
         ThrowIfDisposed();
+        ThrowIfEmpty(new[] { section, key }, false);
         string valueString = NeoIniParser.ValueToString(value);
         ThrowIfEmpty(valueString);
+        ThrowIfContainsUnsupportedChars(new[] { section, key, valueString });
         Lock.EnterWriteLock();
         try { NeoIniReaderCore.AddKeyInSection(Data, section, key, valueString); }
         finally { Lock.ExitWriteLock(); }
@@ -649,9 +674,11 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
     public async Task AddKeyAsync<T>(string section, string key, T value, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
+        ThrowIfEmpty(new[] { section, key }, false);
         cancellationToken.ThrowIfCancellationRequested();
         string valueString = NeoIniParser.ValueToString(value);
         ThrowIfEmpty(valueString);
+        ThrowIfContainsUnsupportedChars(new[] { section, key, valueString });
         Lock.EnterWriteLock();
         try
         {
@@ -743,6 +770,7 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
             stringValue = NeoIniParser.GetStringRaw(Data, section, key);
             if (stringValue == null && UseAutoAdd)
             {
+                ThrowIfEmpty(new[] { section, key }, false);
                 Lock.EnterWriteLock();
                 try
                 {
@@ -751,6 +779,7 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
                     {
                         string defaultValueString = NeoIniParser.ValueToString(defaultValue);
                         ThrowIfEmpty(defaultValueString);
+                        ThrowIfContainsUnsupportedChars(new[] { section, key, defaultValueString });
                         NeoIniReaderCore.AddKeyInSection(Data, section, key, defaultValueString);
                         valueAdded = true;
                     }
@@ -787,6 +816,7 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
             stringValue = NeoIniParser.GetStringRaw(Data, section, key);
             if (stringValue == null && UseAutoAdd)
             {
+                ThrowIfEmpty(new[] { section, key }, false);
                 Lock.EnterWriteLock();
                 try
                 {
@@ -796,6 +826,7 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
                     {
                         string defaultValueString = NeoIniParser.ValueToString(defaultValue);
                         ThrowIfEmpty(defaultValueString);
+                        ThrowIfContainsUnsupportedChars(new[] { section, key, defaultValueString });
                         NeoIniReaderCore.AddKeyInSection(Data, section, key, defaultValueString);
                         valueAdded = true;
                     }
@@ -864,9 +895,11 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
     public void SetValue<T>(string section, string key, T value)
     {
         ThrowIfDisposed();
+        ThrowIfEmpty(new[] { section, key }, false);
         bool keyExists = false;
         string valueString = NeoIniParser.ValueToString(value);
         ThrowIfEmpty(valueString);
+        ThrowIfContainsUnsupportedChars(new[] { section, key, valueString });
         Lock.EnterWriteLock();
         try { keyExists = NeoIniReaderCore.SetKey(Data, section, key, valueString); }
         finally { Lock.ExitWriteLock(); }
@@ -884,10 +917,12 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
     public async Task SetValueAsync<T>(string section, string key, T value, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
+        ThrowIfEmpty(new[] { section, key }, false);
         cancellationToken.ThrowIfCancellationRequested();
         bool keyExists = false;
         string valueString = NeoIniParser.ValueToString(value);
         ThrowIfEmpty(valueString);
+        ThrowIfContainsUnsupportedChars(new[] { section, key, valueString });
         Lock.EnterWriteLock();
         try
         {
@@ -1078,6 +1113,8 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
     public void RenameKey(string section, string oldKey, string newKey)
     {
         ThrowIfDisposed();
+        ThrowIfEmpty(new[] { section, oldKey, newKey }, false);
+        ThrowIfContainsUnsupportedChars(new[] { section, oldKey, newKey });
         Lock.EnterWriteLock();
         try { NeoIniReaderCore.RenameKey(Data, section, oldKey, newKey); }
         finally { Lock.ExitWriteLock(); }
@@ -1093,6 +1130,8 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
     public async Task RenameKeyAsync(string section, string oldKey, string newKey, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
+        ThrowIfEmpty(new[] { section, oldKey, newKey }, false);
+        ThrowIfContainsUnsupportedChars(new[] { section, oldKey, newKey });
         cancellationToken.ThrowIfCancellationRequested();
         Lock.EnterWriteLock();
         try
@@ -1111,6 +1150,8 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
     public void RenameSection(string oldSection, string newSection)
     {
         ThrowIfDisposed();
+        ThrowIfEmpty(new[] { oldSection, newSection }, false);
+        ThrowIfContainsUnsupportedChars(new[] { oldSection, newSection });
         Lock.EnterWriteLock();
         try { NeoIniReaderCore.RenameSection(Data, oldSection, newSection); }
         finally { Lock.ExitWriteLock(); }
@@ -1125,6 +1166,8 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
     public async Task RenameSectionAsync(string oldSection, string newSection, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
+        ThrowIfEmpty(new[] { oldSection, newSection }, false);
+        ThrowIfContainsUnsupportedChars(new[] { oldSection, newSection });
         cancellationToken.ThrowIfCancellationRequested();
         Lock.EnterWriteLock();
         try
