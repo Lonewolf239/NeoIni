@@ -36,7 +36,7 @@
 		<EmbeddedResource Remove="NeoIniTest\**" />
 	</ItemGroup>
 	<ItemGroup>
-		<Compile Include="Annotations\**\*.cs" Exclude="Annotations\bin\**;Annotations\obj\**" />
+		<Compile Include="Annotations\KeyAttribute.cs" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="Generators\NeoIni.Generators.csproj"
