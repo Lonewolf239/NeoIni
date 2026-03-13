@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-Currently, only the latest release (**1.7.1**) is supported with security updates and patches.
+Currently, only the latest release (**1.7.2-pre1**) is supported with security updates and patches.
 
 Please note that **all previous versions** (`< 1.6.1`) are deprecated. They are no longer available for download as they contain known bugs or were incomplete pre-release builds that did not reach final stability standards.
 
@@ -11,6 +11,7 @@ Please note that **all previous versions** (`< 1.6.1`) are deprecated. They are 
 
 | Version | Supported | Notes |
 |---------|-----------|-------|
+| 1.7.2-pre1 | :white_check_mark: | CSR (current actively maintained pre-release) |
 | 1.7.1 | :white_check_mark: | **CSR** |
 | 1.7 | :package: | **LSR** |
 | 1.6.1 | :package: | **LSR** |

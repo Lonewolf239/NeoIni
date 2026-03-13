@@ -5,6 +5,7 @@
 
 NeoIniTest/
 NeoIniDemo/demo_config.ini*
+TODO.md
 
 # dotenv files
 .env

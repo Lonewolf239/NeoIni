@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using Data = System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<string, string>>;
 
 namespace NeoIni;
 
@@ -25,14 +27,38 @@ internal enum HeaderFlags : byte
 internal sealed class HeaderParameters
 {
     internal int HeaderLength;
-    internal bool HasChecksum;
-    internal bool IsEncrypted;
-    internal bool AutoModeEncryption;
+    internal bool HasChecksum { get; }
+    internal bool IsEncrypted { get; }
+    internal bool AutoModeEncryption { get; }
 
     internal HeaderParameters(HeaderFlags flags)
     {
         HasChecksum = flags.HasFlag(HeaderFlags.HasChecksum);
         IsEncrypted = flags.HasFlag(HeaderFlags.IsEncrypted);
         AutoModeEncryption = flags.HasFlag(HeaderFlags.AutoMode);
+    }
+}
+
+internal sealed class NeoIniData
+{
+    internal Data Data { get; }
+    internal List<Comment> Comments { get; }
+
+    internal NeoIniData(Data data, List<Comment> comments) { Data = data; Comments = comments; }
+}
+
+internal enum CommentType { FreeSpace, Up, Right, Down }
+
+internal sealed class Comment
+{
+    internal string Line { get; }
+    internal CommentType CommentType { get; }
+    internal string Content { get; }
+
+    internal Comment(string line, CommentType commentType, string content)
+    {
+        Line = line;
+        CommentType = commentType;
+        Content = content;
     }
 }

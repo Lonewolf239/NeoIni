@@ -5,6 +5,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Comments = System.Collections.Generic.List<NeoIni.Comment>;
 using Data = System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<string, string>>;
 
 namespace NeoIni;
@@ -32,11 +33,12 @@ internal sealed class NeoIniFileProvider
     private readonly string FilePath;
     private readonly byte[] EncryptionKey;
     private readonly byte[] Salt;
-    private readonly bool Encryption = false;
     private readonly bool AutoEncryption = false;
 
     private string TempFilePath => FilePath + ".tmp";
     private string BackupFilePath => FilePath + ".backup";
+
+    internal readonly bool Encryption = false;
 
     internal event EventHandler<ErrorEventArgs> Error;
     internal event EventHandler<ChecksumMismatchEventArgs> ChecksumMismatch;
@@ -60,64 +62,72 @@ internal sealed class NeoIniFileProvider
         if (File.Exists(TempFilePath)) File.Delete(TempFilePath);
     }
 
-    internal Data GetData()
+    internal NeoIniData GetData(bool humanization = false)
     {
-        var data = new Data();
+        Data data = new();
+        Comments comments = new();
         string directory = Path.GetDirectoryName(FilePath);
         if (!string.IsNullOrWhiteSpace(directory)) Directory.CreateDirectory(directory);
         if (!File.Exists(FilePath))
         {
             using var stream = File.Create(FilePath);
-            return data;
+            return new(data, comments);
         }
         string currentSection = null;
         var lines = ReadFile();
-        if (lines == null) return data;
-        foreach (var line in lines)
+        if (lines == null) return new(data, comments);
+        for (int i = 0; i < lines.Length; i++)
         {
-            var trimmed = line.Trim();
+            var trimmed = lines[i].Trim(' ', '\t', '\u00A0', '\u200B');
             if (string.IsNullOrEmpty(trimmed)) continue;
-            if (trimmed.StartsWith(';')) continue;
-            if (trimmed.StartsWith("[") && trimmed.EndsWith("]"))
+            if (NeoIniParser.IsCommentLine(trimmed))
             {
-                currentSection = trimmed.Trim('[', ']');
-                if (!data.ContainsKey(currentSection)) data[currentSection] = new();
+                NeoIniParser.HandleCommentLine(lines, i, trimmed, humanization, comments);
+                continue;
             }
-            else if (currentSection != null && NeoIniParser.TryMatchKey(trimmed.AsSpan(), out string key, out string value))
-                data[currentSection][key] = value;
+            if (NeoIniParser.IsSectionLine(trimmed))
+            {
+                currentSection = NeoIniParser.HandleSectionLine(trimmed, humanization, data, comments);
+                continue;
+            }
+            if (currentSection != null && NeoIniParser.TryMatchKey(trimmed.AsSpan(), out string key, out string value))
+                NeoIniParser.HandleKeyValueLine(trimmed, currentSection, key, value, humanization, data, comments);
         }
-        return data;
+        return new(data, comments);
     }
 
-    internal async Task<Data> GetDataAsync(CancellationToken ct = default)
+    internal async Task<NeoIniData> GetDataAsync(bool humanization = false, CancellationToken ct = default)
     {
         Data data = new();
+        Comments comments = new();
         string directory = Path.GetDirectoryName(FilePath);
         if (!string.IsNullOrWhiteSpace(directory)) Directory.CreateDirectory(directory);
         if (!File.Exists(FilePath))
         {
             using var stream = File.Create(FilePath);
-            return data;
+            return new(data, comments);
         }
         var lines = await ReadFileAsync(ct).ConfigureAwait(false);
-        if (lines == null) return data;
+        if (lines == null) return new(data, comments);
         string currentSection = null;
-        foreach (var line in lines)
+        for (int i = 0; i < lines.Length; i++)
         {
-            ct.ThrowIfCancellationRequested();
-            var trimmed = line.Trim();
+            var trimmed = lines[i].Trim();
             if (string.IsNullOrEmpty(trimmed)) continue;
-            if (trimmed.StartsWith(';')) continue;
-            if (trimmed.StartsWith('[') && trimmed.EndsWith(']'))
+            if (NeoIniParser.IsCommentLine(trimmed))
             {
-                currentSection = trimmed.Trim('[', ']');
-                if (!data.ContainsKey(currentSection))
-                    data[currentSection] = new();
+                NeoIniParser.HandleCommentLine(lines, i, trimmed, humanization, comments);
+                continue;
             }
-            else if (currentSection != null && NeoIniParser.TryMatchKey(trimmed.AsSpan(), out var key, out var value))
-                data[currentSection][key] = value;
+            if (NeoIniParser.IsSectionLine(trimmed))
+            {
+                currentSection = NeoIniParser.HandleSectionLine(trimmed, humanization, data, comments);
+                continue;
+            }
+            if (currentSection != null && NeoIniParser.TryMatchKey(trimmed.AsSpan(), out string key, out string value))
+                NeoIniParser.HandleKeyValueLine(trimmed, currentSection, key, value, humanization, data, comments);
         }
-        return data;
+        return new(data, comments);
     }
 
     internal void SaveFile(string content, bool useChecksum, bool useBackup)
