@@ -36,9 +36,6 @@
 		<EmbeddedResource Remove="NeoIniTest\**" />
 	</ItemGroup>
 	<ItemGroup>
-		<Compile Include="Annotations\KeyAttribute.cs" />
-	</ItemGroup>
-	<ItemGroup>
 		<ProjectReference Include="Generators\NeoIni.Generators.csproj"
 			OutputItemType="Analyzer"
 			ReferenceOutputAssembly="false" />
