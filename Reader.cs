@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using NeoIni.Core;
+using NeoIni.Internal;
+using NeoIni.Providers;
 
 namespace NeoIni;
 
@@ -134,7 +137,7 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
     public event EventHandler AutoSave;
 
     /// <summary>Called when errors occur (parsing, saving, reading a file, etc.)</summary>
-    public event EventHandler<ErrorEventArgs> Error
+    public event EventHandler<ProviderErrorEventArgs> Error
     {
         add => FileProvider.Error += value;
         remove => FileProvider.Error -= value;

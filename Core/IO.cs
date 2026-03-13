@@ -2,7 +2,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace NeoIni;
+namespace NeoIni.Core;
 
 internal sealed class NeoIniIO
 {

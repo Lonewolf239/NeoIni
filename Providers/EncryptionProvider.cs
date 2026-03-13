@@ -1,7 +1,8 @@
 using System;
 using System.Security.Cryptography;
+using NeoIni.Internal;
 
-namespace NeoIni;
+namespace NeoIni.Providers;
 
 internal sealed class NeoIniEncryptionProvider
 {

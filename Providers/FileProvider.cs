@@ -5,10 +5,12 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Comments = System.Collections.Generic.List<NeoIni.Comment>;
+using NeoIni.Core;
+using NeoIni.Internal;
+using Comments = System.Collections.Generic.List<NeoIni.Internal.Comment>;
 using Data = System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<string, string>>;
 
-namespace NeoIni;
+namespace NeoIni.Providers;
 
 internal sealed class NeoIniFileProvider
 {
@@ -34,7 +36,7 @@ internal sealed class NeoIniFileProvider
 
     internal readonly bool Encryption = false;
 
-    internal event EventHandler<ErrorEventArgs> Error;
+    internal event EventHandler<ProviderErrorEventArgs> Error;
     internal event EventHandler<ChecksumMismatchEventArgs> ChecksumMismatch;
 
     internal NeoIniFileProvider(string filePath) => FilePath = filePath;
@@ -502,5 +504,5 @@ internal sealed class NeoIniFileProvider
         return NeoIniEncryptionProvider.HashData(data);
     }
 
-    internal void RaiseError(object sender, ErrorEventArgs e) => Error?.Invoke(sender ?? this, e);
+    internal void RaiseError(object sender, ProviderErrorEventArgs e) => Error?.Invoke(sender ?? this, e);
 }

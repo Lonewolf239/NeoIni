@@ -1,6 +1,6 @@
 using System;
 
-namespace NeoIni;
+namespace NeoIni.Internal;
 
 internal sealed class MissingEncryptionKeyException : Exception
 {

@@ -22,10 +22,6 @@
 		<Content Remove="Generators\**" />
 		<None Remove="Generators\**" />
 		<EmbeddedResource Remove="Generators\**" />
-		<Compile Remove="Annotations\**" />
-		<Content Remove="Annotations\**" />
-		<None Remove="Annotations\**" />
-		<EmbeddedResource Remove="Annotations\**" />
 		<Compile Remove="NeoIniDemo\**" />
 		<Content Remove="NeoIniDemo\**" />
 		<None Remove="NeoIniDemo\**" />

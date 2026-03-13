@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
-using Comments = System.Collections.Generic.List<NeoIni.Comment>;
+using NeoIni.Internal;
+using Comments = System.Collections.Generic.List<NeoIni.Internal.Comment>;
 using Data = System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<string, string>>;
 
-namespace NeoIni;
+namespace NeoIni.Core;
 
 internal sealed class NeoIniParser
 {
@@ -44,7 +45,7 @@ internal sealed class NeoIniParser
         return Unescape(raw);
     }
 
-    internal static T TryParseValue<T>(string value, T defaultValue, EventHandler<ErrorEventArgs> onError)
+    internal static T TryParseValue<T>(string value, T defaultValue, EventHandler<ProviderErrorEventArgs> onError)
     {
         if (string.IsNullOrWhiteSpace(value)) return defaultValue;
         Type targetType = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);

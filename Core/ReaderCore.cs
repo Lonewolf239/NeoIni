@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using NeoIni.Internal;
 using Data = System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<string, string>>;
 
-namespace NeoIni;
+namespace NeoIni.Core;
 
 internal sealed class NeoIniReaderCore
 {

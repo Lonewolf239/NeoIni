@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Data = System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<string, string>>;
 
-namespace NeoIni;
+namespace NeoIni.Internal;
 
 /// <summary>
 /// Represents a matched entry found during a search operation in the INI file.

@@ -1,6 +1,6 @@
 using System;
 
-namespace NeoIni;
+namespace NeoIni.Internal;
 
 /// <summary>Provides data for the event that is raised when a file checksum mismatch occurs.</summary>
 public sealed class ChecksumMismatchEventArgs : EventArgs
@@ -22,14 +22,14 @@ public sealed class ChecksumMismatchEventArgs : EventArgs
 }
 
 /// <summary>Provides data for the event that is raised when an error or exception occurs.</summary>
-public sealed class ErrorEventArgs : EventArgs
+public sealed class ProviderErrorEventArgs : EventArgs
 {
     /// <summary>Gets the exception that caused the error.</summary>
     public Exception Exception { get; }
 
-    /// <summary>Initializes a new instance of the <see cref="ErrorEventArgs"/> class.</summary>
+    /// <summary>Initializes a new instance of the <see cref="ProviderErrorEventArgs"/> class.</summary>
     /// <param name="exception">The exception containing information about the error.</param>
-    public ErrorEventArgs(Exception exception) => Exception = exception;
+    public ProviderErrorEventArgs(Exception exception) => Exception = exception;
 }
 
 /// <summary>Provides data for events related to a specific key and its value within a section.</summary>
