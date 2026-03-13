@@ -312,7 +312,7 @@ using NeoIniReader reader = new("config.ini");
 | Method | Description | Async Version |
 |--------|-------------|---------------|
 | `GetValue<T>` | Read typed value with default fallback (optionally auto-adding) | `GetValueAsync<T>` |
-| `GetValueClamp<T>` | Read typed value and clamp it between min/max | `GetValueClampAsync<T>` |
+| `GetValueClamped<T>` | Read typed value and clamp it between min/max | `GetValueClampedAsync<T>` |
 | `TryGetValue<T>` | Read typed value without modifying the file and without AutoAdd | - |
 | `SetValue<T>` | Set/create key-value | `SetValueAsync<T>` |
 | `SetValueClamped<T>` | Set/create key-value and clamp it within range | `SetValueClampedAsync<T>` |
@@ -333,7 +333,7 @@ using NeoIniReader reader = new("config.ini");
 | `KeyExists` | Check if key exists in section | – |
 | `SaveFile` | Save data to a file | `SaveFileAsync` |
 | `ToString` | Serialize INI data to formatted string (as in file) | – |
-| `ReloadFromFile` | Reload data from file | – |
+| `ReloadFromFile` | Reload data from file | `ReloadFromFileAsync` |
 | `DeleteFile` | Delete file from disk | – |
 | `DeleteFileWithData` | Delete file and clear data | – |
 | `DeleteBackup` | Delete the backup file from disk | – |

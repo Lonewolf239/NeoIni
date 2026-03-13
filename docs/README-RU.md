@@ -312,7 +312,7 @@ using NeoIniReader reader = new("config.ini");
 | Метод | Описание | Асинхронная версия |
 |--------|-------------|---------------|
 | `GetValue<T>` | Читает типизированное значение с дефолтным (опционально с автодобавлением) | `GetValueAsync<T>` |
-| `GetValueClamp<T>` | Читает типизированное значение и ограничивает его между min/max | `GetValueClampAsync<T>` |
+| `GetValueClamped<T>` | Читает типизированное значение и ограничивает его между min/max | `GetValueClampedAsync<T>` |
 | `TryGetValue<T>` | Читает типизированное значение без изменения файла и без AutoAdd | - |
 | `SetValue<T>` | Устанавливает/создает ключ-значение | `SetValueAsync<T>` |
 | `SetValueClamped<T>` | Устанавливает/создает ключ-значение и ограничивает его в диапазоне | `SetValueClampedAsync<T>` |
@@ -333,7 +333,7 @@ using NeoIniReader reader = new("config.ini");
 | `KeyExists` | Проверяет, существует ли ключ в секции | – |
 | `SaveFile` | Сохраняет данные в файл | `SaveFileAsync` |
 | `ToString` | Сериализует INI-данные в форматированную строку (как в файле) | – |
-| `ReloadFromFile` | Перезагружает данные из файла | – |
+| `ReloadFromFile` | Перезагружает данные из файла | `ReloadFromFileAsync` |
 | `DeleteFile` | Удаляет файл с диска | – |
 | `DeleteFileWithData` | Удаляет файл и очищает данные из памяти | – |
 | `DeleteBackup` | Удаляет файл бэкапа с диска | – |
