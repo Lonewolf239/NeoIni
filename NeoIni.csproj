@@ -37,14 +37,14 @@
 			ReferenceOutputAssembly="false" />
 	</ItemGroup>
 	<ItemGroup>
-		<None Include="Generators\bin\$(Configuration)\netstandard2.0\NeoIni.Generators.dll" 
-			  Pack="true" 
-			  PackagePath="analyzers/dotnet/cs" 
+		<None Include="Generators\bin\$(Configuration)\netstandard2.0\NeoIni.Generators.dll"
+			  Pack="true"
+			  PackagePath="analyzers/dotnet/cs"
 			  Visible="false" />
 	</ItemGroup>
 	<ItemGroup>
 		<None Include="icon.png" Pack="true" PackagePath="\" />
-		<None Include="README-NUGET.md" Pack="true" PackagePath="\" />
-		<None Include="LICENSE" Pack="true" PackagePath="\" />
+		<None Include="docs\README-NUGET.md" Pack="true" PackagePath="\" />
+		<None Include="docs\LICENSE" Pack="true" PackagePath="\" />
 	</ItemGroup>
 </Project>

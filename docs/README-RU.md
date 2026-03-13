@@ -301,9 +301,9 @@ using NeoIniReader reader = new("config.ini");
 
 ## Advanced features
 
-- Attribute‑based mapping & source generator (1.7+) — [detailed guide](./docs/ATTRIBUTE-MAPPING-RU.md)
-- Hot Reload (1.7.1+) — [usage & caveats](./docs/HOT-RELOAD-RU.md)
-- Human‑editable INI mode (1.7.2+) — [experimental mode](./docs/HUMAN-MODE-RU.md)
+- Attribute‑based mapping & source generator (1.7+) — [detailed guide](./ATTRIBUTE-MAPPING-RU.md)
+- Hot Reload (1.7.1+) — [usage & caveats](./HOT-RELOAD-RU.md)
+- Human‑editable INI mode (1.7.2+) — [experimental mode](./HUMAN-MODE-RU.md)
 
 ## API Reference
 

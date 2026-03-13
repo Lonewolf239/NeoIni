@@ -16,7 +16,7 @@ If you have found a new bug, create an Issue and include:
 -   The expected and actual behavior.
 -   If the error is related to file corruption, please attach (if possible) an anonymized example file.
 
-> **Important:** If you discover a security vulnerability (encryption, data leak), please follow our [Security Policy](SECURITY.md) and do not publish details in public Issues.
+> **Important:** If you discover a security vulnerability (encryption, data leak), please follow our [Security Policy](./SECURITY.md) and do not publish details in public Issues.
 
 ## Feature Requests
 
