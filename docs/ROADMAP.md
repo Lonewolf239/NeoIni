@@ -15,13 +15,13 @@ Long-term development plan for NeoIni. The library evolves from a single-file IN
 
 | Version | Status | Description |
 |---------|--------|-------------|
-| 1.8 | 🕓 Planned | Async-safe concurrency: replace `ReaderWriterLockSlim` with async-compatible primitive. Fix lost `CancellationToken` in `AddKeyClampedAsync` / `SetValueClampedAsync`. |
+| 1.8 | 🕓 Planned | Async-safe concurrency: replace `ReaderWriterLockSlim` with async-compatible primitive. |
 | 1.9 | 🕓 Planned | Quoted value support: `key = "value ; not a comment"`. Broadens compatibility with real-world INI files (MySQL, PHP, Git config). |
 
 ### 2.0–2.2 — Major Redesign
 
 | Version | Status | Description |
 |---------|--------|-------------|
-| 2.0 | 🕓 Planned | **Breaking.** Rename `NeoIniReader` → `NeoIniDocument`. Public exception types. Extract `HotReloadManager`. Eliminate sync/async code duplication. |
+| 2.0 | 🕓 Planned | Rename `NeoIniReader` → `NeoIniDocument`. Extract `HotReloadManager`. Eliminate sync/async code duplication. |
 | 2.1 | 🕓 Planned | Reactive API: `reader.Observe<int>("Section", "Key")` → `IObservable<int>` for per-key change subscriptions. |
 | 2.2 | 🕓 Planned | Hierarchical sections: `[Parent.Child]` navigation via `reader.GetSection("Parent").GetSection("Child")`. |
