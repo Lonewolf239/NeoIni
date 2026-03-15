@@ -172,3 +172,9 @@ Full method, options, and event reference — [API.md](https://github.com/Lonewo
 ## Philosophy
 
 **Black Box Design** — all internal logic is hidden behind the simple public API of `NeoIniReader`. You work only with methods and events, without thinking about implementation details. NeoIni config files are owned and managed by the library; human comments are intentionally not preserved in standard mode (the in-file warning header signals this). For hand-edited configs, use [Human-editable mode](https://github.com/Lonewolf239/NeoIni/blob/main/docs/HUMAN-MODE.md).
+
+---
+
+## Changelog
+
+Full version history and release notes — (CHANGELOG.md)[https://github.com/Lonewolf239/NeoIni/blob/main/docs/CHANGELOG.md]
