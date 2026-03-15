@@ -1,3 +1,6 @@
+[![EN](https://img.shields.io/badge/CONTRIBUTING-EN-2D2D2D?style=for-the-badge&logo=github&logoColor=FFFFFF)](./CONTRIBUTING.md)
+[![RU](https://img.shields.io/badge/CONTRIBUTING-RU-2D2D2D?style=for-the-badge&logo=google-translate&logoColor=FFFFFF)](./CONTRIBUTING-RU.md)
+
 ## Contributing to NeoIni
 
 NeoIni welcomes bug reports, feature requests, and pull requests. This guide covers the process for each.

@@ -1,3 +1,6 @@
+[![EN](https://img.shields.io/badge/SECURITY-EN-2D2D2D?style=for-the-badge&logo=github&logoColor=FFFFFF)](./SECURITY.md)
+[![RU](https://img.shields.io/badge/SECURITY-RU-2D2D2D?style=for-the-badge&logo=google-translate&logoColor=FFFFFF)](./SECURITY-RU.md)
+
 ## Security policy · NeoIni
 
 Report vulnerabilities responsibly so they can be fixed before public disclosure.
@@ -11,16 +14,16 @@ NeoIni follows a tiered support model:
 | Abbreviation | Meaning | Scope |
 |--------------|---------|-------|
 | **CSR** | Current Stable Release | Full security patches and bug fixes |
-| **LSR** | Long-term Stable Release | Critical security patches only |
+| **LSR** | Long-term Stable Release | No patches — available for download only |
 | **DSR** | Deprecated Stable Release | No patches — upgrade recommended |
 
 | Version | Status | Support |
 |---------|--------|---------|
 | 1.7.3 | **CSR** | Security patches + bug fixes |
-| 1.7.2 | LSR | Critical security patches |
-| 1.7.1 | LSR | Critical security patches. Using the weaker Set methods is not recommended if you accept untrusted input. |
-| 1.7 | LSR | Critical security patches. Using the weaker Set methods is not recommended if you accept untrusted input. |
-| 1.6.1 | LSR | Critical security patches. Using the weaker Set methods is not recommended if you accept untrusted input. |
+| 1.7.2 | LSR | Available for download |
+| 1.7.1 | LSR | Available for download. Using the weaker Set methods is not recommended if you accept untrusted input. |
+| 1.7 | LSR | Available for download. Using the weaker Set methods is not recommended if you accept untrusted input. |
+| 1.6.1 | LSR | Available for download. Using the weaker Set methods is not recommended if you accept untrusted input. |
 | < 1.6.1 | **DSR** | Incomplete, buggy, or deprecated versions. |
 
 ---
