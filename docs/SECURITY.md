@@ -6,9 +6,9 @@ Currently, only the latest release (**1.7.3**) is supported with security update
 
 Please note that **all previous versions** (`< 1.6.1`) are deprecated. They are no longer available for download as they contain known bugs or were incomplete pre-release builds that did not reach final stability standards.
 
-**CSR** — actively maintained with new features and updates.
-**LSR** — fully stable and safe to use; no further updates or new features planned.
-**DSR** — deprecated and security‑risk; known to contain bugs or incomplete features, must not be used in production.
+- **CSR** — actively maintained with new features and updates.
+- **LSR** — fully stable and safe to use; no further updates or new features planned.
+- **DSR** — deprecated and security‑risk; known to contain bugs or incomplete features, must not be used in production.
 
 | Version | Supported | State | Notes |
 |---------|-----------|-------|-------|
