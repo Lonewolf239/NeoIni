@@ -1,30 +1,36 @@
-## Hot Reload Support (1.7.1+)
+## Hot-reload (1.7.1+)
 
-Starting from **1.7.1**, NeoIni introduces a **hot‑reload mechanism** for automatically reloading configuration files as they change on disk — without restarting your application.
+Automatically detect configuration changes and reload data without restarting your application. NeoIni uses polling with checksum comparison to pick up external modifications to the INI source.
 
-This feature is useful for long‑running services, debug sessions, or developer tools that want to respond dynamically to live configuration updates.
+---
 
-### Starting and stopping hot reload
-
-You can start real‑time monitoring of the INI file by calling `StartHotReload(int delayMs)`.
-
-This method checks the file for modifications at the specified interval (in milliseconds) and reloads it when a change is detected.
+### Starting and stopping
 
 ```csharp
+using NeoIni;
+
 NeoIniReader reader = new("config.ini");
 
-// Start hot reload polling every 2 seconds
+// Start hot-reload polling every 2 seconds
 reader.StartHotReload(2000);
 
-// Stop watching for modifications
+// Stop watching
 reader.StopHotReload();
 ```
 
+`StartHotReload(int delayMs)` accepts the polling interval in milliseconds. Minimum is **1000 ms** — lower values throw `InvalidHotReloadDelayException`. Call `StopHotReload()` to disable at any time.
+
+---
+
 ### Behavior and safety
 
-- Minimum polling delay is **1000 ms**. An `InvalidHotReloadDelayException` will be thrown otherwise.  
-- The hot reload process runs asynchronously in the background, monitoring file checksums.  
-- Only one hot reload watcher can run at a time per instance.  
-- On every detected change, NeoIni automatically calls `ReloadFromFileAsync()` to refresh configuration data in memory.
+- **Polling + checksum:** On each interval, NeoIni computes a checksum of the current source state and compares it to the last known value. If the checksum differs, the data is reloaded.
+- **Thread-safe:** Reloads acquire the internal `ReaderWriterLockSlim` write lock, so concurrent reads are safe.
+- **Events:** A successful reload fires the `Loaded` event. If the reload fails, the `Error` event fires and the previous data is retained.
+- **AutoSave interaction:** If `UseAutoSave` is enabled, in-memory changes are saved before the reload comparison runs, preventing data loss.
 
-> **Note:** The feature incurs negligible overhead since it uses file checksum comparison and cancellation tokens for cooperative shutdown.
+---
+
+### Provider support
+
+Since **1.7.3**, hot-reload works with any `INeoIniProvider` that returns a meaningful value from `GetStateChecksum()`. The built-in `NeoIniFileProvider` uses the file's last-write timestamp and size as its checksum. Custom providers can return any byte array that changes when the underlying data changes.

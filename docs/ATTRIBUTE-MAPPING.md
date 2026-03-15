@@ -1,18 +1,12 @@
-## Attribute‑based mapping & Source Generator (1.7+)
+## Attribute-based mapping & source generator (1.7+)
 
-Starting from **1.7**, NeoIni ships with:
+Map INI configuration to typed C# classes with zero reflection overhead. NeoIni's source generator translates `NeoIniKeyAttribute` annotations into compile-time `Get<T>()` / `Set<T>()` extension methods — no manual `GetValue`/`SetValue` calls required.
 
-- NeoIni.Annotations.NeoIniKeyAttribute — an attribute assigned to properties of configuration classes.
-- Roslyn source generator (NeoIni.Generators.NeoIniMappingGenerator), which generates:
-  - `NeoIni.NeoIniReaderExtensions.Get<T>(this NeoIniReader reader) where T : new()`
-  - `NeoIni.NeoIniReaderExtensions.Set<T>(this NeoIniReader reader, T config)`
-
-This allows you to describe the configuration as a regular C# class and map it to INI without manually copying and pasting `GetValue`/`SetValue`.
+---
 
 ### Defining a config model
 
-Use the NeoIniKeyAttribute to specify the mapping.
-The attribute takes two required constructor parameters (Section and Key) and one optional property (DefaultValue).
+Decorate properties with `NeoIniKeyAttribute`. The attribute takes two required constructor parameters (`Section`, `Key`) and one optional property (`DefaultValue`).
 
 ```csharp
 using NeoIni.Annotations;
@@ -21,8 +15,6 @@ namespace MyApp.Config;
 
 public sealed class AppConfig
 {
-    // Required constructor args: Section ("General"), Key ("AppName")
-    // Optional property: DefaultValue ("MyApp")
     [NeoIniKey("General", "AppName", DefaultValue = "MyApp")]
     public string AppName { get; set; }
 
@@ -40,9 +32,11 @@ public sealed class AppConfig
 }
 ```
 
-### Read the entire configuration
+---
 
-The Source Generator automatically creates a highly optimized `Get<T>()` extension method.
+### Reading
+
+The source generator creates a `Get<T>()` extension method that instantiates the model and populates it from the INI file. Missing keys fall back to the `DefaultValue` specified in the attribute.
 
 ```csharp
 using NeoIni;
@@ -50,16 +44,16 @@ using MyApp.Config;
 
 NeoIniReader reader = new("config.ini");
 
-// Instantiates AppSettings and populates it with values from the INI file.
-// Missing keys will use the DefaultValue from the attribute (or standard defaults).
-AppSettings settings = reader.Get<AppSettings>();
+AppConfig config = reader.Get<AppConfig>();
 
-Console.WriteLine($"App: {settings.AppName}, DB: {settings.DbHost}:{settings.DbPort}");
+Console.WriteLine($"App: {config.AppName}, DB: {config.DbHost}:{config.DbPort}");
 ```
 
-### Save the entire configuration
+---
 
-Use the generated `Set<T>()` method to write all mapped properties back to the INI file.
+### Writing
+
+Use `Set<T>()` to write all mapped properties back to the INI file.
 
 ```csharp
 using NeoIni;
@@ -67,7 +61,7 @@ using MyApp.Config;
 
 NeoIniReader reader = new("config.ini");
 
-AppSettings newSettings = new()
+AppConfig config = new()
 {
     AppName = "My Super App",
     LogLevel = "Debug",
@@ -76,11 +70,10 @@ AppSettings newSettings = new()
     EnableMetrics = false
 };
 
-// Writes all [NeoIniKey] mapped properties to the reader
-reader.Set(newSettings);
-
-// Save changes to disk
+reader.Set(config);
 reader.SaveFile();
 ```
 
-> **Note:** The source generator translates your attributes directly into safe, strongly-typed `GetValue<T>` and `SetValue<T>` calls during compilation, meaning there is **zero reflection overhead** at runtime.
+---
+
+> **Zero reflection at runtime.** The source generator emits strongly-typed `GetValue<T>` and `SetValue<T>` calls at compile time — no reflection is used at runtime.

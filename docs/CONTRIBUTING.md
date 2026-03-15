@@ -1,46 +1,67 @@
-# Contributing to NeoIni
+## Contributing to NeoIni
 
-Thank you for your interest in **NeoIni**! We welcome contributions of all forms: from bug reports to code contributions and documentation improvements.
+NeoIni welcomes bug reports, feature requests, and pull requests. This guide covers the process for each.
 
-This document outlines the process for contributing to the project.
+---
 
-## Bug Reports
+### Bug reports
 
-Before creating an Issue, please:
-1.  **Check the version.** Ensure you are using the current version of the library (1.7.3). We do not support older versions.
-2.  **Use search.** It is possible that this problem has already been discussed or resolved.
+Open a [GitHub Issue](https://github.com/Lonewolf239/NeoIni/issues) with:
 
-If you have found a new bug, create an Issue and include:
--   The library version and .NET version.
--   A minimal code snippet that reproduces the error.
--   The expected and actual behavior.
--   If the error is related to file corruption, please attach (if possible) an anonymized example file.
+- **NeoIni version** (current: `1.7.3`) and **.NET version**.
+- **Minimal reproduction** — code snippet or repo that triggers the bug.
+- **Expected vs. actual behavior.**
+- **Stack trace** (if applicable).
 
-> **Important:** If you discover a security vulnerability (encryption, data leak), please follow our [Security Policy](/docs/SECURITY.md) and do not publish details in public Issues.
+Check existing issues before opening a duplicate.
 
-## Feature Requests
+> **Security vulnerabilities:** Do not report in public issues. Follow the [Security Policy](./SECURITY.md).
 
-We strive to adhere to the "Black Box" philosophy: the library should be simple on the outside and powerful on the inside. If you want to suggest a new feature:
-1.  Create an Issue with the label `enhancement`.
-2.  Describe what problem it solves.
-3.  Explain why this should be part of the core library rather than an external extension.
+---
 
-## Development and Pull Requests
+### Feature requests
 
-We use the standard GitHub Flow process:
+Open an issue with the **Feature Request** label. Include:
 
-1.  **Fork** the repository.
-2.  Create a branch for your task:
-    -   `fix/issue-number-description` — for fixes.
-    -   `feature/feature-name` — for new features.
-3.  **Code Requirements:**
-    -   Platform: **.NET 6.0**.
-    -   Follow standard C# code style (PascalCase for methods and global variables, camelCase for local variables).
-    -   **Thread Safety:** Any code working with config data MUST be thread-safe (use existing locking mechanisms like `ReaderWriterLockSlim`).
-    -   **Asynchrony:** If an operation takes time (IO), implement an `Async` version.
-4.  Ensure the project builds without errors or warnings.
-5.  Submit a Pull Request to the `main` branch.
+- **Use case** — what problem does the feature solve?
+- **Proposed API** — how would the feature look from the caller's perspective?
+- **Alternatives considered** — other approaches you evaluated.
 
-## Licensing
+Features that align with the [Roadmap](./ROADMAP.md) are prioritized.
 
-By submitting code to the NeoIni repository, you agree to license your contribution under the terms of the MIT License used in this project.
+---
+
+### Development workflow
+
+1. **Fork & clone** the repository.
+2. **Create a branch** from `main`:
+   - Bug fix: `fix/short-description`
+   - Feature: `feature/short-description`
+   - Docs: `docs/short-description`
+3. **Write code** following the existing conventions:
+   - All public API changes require XML doc comments.
+   - Thread safety: acquire the internal lock for any shared-state access.
+   - Async methods must accept and forward `CancellationToken`.
+   - No additional dependencies without prior discussion.
+4. **Test** your changes — include unit tests for new functionality and regression tests for bug fixes.
+5. **Open a pull request** against `main`.
+
+---
+
+### Pull request requirements
+
+| Requirement | Details |
+|-------------|---------|
+| Branch | Based on latest `main` |
+| Scope | One logical change per PR |
+| Tests | All existing tests pass; new tests cover the change |
+| Docs | Update relevant docs if the public API changes |
+| Commit messages | Imperative mood, concise (`Fix checksum race on concurrent reload`) |
+
+PRs are reviewed by the maintainer. Address feedback promptly — stale PRs may be closed after 30 days.
+
+---
+
+### License
+
+By contributing, you agree that your contributions are licensed under the [MIT License](./LICENSE).

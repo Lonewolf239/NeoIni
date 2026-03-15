@@ -1,28 +1,57 @@
-# Security Policy
+## Security policy · NeoIni
 
-## Supported Versions
+Report vulnerabilities responsibly so they can be fixed before public disclosure.
 
-Currently, only the latest release (**1.7.3**) is supported with security updates and patches.
+---
 
-Please note that **all previous versions** (`< 1.6.1`) are deprecated. They are no longer available for download as they contain known bugs or were incomplete pre-release builds that did not reach final stability standards.
+### Supported versions
 
-- **CSR** — actively maintained with new features and updates.
-- **LSR** — fully stable and safe to use; no further updates or new features planned.
-- **DSR** — deprecated and security‑risk; known to contain bugs or incomplete features, must not be used in production.
+NeoIni follows a tiered support model:
 
-| Version | Supported | State | Notes |
-|---------|-----------|-------|-------|
-| 1.7.3 | :white_check_mark: | *CSR* | Current Stable Release |
-| 1.7.2 | :package: | *LSR* | Legacy Stable Release |
-| 1.7.1 | :package: | **LSR** | Using the weaker Set methods is not recommended if you accept untrusted input. |
-| 1.7 | :package: | **LSR** | Using the weaker Set methods is not recommended if you accept untrusted input. |
-| 1.6.1 | :package: | **LSR** | Using the weaker Set methods is not recommended if you accept untrusted input. |
-| < 1.6.1 | :x: | **DSR** | Incomplete, buggy, or deprecated versions. |
+| Abbreviation | Meaning | Scope |
+|--------------|---------|-------|
+| **CSR** | Current Stable Release | Full security patches and bug fixes |
+| **LSR** | Long-term Stable Release | Critical security patches only |
+| **DSR** | Deprecated Stable Release | No patches — upgrade recommended |
 
-## Reporting a Vulnerability
+| Version | Status | Support |
+|---------|--------|---------|
+| 1.7.3 | **CSR** | Security patches + bug fixes |
+| 1.7.2 | LSR | Critical security patches |
+| 1.7.1 | LSR | Critical security patches. Using the weaker Set methods is not recommended if you accept untrusted input. |
+| 1.7 | LSR | Critical security patches. Using the weaker Set methods is not recommended if you accept untrusted input. |
+| 1.6.1 | LSR | Critical security patches. Using the weaker Set methods is not recommended if you accept untrusted input. |
+| < 1.6.1 | **DSR** | Incomplete, buggy, or deprecated versions. |
 
-If you discover a security vulnerability in the supported version, please report it immediately.
+---
 
-*   **How to report**: Please open a Draft Security Advisory in the repository or contact us via Telegram: [@an1onime](https://t.me/an1onime).
-*   **Timeline:** We aim to acknowledge all reports within 48 hours.
-*   **Policy:** Please do not disclose the vulnerability publicly until a patch has been released.
+### Reporting a vulnerability
+
+**Do not open a public issue for security vulnerabilities.**
+
+Contact the maintainer directly:
+
+- **Telegram:** [@an1onime](https://t.me/an1onime)
+
+Include in your report:
+
+1. **Affected version(s).**
+2. **Description** of the vulnerability and its impact.
+3. **Reproduction steps** — minimal code or configuration to trigger the issue.
+4. **Suggested fix** (if you have one).
+
+You will receive an acknowledgment within **48 hours**. A fix will be developed privately and released as a patch before public disclosure.
+
+---
+
+### Scope
+
+The following areas are in scope for security reports:
+
+- AES-256 encryption (key derivation, IV/salt handling, CBC mode).
+- SHA-256 checksum validation and `.backup` fallback logic.
+- File I/O race conditions (atomic writes, temp files).
+- Thread-safety issues under concurrent access.
+- Provider interface — data leakage or bypass via custom `INeoIniProvider` implementations.
+
+Out of scope: denial-of-service via intentionally malformed INI files with extreme sizes.

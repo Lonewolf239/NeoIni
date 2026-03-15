@@ -1,6 +1,8 @@
-## Pluggable Providers (1.7.3+)
+## Pluggable providers (1.7.3+)
 
-Starting with **1.7.3**, `NeoIniReader` works through the `INeoIniProvider` interface instead of being hardcoded to the file system. You can implement your own provider to store configuration in a database, remote service, in-memory store, or any other backend.
+Decouple configuration storage from the file system. The `INeoIniProvider` interface lets you back `NeoIniReader` with a database, remote service, in-memory store, or any custom backend.
+
+---
 
 ### Using a custom provider
 
@@ -17,6 +19,8 @@ NeoIniReader reader = await NeoIniReader.CreateAsync(myCustomProvider, cancellat
 // Human mode with a custom provider
 NeoIniReader reader = NeoIniReader.CreateHumanMode(myCustomProvider);
 ```
+
+---
 
 ### Implementing INeoIniProvider
 
@@ -60,8 +64,10 @@ public class MyDatabaseProvider : INeoIniProvider
 }
 ```
 
+---
+
 ### Notes
 
-- All existing file-based constructors (`new NeoIniReader(path)`, encryption variants) continue to work exactly as before — they use the built-in `NeoIniFileProvider` internally.
-- `UseAutoBackup`, `DeleteFile`, `DeleteBackup`, and `GetEncryptionPassword` are file-provider-specific. Calling them on a custom provider will throw `UnsupportedProviderOperationException`.
+- All existing file-based constructors (`new NeoIniReader(path)`, encryption variants) continue to work — they use the built-in `NeoIniFileProvider` internally.
+- `UseAutoBackup`, `DeleteFile`, `DeleteBackup`, and `GetEncryptionPassword` are file-provider-specific. Calling them on a custom provider throws `UnsupportedProviderOperationException`.
 - Hot-reload works with any provider that returns a meaningful value from `GetStateChecksum()`.

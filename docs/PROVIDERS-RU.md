@@ -1,6 +1,8 @@
-## Pluggable Providers (1.7.3+)
+## Pluggable providers (1.7.3+)
 
-Начиная с **1.7.3**, `NeoIniReader` работает через интерфейс `INeoIniProvider`, а не напрямую с файловой системой. Вы можете реализовать собственный провайдер для хранения конфигурации в базе данных, удалённом сервисе, в памяти или любом другом бэкенде.
+Отделение хранилища конфигурации от файловой системы. Интерфейс `INeoIniProvider` позволяет подключить `NeoIniReader` к базе данных, удалённому сервису, хранилищу в памяти или любому пользовательскому бэкенду.
+
+---
 
 ### Using a custom provider
 
@@ -14,9 +16,11 @@ NeoIniReader reader = new(myCustomProvider);
 // Асинхронно
 NeoIniReader reader = await NeoIniReader.CreateAsync(myCustomProvider, cancellationToken: ct);
 
-// Human mode с кастомным провайдером
+// Human mode с пользовательским provider-ом
 NeoIniReader reader = NeoIniReader.CreateHumanMode(myCustomProvider);
 ```
+
+---
 
 ### Implementing INeoIniProvider
 
@@ -31,7 +35,7 @@ public class MyDatabaseProvider : INeoIniProvider
 
     public NeoIniData GetData(bool humanization = false)
     {
-        // Загрузите данные из вашего хранилища и верните распарсенные секции + комментарии
+        // Загрузите данные из хранилища и верните распарсенные секции + комментарии
     }
 
     public Task<NeoIniData> GetDataAsync(bool humanization = false, CancellationToken ct = default)
@@ -60,8 +64,10 @@ public class MyDatabaseProvider : INeoIniProvider
 }
 ```
 
+---
+
 ### Notes
 
-- Все существующие файловые конструкторы (`new NeoIniReader(path)`, варианты с шифрованием) продолжают работать как раньше — внутри они используют встроенный `NeoIniFileProvider`.
-- `UseAutoBackup`, `DeleteFile`, `DeleteBackup` и `GetEncryptionPassword` специфичны для файлового провайдера. При вызове на кастомном провайдере будет выброшено `UnsupportedProviderOperationException`.
-- Hot-reload работает с любым провайдером, который возвращает осмысленное значение из `GetStateChecksum()`.
+- Все существующие файловые конструкторы (`new NeoIniReader(path)`, варианты с шифрованием) продолжают работать — внутри они используют встроенный `NeoIniFileProvider`.
+- `UseAutoBackup`, `DeleteFile`, `DeleteBackup` и `GetEncryptionPassword` специфичны для файлового provider-а. При вызове на пользовательском provider-е будет выброшено `UnsupportedProviderOperationException`.
+- Hot-reload работает с любым provider-ом, который возвращает осмысленное значение из `GetStateChecksum()`.
