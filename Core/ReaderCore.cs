@@ -18,13 +18,13 @@ internal sealed class NeoIniReaderCore
 
     internal static void AddSection(Data data, string section) => data.TryAdd(section, new());
 
-    internal static void AddKeyInSection(Data data, string section, string key, string value)
+    internal static void AddKey(Data data, string section, string key, string value)
     {
         AddSection(data, section);
         data[section].TryAdd(key, value);
     }
 
-    internal static bool SetKey(Data data, string section, string key, string value)
+    internal static bool SetValue(Data data, string section, string key, string value)
     {
         if (!data.TryGetValue(section, out var sectionData))
         {
@@ -83,7 +83,7 @@ internal sealed class NeoIniReaderCore
             {
                 if ((kvp.Key?.Contains(pattern, StringComparison.OrdinalIgnoreCase) == true) ||
                     (kvp.Value?.Contains(pattern, StringComparison.OrdinalIgnoreCase) == true))
-                    results.Add(new(section.Key, kvp.Key, kvp.Value));
+                    results.Add(new(section.Key, kvp.Key, NeoIniParser.GetStringRaw(kvp.Value)));
             }
         }
         return results;

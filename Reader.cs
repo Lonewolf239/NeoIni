@@ -16,7 +16,7 @@ namespace NeoIni;
 /// <br/>
 /// <b>Target Framework: .NET 6+</b>
 /// <br/>
-/// <b>Version: 1.7.3</b>
+/// <b>Version: 1.8-pre1</b>
 /// <br/>
 /// <b>Black Box Philosophy:</b> This class follows a strict "black box" design principle - users interact only through the public API without needing to understand internal implementation details. Input goes in, processed output comes out, internals remain hidden and abstracted.
 /// </summary>
@@ -32,7 +32,7 @@ public partial class NeoIniReader : IDisposable, IAsyncDisposable
         ThrowIfDisposed();
         string content;
         Lock.EnterReadLock();
-        try { content = NeoIniParser.GetContent(Data, Comments, HumanMode); }
+        try { content = NeoIniParser.GetContent(Data, Comments, HumanMode, UseShielding); }
         finally { Lock.ExitReadLock(); }
         return content;
     }
@@ -90,31 +90,9 @@ public partial class NeoIniReader : IDisposable, IAsyncDisposable
     public void SaveFile()
     {
         ThrowIfDisposed();
-        string content;
-        Lock.EnterUpgradeableReadLock();
-        try
-        {
-            if (HotReloadState == 1)
-            {
-                Lock.EnterWriteLock();
-                try { PauseHotReload.Reset(); }
-                finally { Lock.ExitWriteLock(); }
-            }
-            content = NeoIniParser.GetContent(Data, Comments, HumanMode);
-        }
-        finally { Lock.ExitUpgradeableReadLock(); }
+        string content = GetSaveContent();
         Provider.Save(content, UseChecksum);
-        if (HotReloadState == 1)
-        {
-            Lock.EnterWriteLock();
-            try
-            {
-                PrevHotReloadChecksum = Provider.GetStateChecksum();
-                PauseHotReload.Set();
-            }
-            finally { Lock.ExitWriteLock(); }
-        }
-        Saved?.Invoke(this, EventArgs.Empty);
+        FinalizeSave();
     }
 
     /// <summary>Asynchronously saves the current data to the INI file</summary>
@@ -122,32 +100,9 @@ public partial class NeoIniReader : IDisposable, IAsyncDisposable
     {
         ThrowIfDisposed();
         cancellationToken.ThrowIfCancellationRequested();
-        string content;
-        Lock.EnterUpgradeableReadLock();
-        try
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (HotReloadState == 1)
-            {
-                Lock.EnterWriteLock();
-                try { PauseHotReload.Reset(); }
-                finally { Lock.ExitWriteLock(); }
-            }
-            content = NeoIniParser.GetContent(Data, Comments, HumanMode);
-        }
-        finally { Lock.ExitUpgradeableReadLock(); }
+        string content = GetSaveContent(cancellationToken);
         await Provider.SaveAsync(content, UseChecksum, cancellationToken).ConfigureAwait(false);
-        if (HotReloadState == 1)
-        {
-            Lock.EnterWriteLock();
-            try
-            {
-                PrevHotReloadChecksum = Provider.GetStateChecksum();
-                PauseHotReload.Set();
-            }
-            finally { Lock.ExitWriteLock(); }
-        }
-        Saved?.Invoke(this, EventArgs.Empty);
+        FinalizeSave();
     }
 
     /// <summary>Determines whether a specific section exists in the loaded data</summary>
@@ -177,13 +132,7 @@ public partial class NeoIniReader : IDisposable, IAsyncDisposable
     /// <param name="section">The name of the new section.</param>
     public void AddSection(string section)
     {
-        ThrowIfDisposed();
-        ThrowIfEmpty(section, false);
-        ThrowIfContainsUnsupportedChars(section);
-        Lock.EnterWriteLock();
-        try { NeoIniReaderCore.AddSection(Data, section); }
-        finally { Lock.ExitWriteLock(); }
-        SectionAdded?.Invoke(this, new(section));
+        AddSectionHelper(section);
         DoAutoSave();
     }
 
@@ -192,18 +141,7 @@ public partial class NeoIniReader : IDisposable, IAsyncDisposable
     /// <param name="cancellationToken">Cancellation token.</param>
     public async Task AddSectionAsync(string section, CancellationToken cancellationToken = default)
     {
-        ThrowIfDisposed();
-        ThrowIfEmpty(section, false);
-        ThrowIfContainsUnsupportedChars(section);
-        cancellationToken.ThrowIfCancellationRequested();
-        Lock.EnterWriteLock();
-        try
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            NeoIniReaderCore.AddSection(Data, section);
-        }
-        finally { Lock.ExitWriteLock(); }
-        SectionAdded?.Invoke(this, new(section));
+        AddSectionHelper(section, cancellationToken);
         await DoAutoSaveAsync(cancellationToken).ConfigureAwait(false);
     }
 
@@ -214,16 +152,7 @@ public partial class NeoIniReader : IDisposable, IAsyncDisposable
     /// <param name="value">The value to assign to the key.</param>
     public void AddKey<T>(string section, string key, T value)
     {
-        ThrowIfDisposed();
-        ThrowIfEmpty(section, false);
-        ThrowIfEmpty(key, false);
-        string valueString = NeoIniParser.ValueToString(value);
-        ThrowIfEmpty(valueString);
-        ThrowIfContainsUnsupportedChars(new[] { section, key, valueString });
-        Lock.EnterWriteLock();
-        try { NeoIniReaderCore.AddKeyInSection(Data, section, key, valueString); }
-        finally { Lock.ExitWriteLock(); }
-        KeyAdded?.Invoke(this, new(section, key, valueString));
+        AddKeyHelper<T>(section, key, value);
         DoAutoSave();
     }
 
@@ -235,21 +164,7 @@ public partial class NeoIniReader : IDisposable, IAsyncDisposable
     /// <param name="cancellationToken">Cancellation token.</param>
     public async Task AddKeyAsync<T>(string section, string key, T value, CancellationToken cancellationToken = default)
     {
-        ThrowIfDisposed();
-        ThrowIfEmpty(section, false);
-        ThrowIfEmpty(key, false);
-        cancellationToken.ThrowIfCancellationRequested();
-        string valueString = NeoIniParser.ValueToString(value);
-        ThrowIfEmpty(valueString);
-        ThrowIfContainsUnsupportedChars(new[] { section, key, valueString });
-        Lock.EnterWriteLock();
-        try
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            NeoIniReaderCore.AddKeyInSection(Data, section, key, valueString);
-        }
-        finally { Lock.ExitWriteLock(); }
-        KeyAdded?.Invoke(this, new(section, key, valueString));
+        AddKeyHelper<T>(section, key, value, cancellationToken);
         await DoAutoSaveAsync(cancellationToken).ConfigureAwait(false);
     }
 
@@ -325,33 +240,7 @@ public partial class NeoIniReader : IDisposable, IAsyncDisposable
     public T GetValue<T>(string section, string key, T defaultValue = default)
     {
         ThrowIfDisposed();
-        string stringValue;
-        bool valueAdded = false;
-        Lock.EnterUpgradeableReadLock();
-        try
-        {
-            stringValue = NeoIniParser.GetStringRaw(Data, section, key);
-            if (stringValue == null && UseAutoAdd)
-            {
-                ThrowIfEmpty(section, false);
-                ThrowIfEmpty(key, false);
-                Lock.EnterWriteLock();
-                try
-                {
-                    stringValue = NeoIniParser.GetStringRaw(Data, section, key);
-                    if (stringValue == null)
-                    {
-                        string defaultValueString = NeoIniParser.ValueToString(defaultValue);
-                        ThrowIfEmpty(defaultValueString);
-                        ThrowIfContainsUnsupportedChars(new[] { section, key, defaultValueString });
-                        NeoIniReaderCore.AddKeyInSection(Data, section, key, defaultValueString);
-                        valueAdded = true;
-                    }
-                }
-                finally { Lock.ExitWriteLock(); }
-            }
-        }
-        finally { Lock.ExitUpgradeableReadLock(); }
+        var (valueAdded, stringValue) = GetValueHelper<T>(section, key, defaultValue);
         if (valueAdded) DoAutoSave();
         if (stringValue == null) return defaultValue;
         return NeoIniParser.TryParseValue<T>(stringValue, defaultValue, Provider.RaiseError);
@@ -371,35 +260,7 @@ public partial class NeoIniReader : IDisposable, IAsyncDisposable
     {
         ThrowIfDisposed();
         cancellationToken.ThrowIfCancellationRequested();
-        string stringValue;
-        bool valueAdded = false;
-        Lock.EnterUpgradeableReadLock();
-        try
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            stringValue = NeoIniParser.GetStringRaw(Data, section, key);
-            if (stringValue == null && UseAutoAdd)
-            {
-                ThrowIfEmpty(section, false);
-                ThrowIfEmpty(key, false);
-                Lock.EnterWriteLock();
-                try
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    stringValue = NeoIniParser.GetStringRaw(Data, section, key);
-                    if (stringValue == null)
-                    {
-                        string defaultValueString = NeoIniParser.ValueToString(defaultValue);
-                        ThrowIfEmpty(defaultValueString);
-                        ThrowIfContainsUnsupportedChars(new[] { section, key, defaultValueString });
-                        NeoIniReaderCore.AddKeyInSection(Data, section, key, defaultValueString);
-                        valueAdded = true;
-                    }
-                }
-                finally { Lock.ExitWriteLock(); }
-            }
-        }
-        finally { Lock.ExitUpgradeableReadLock(); }
+        var (valueAdded, stringValue) = GetValueHelper<T>(section, key, defaultValue, cancellationToken);
         if (valueAdded) await DoAutoSaveAsync(cancellationToken).ConfigureAwait(false);
         if (stringValue == null) return defaultValue;
         return NeoIniParser.TryParseValue<T>(stringValue, defaultValue, Provider.RaiseError);
@@ -459,18 +320,7 @@ public partial class NeoIniReader : IDisposable, IAsyncDisposable
     /// <param name="value">The value to write to the file.</param>
     public void SetValue<T>(string section, string key, T value)
     {
-        ThrowIfDisposed();
-        ThrowIfEmpty(section, false);
-        ThrowIfEmpty(key, false);
-        bool keyExists = false;
-        string valueString = NeoIniParser.ValueToString(value);
-        ThrowIfEmpty(valueString);
-        ThrowIfContainsUnsupportedChars(new[] { section, key, valueString });
-        Lock.EnterWriteLock();
-        try { keyExists = NeoIniReaderCore.SetKey(Data, section, key, valueString); }
-        finally { Lock.ExitWriteLock(); }
-        if (keyExists) KeyChanged?.Invoke(this, new(section, key, valueString));
-        else KeyAdded?.Invoke(this, new(section, key, valueString));
+        SetValueHelper<T>(section, key, value);
         DoAutoSave();
     }
 
@@ -482,23 +332,7 @@ public partial class NeoIniReader : IDisposable, IAsyncDisposable
     /// <param name="cancellationToken">Cancellation token.</param>
     public async Task SetValueAsync<T>(string section, string key, T value, CancellationToken cancellationToken = default)
     {
-        ThrowIfDisposed();
-        ThrowIfEmpty(section, false);
-        ThrowIfEmpty(key, false);
-        cancellationToken.ThrowIfCancellationRequested();
-        bool keyExists = false;
-        string valueString = NeoIniParser.ValueToString(value);
-        ThrowIfEmpty(valueString);
-        ThrowIfContainsUnsupportedChars(new[] { section, key, valueString });
-        Lock.EnterWriteLock();
-        try
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            keyExists = NeoIniReaderCore.SetKey(Data, section, key, valueString);
-        }
-        finally { Lock.ExitWriteLock(); }
-        if (keyExists) KeyChanged?.Invoke(this, new(section, key, valueString));
-        else KeyAdded?.Invoke(this, new(section, key, valueString));
+        SetValueHelper<T>(section, key, value, cancellationToken);
         await DoAutoSaveAsync(cancellationToken).ConfigureAwait(false);
     }
 
@@ -539,12 +373,7 @@ public partial class NeoIniReader : IDisposable, IAsyncDisposable
     /// <param name="key">The key to remove.</param>
     public void RemoveKey(string section, string key)
     {
-        ThrowIfDisposed();
-        Lock.EnterWriteLock();
-        try { NeoIniReaderCore.RemoveKey(Data, section, key); }
-        finally { Lock.ExitWriteLock(); }
-        KeyRemoved?.Invoke(this, new(section, key));
-        SectionChanged?.Invoke(this, new(section));
+        RemoveKeyHelper(section, key);
         DoAutoSave();
     }
 
@@ -554,17 +383,7 @@ public partial class NeoIniReader : IDisposable, IAsyncDisposable
     /// <param name="cancellationToken">Cancellation token.</param>
     public async Task RemoveKeyAsync(string section, string key, CancellationToken cancellationToken = default)
     {
-        ThrowIfDisposed();
-        cancellationToken.ThrowIfCancellationRequested();
-        Lock.EnterWriteLock();
-        try
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            NeoIniReaderCore.RemoveKey(Data, section, key);
-        }
-        finally { Lock.ExitWriteLock(); }
-        KeyRemoved?.Invoke(this, new(section, key));
-        SectionChanged?.Invoke(this, new(section));
+        RemoveKeyHelper(section, key, cancellationToken);
         await DoAutoSaveAsync(cancellationToken).ConfigureAwait(false);
     }
 
@@ -572,11 +391,7 @@ public partial class NeoIniReader : IDisposable, IAsyncDisposable
     /// <param name="section">The name of the section to remove.</param>
     public void RemoveSection(string section)
     {
-        ThrowIfDisposed();
-        Lock.EnterWriteLock();
-        try { NeoIniReaderCore.RemoveSection(Data, section); }
-        finally { Lock.ExitWriteLock(); }
-        SectionRemoved?.Invoke(this, new(section));
+        RemoveSectionHelper(section);
         DoAutoSave();
     }
 
@@ -585,16 +400,7 @@ public partial class NeoIniReader : IDisposable, IAsyncDisposable
     /// <param name="cancellationToken">Cancellation token.</param>
     public async Task RemoveSectionAsync(string section, CancellationToken cancellationToken = default)
     {
-        ThrowIfDisposed();
-        cancellationToken.ThrowIfCancellationRequested();
-        Lock.EnterWriteLock();
-        try
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            NeoIniReaderCore.RemoveSection(Data, section);
-        }
-        finally { Lock.ExitWriteLock(); }
-        SectionRemoved?.Invoke(this, new(section));
+        RemoveSectionHelper(section, cancellationToken);
         await DoAutoSaveAsync(cancellationToken).ConfigureAwait(false);
     }
 
@@ -647,11 +453,7 @@ public partial class NeoIniReader : IDisposable, IAsyncDisposable
     /// <param name="section">The name of the section to clear.</param>
     public void ClearSection(string section)
     {
-        ThrowIfDisposed();
-        Lock.EnterWriteLock();
-        try { NeoIniReaderCore.ClearSection(Data, section); }
-        finally { Lock.ExitWriteLock(); }
-        SectionChanged?.Invoke(this, new(section));
+        ClearSectionHelper(section);
         DoAutoSave();
     }
 
@@ -660,16 +462,7 @@ public partial class NeoIniReader : IDisposable, IAsyncDisposable
     /// <param name="cancellationToken">Cancellation token.</param>
     public async Task ClearSectionAsync(string section, CancellationToken cancellationToken = default)
     {
-        ThrowIfDisposed();
-        cancellationToken.ThrowIfCancellationRequested();
-        Lock.EnterWriteLock();
-        try
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            NeoIniReaderCore.ClearSection(Data, section);
-        }
-        finally { Lock.ExitWriteLock(); }
-        SectionChanged?.Invoke(this, new(section));
+        ClearSectionHelper(section, cancellationToken);
         await DoAutoSaveAsync(cancellationToken).ConfigureAwait(false);
     }
 
@@ -679,15 +472,7 @@ public partial class NeoIniReader : IDisposable, IAsyncDisposable
     /// <param name="newKey">The new name for the key</param>
     public void RenameKey(string section, string oldKey, string newKey)
     {
-        ThrowIfDisposed();
-        ThrowIfEmpty(section);
-        ThrowIfEmpty(oldKey);
-        ThrowIfEmpty(newKey);
-        ThrowIfContainsUnsupportedChars(new[] { section, oldKey, newKey });
-        Lock.EnterWriteLock();
-        try { NeoIniReaderCore.RenameKey(Data, section, oldKey, newKey); }
-        finally { Lock.ExitWriteLock(); }
-        KeyRenamed?.Invoke(this, new(section, oldKey, newKey));
+        RenameKeyHelper(section, oldKey, newKey);
         DoAutoSave();
     }
 
@@ -698,20 +483,7 @@ public partial class NeoIniReader : IDisposable, IAsyncDisposable
     /// <param name="cancellationToken">Cancellation token.</param>
     public async Task RenameKeyAsync(string section, string oldKey, string newKey, CancellationToken cancellationToken = default)
     {
-        ThrowIfDisposed();
-        ThrowIfEmpty(section);
-        ThrowIfEmpty(oldKey);
-        ThrowIfEmpty(newKey);
-        ThrowIfContainsUnsupportedChars(new[] { section, oldKey, newKey });
-        cancellationToken.ThrowIfCancellationRequested();
-        Lock.EnterWriteLock();
-        try
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            NeoIniReaderCore.RenameKey(Data, section, oldKey, newKey);
-        }
-        finally { Lock.ExitWriteLock(); }
-        KeyRenamed?.Invoke(this, new(section, oldKey, newKey));
+        RenameKeyHelper(section, oldKey, newKey, cancellationToken);
         await DoAutoSaveAsync(cancellationToken).ConfigureAwait(false);
     }
 
@@ -720,14 +492,7 @@ public partial class NeoIniReader : IDisposable, IAsyncDisposable
     /// <param name="newSection">The new name for the section</param>
     public void RenameSection(string oldSection, string newSection)
     {
-        ThrowIfDisposed();
-        ThrowIfEmpty(oldSection);
-        ThrowIfEmpty(newSection);
-        ThrowIfContainsUnsupportedChars(new[] { oldSection, newSection });
-        Lock.EnterWriteLock();
-        try { NeoIniReaderCore.RenameSection(Data, oldSection, newSection); }
-        finally { Lock.ExitWriteLock(); }
-        SectionRenamed?.Invoke(this, new(oldSection, newSection));
+        RenameSectionHelper(oldSection, newSection);
         DoAutoSave();
     }
 
@@ -737,19 +502,7 @@ public partial class NeoIniReader : IDisposable, IAsyncDisposable
     /// <param name="cancellationToken">Cancellation token.</param>
     public async Task RenameSectionAsync(string oldSection, string newSection, CancellationToken cancellationToken = default)
     {
-        ThrowIfDisposed();
-        ThrowIfEmpty(oldSection);
-        ThrowIfEmpty(newSection);
-        ThrowIfContainsUnsupportedChars(new[] { oldSection, newSection });
-        cancellationToken.ThrowIfCancellationRequested();
-        Lock.EnterWriteLock();
-        try
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            NeoIniReaderCore.RenameSection(Data, oldSection, newSection);
-        }
-        finally { Lock.ExitWriteLock(); }
-        SectionRenamed?.Invoke(this, new(oldSection, newSection));
+        RenameSectionHelper(oldSection, newSection, cancellationToken);
         await DoAutoSaveAsync(cancellationToken).ConfigureAwait(false);
     }
 

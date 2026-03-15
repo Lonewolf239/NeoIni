@@ -77,4 +77,20 @@ public partial class NeoIniReader
     /// Default value is <c>true</c>.
     /// </summary>
     public bool AllowEmptyValues { get; set; }
+
+    /// <summary>Determines whether data shielding is applied to the configuration.</summary>
+    /// Default value is <c>false</c>.
+    /// <exception cref="ModeConflictException">
+    /// Thrown when attempting to set this property while Human Mode is active. 
+    /// Shielding is incompatible with the manual editing capabilities of Human Mode.
+    /// </exception>
+    public bool UseShielding
+    {
+        get => _UseShielding;
+        set
+        {
+            if (HumanMode) throw new ModeConflictException();
+            _UseShielding = value;
+        }
+    }
 }

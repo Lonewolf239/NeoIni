@@ -1,3 +1,6 @@
+[![EN](https://img.shields.io/badge/README-EN-2D2D2D?style=for-the-badge&logo=github&logoColor=FFFFFF)](./PROVIDERS.md)
+[![RU](https://img.shields.io/badge/README-RU-2D2D2D?style=for-the-badge&logo=google-translate&logoColor=FFFFFF)](./PROVIDERS-RU.md)
+
 ## Pluggable providers (1.7.3+)
 
 Отделение хранилища конфигурации от файловой системы. Интерфейс `INeoIniProvider` позволяет подключить `NeoIniReader` к базе данных, удалённому сервису, хранилищу в памяти или любому пользовательскому бэкенду.

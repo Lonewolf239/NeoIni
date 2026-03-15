@@ -1,3 +1,6 @@
+[![EN](https://img.shields.io/badge/README-EN-2D2D2D?style=for-the-badge&logo=github&logoColor=FFFFFF)](./HUMAN-MODE.md)
+[![RU](https://img.shields.io/badge/README-RU-2D2D2D?style=for-the-badge&logo=google-translate&logoColor=FFFFFF)](./HUMAN-MODE-RU.md)
+
 ## Human-editable mode (1.7.2+)
 
 Сохранение комментариев, пустых строк и форматирования в INI-файлах, редактируемых вручную. В стандартном режиме NeoIni владеет файлом и удаляет не-данные. Human-editable mode отключает это поведение, позволяя файлу оставаться читаемым и редактируемым людьми.

@@ -1,3 +1,6 @@
+[![EN](https://img.shields.io/badge/README-EN-2D2D2D?style=for-the-badge&logo=github&logoColor=FFFFFF)](./API.md)
+[![RU](https://img.shields.io/badge/README-RU-2D2D2D?style=for-the-badge&logo=google-translate&logoColor=FFFFFF)](./API-RU.md)
+
 ## API Reference · NeoIni
 
 Полная справка по всем публичным методам, опциям и событиям `NeoIniReader`.

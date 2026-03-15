@@ -1,3 +1,6 @@
+[![EN](https://img.shields.io/badge/README-EN-2D2D2D?style=for-the-badge&logo=github&logoColor=FFFFFF)](./HOT-RELOAD.md)
+[![RU](https://img.shields.io/badge/README-RU-2D2D2D?style=for-the-badge&logo=google-translate&logoColor=FFFFFF)](./HOT-RELOAD-RU.md)
+
 ## Hot-reload (1.7.1+)
 
 Automatically detect configuration changes and reload data without restarting your application. NeoIni uses polling with checksum comparison to pick up external modifications to the INI source.

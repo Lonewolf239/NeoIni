@@ -1,3 +1,6 @@
+[![EN](https://img.shields.io/badge/README-EN-2D2D2D?style=for-the-badge&logo=github&logoColor=FFFFFF)](./PROVIDERS.md)
+[![RU](https://img.shields.io/badge/README-RU-2D2D2D?style=for-the-badge&logo=google-translate&logoColor=FFFFFF)](./PROVIDERS-RU.md)
+
 ## Pluggable providers (1.7.3+)
 
 Decouple configuration storage from the file system. The `INeoIniProvider` interface lets you back `NeoIniReader` with a database, remote service, in-memory store, or any custom backend.

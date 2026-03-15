@@ -9,7 +9,7 @@ using Data = System.Collections.Generic.Dictionary<string, System.Collections.Ge
 
 namespace NeoIni.Core;
 
-internal sealed class NeoIniParser
+internal partial class NeoIniParser
 {
     internal static string FormatInvariant<T>(T value) =>
         value is IFormattable formattable ? formattable.ToString(null, CultureInfo.InvariantCulture) : value?.ToString() ?? string.Empty;
@@ -26,18 +26,20 @@ internal sealed class NeoIniParser
             {
                 if (i + 1 < s.Length && s[i + 1] == '\n')
                 {
-                    sb.Append("\\r\\n");
+                    sb.Append(@"\r\n");
                     i++;
                 }
-                else sb.Append("\\r");
+                else sb.Append(@"\r");
                 continue;
             }
-            if (c == '\n') { sb.Append("\\n"); continue; }
-            if (c == '\\') { sb.Append("\\\\"); continue; }
+            if (c == '\n') { sb.Append(@"\n"); continue; }
+            if (c == '\\') { sb.Append(@"\\"); continue; }
             sb.Append(c);
         }
         return FormatInvariant(sb);
     }
+
+    internal static string GetStringRaw(string raw) => Unescape(raw);
 
     internal static string GetStringRaw(Data data, string section, string keyName)
     {
@@ -69,14 +71,21 @@ internal sealed class NeoIniParser
 
     internal static bool TryMatchKey(ReadOnlySpan<char> line, out string key, out string value)
     {
-        key = value = null;
-        var semicolonIndex = line.IndexOf(';');
-        if (semicolonIndex >= 0) line = line[..semicolonIndex];
+        key = null;
+        value = null;
         int eqIndex = line.IndexOf('=');
         if (eqIndex == -1) return false;
         ReadOnlySpan<char> keySpan = line[..eqIndex].Trim();
-        ReadOnlySpan<char> valueSpan = line[(eqIndex + 1)..].Trim();
         if (keySpan.IsEmpty) return false;
+        ReadOnlySpan<char> valueSpan;
+        int quoteIndex = line.IndexOf('"');
+        if (quoteIndex == -1)
+        {
+            int semicolonIndex = line.IndexOf(';');
+            if (semicolonIndex > eqIndex) valueSpan = line[(eqIndex + 1)..semicolonIndex].Trim();
+            else valueSpan = line[(eqIndex + 1)..].Trim();
+        }
+        else valueSpan = ParseShielding(line);
         key = keySpan.ToString();
         value = valueSpan.ToString();
         return true;
@@ -92,7 +101,7 @@ internal sealed class NeoIniParser
         return value;
     }
 
-    internal static string GetContent(Data data, Comments commentsData, bool humanization)
+    internal static string GetContent(Data data, Comments commentsData, bool humanization, bool useShielding)
     {
         if (data == null || data.Count == 0) return string.Empty;
         var estimatedSize = Environment.NewLine.Length;
@@ -101,7 +110,7 @@ internal sealed class NeoIniParser
         {
             estimatedSize += section.Key.Length + 2 + Environment.NewLine.Length;
             foreach (var kvp in section.Value)
-                estimatedSize += kvp.Key.Length + (kvp.Value?.Length ?? 0) + 3 + Environment.NewLine.Length;
+                estimatedSize += kvp.Key.Length + (kvp.Value?.Length ?? 0) + 3 + (useShielding ? 2 : 0) + Environment.NewLine.Length;
             estimatedSize += Environment.NewLine.Length;
         }
         if (comments != null && comments.Count > 0)
@@ -117,7 +126,8 @@ internal sealed class NeoIniParser
             content.AppendLine(GetContentHelper(section.Key, sectionLine, comments));
             foreach (var kvp in section.Value)
             {
-                var keyValueLine = $"{kvp.Key} = {kvp.Value}";
+                string keyValueLine = $"{kvp.Key} = " +
+                    $"{(useShielding ? '"' : string.Empty) + kvp.Value + (useShielding ? '"' : string.Empty)}";
                 content.AppendLine(GetContentHelper(kvp.Key, keyValueLine, comments));
             }
             content.AppendLine();
@@ -188,77 +198,5 @@ internal sealed class NeoIniParser
         if (!humanization || comments == null) return;
         if (!TryParseLine(trimmed, out _, out var afterSemicolon)) return;
         if (!string.IsNullOrEmpty(afterSemicolon)) comments.Add(new Comment(key, CommentType.Right, afterSemicolon));
-    }
-
-    private static string Unescape(string s)
-    {
-        if (string.IsNullOrEmpty(s)) return s;
-        StringBuilder sb = new(s.Length);
-        for (int i = 0; i < s.Length; i++)
-        {
-            char c = s[i];
-            if (c == '\\' && i + 1 < s.Length)
-            {
-                char next = s[i + 1];
-                switch (next)
-                {
-                    case 'r':
-                        if (i + 3 < s.Length && s[i + 2] == '\\' && s[i + 3] == 'n')
-                        {
-                            sb.Append('\r').Append('\n');
-                            i += 3;
-                        }
-                        else
-                        {
-                            sb.Append('\r');
-                            i++;
-                        }
-                        continue;
-                    case 'n': sb.Append('\n'); i++; continue;
-                    case '\\': sb.Append('\\'); i++; continue;
-                }
-            }
-            sb.Append(c);
-        }
-        return FormatInvariant(sb);
-    }
-
-    private static string GetContentHelper(string key, string lineContent, Comments comments)
-    {
-        if (comments == null || comments.Count == 0) return lineContent;
-        Comment matched = null;
-        foreach (var item in comments)
-        {
-            if (item.Line != key) continue;
-            matched = item;
-            break;
-        }
-        if (matched == null || string.IsNullOrEmpty(matched.Content)) return lineContent;
-        comments.Remove(matched);
-        return matched.CommentType switch
-        {
-            CommentType.Up => $"; {matched.Content}{Environment.NewLine}{lineContent}",
-            CommentType.Right => $"{lineContent} ; {matched.Content}",
-            CommentType.Down => $"{lineContent}{Environment.NewLine}; {matched.Content}",
-            _ => $"; {matched.Content}{Environment.NewLine}"
-        };
-    }
-
-    private static string ParseNearestLine(string line)
-    {
-        if (TryMatchKey(line.AsSpan(), out var key, out _)) return key;
-        return line.Trim('[', ']');
-    }
-
-    private static bool TryParseLine(string trimmed, out string beforeSemicolon, out string afterSemicolon)
-    {
-        beforeSemicolon = trimmed;
-        afterSemicolon = string.Empty;
-        if (string.IsNullOrEmpty(trimmed)) return false;
-        var semicolonIndex = trimmed.IndexOf(';');
-        if (semicolonIndex < 0) return false;
-        beforeSemicolon = trimmed[..semicolonIndex].Trim();
-        afterSemicolon = trimmed[(semicolonIndex + 1)..].Trim();
-        return true;
     }
 }

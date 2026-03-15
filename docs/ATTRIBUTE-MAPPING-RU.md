@@ -1,3 +1,6 @@
+[![EN](https://img.shields.io/badge/README-EN-2D2D2D?style=for-the-badge&logo=github&logoColor=FFFFFF)](./ATTRIBUTE-MAPPING.md)
+[![RU](https://img.shields.io/badge/README-RU-2D2D2D?style=for-the-badge&logo=google-translate&logoColor=FFFFFF)](./ATTRIBUTE-MAPPING-RU.md)
+
 ## Attribute-based mapping & source generator (1.7+)
 
 Маппинг INI-конфигурации на типизированные C#-классы без накладных расходов на рефлексию. Source generator NeoIni транслирует аннотации `NeoIniKeyAttribute` в extension-методы `Get<T>()` / `Set<T>()` на этапе компиляции — ручные вызовы `GetValue`/`SetValue` не нужны.

@@ -1,3 +1,6 @@
+[![EN](https://img.shields.io/badge/README-EN-2D2D2D?style=for-the-badge&logo=github&logoColor=FFFFFF)](./HOT-RELOAD.md)
+[![RU](https://img.shields.io/badge/README-RU-2D2D2D?style=for-the-badge&logo=google-translate&logoColor=FFFFFF)](./HOT-RELOAD-RU.md)
+
 ## Hot-reload (1.7.1+)
 
 Автоматическое обнаружение изменений конфигурации и перезагрузка данных без перезапуска приложения. NeoIni использует polling с проверкой checksum для отслеживания внешних модификаций INI-источника.

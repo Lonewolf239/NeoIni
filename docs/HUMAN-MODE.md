@@ -1,3 +1,6 @@
+[![EN](https://img.shields.io/badge/README-EN-2D2D2D?style=for-the-badge&logo=github&logoColor=FFFFFF)](./HUMAN-MODE.md)
+[![RU](https://img.shields.io/badge/README-RU-2D2D2D?style=for-the-badge&logo=google-translate&logoColor=FFFFFF)](./HUMAN-MODE-RU.md)
+
 ## Human-editable mode (1.7.2+)
 
 Preserve comments, blank lines, and formatting in hand-edited INI files. In standard mode, NeoIni owns the file and strips non-data content. Human-editable mode disables this behavior so the file stays readable and editable by people.

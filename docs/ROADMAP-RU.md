@@ -1,3 +1,6 @@
+[![EN](https://img.shields.io/badge/README-EN-2D2D2D?style=for-the-badge&logo=github&logoColor=FFFFFF)](./ROADMAP.md)
+[![RU](https://img.shields.io/badge/README-RU-2D2D2D?style=for-the-badge&logo=google-translate&logoColor=FFFFFF)](./ROADMAP-RU.md)
+
 ## Roadmap · NeoIni
 
 Долгосрочный план развития NeoIni. Библиотека эволюционирует от однофайлового INI-ридера к универсальному конфигурационному фреймворку на основе провайдеров, сохраняя философию **Black Box** и внутреннюю модель данных `Dictionary<string, Dictionary<string, string>>`.
@@ -19,7 +22,7 @@
 
 | Version | Status | Description |
 |--------|--------|----------|
-| 1.8 | 🕓 Planned | Поддержка значений в кавычках: `key = "value ; not a comment"`. Расширяет совместимость с реальными INI-файлами (MySQL, PHP, Git config). |
+| 1.8 | 🧪 Pre‑release | Поддержка значений в кавычках: `key = "value ; not a comment"`. Расширяет совместимость с реальными INI-файлами (MySQL, PHP, Git config). |
 
 ---
 

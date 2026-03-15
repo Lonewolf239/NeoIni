@@ -35,12 +35,14 @@ public partial class NeoIniReader
 
     private bool _UseChecksum;
 
+    private bool _UseShielding;
+
     private string ExtractContent()
     {
         Lock.EnterWriteLock();
         try
         {
-            string content = SaveOnDispose ? NeoIniParser.GetContent(Data, Comments, HumanMode) : null;
+            string content = SaveOnDispose ? NeoIniParser.GetContent(Data, Comments, HumanMode, UseShielding) : null;
             Data.Clear();
             Comments.Clear();
             return content;
@@ -94,6 +96,7 @@ public partial class NeoIniReader
         UseChecksum = options.UseChecksum;
         SaveOnDispose = options.SaveOnDispose;
         AllowEmptyValues = options.AllowEmptyValues;
+        UseShielding = options.UseShielding;
     }
 
     private void ThrowIfDisposed() { if (Disposed) throw new ObjectDisposedException(nameof(NeoIniReader)); }
@@ -104,17 +107,10 @@ public partial class NeoIniReader
         if (string.IsNullOrEmpty(value)) throw new EmptyValueNotAllowedException(nameof(value));
     }
 
-    private static void ThrowIfContainsUnsupportedChars(string value) => ThrowIfContainsUnsupportedChars(new[] { value });
-
-    private static void ThrowIfContainsUnsupportedChars(string[] values)
+    private void ThrowIfContainsUnsupportedChars(string value)
     {
-        if (values is null) return;
-        ReadOnlySpan<char> invalid = ";\"=".AsSpan();
-        foreach (var value in values)
-        {
-            if (value is null) continue;
-            if (value.AsSpan().IndexOfAny(invalid) >= 0) throw new UnsupportedIniCharacterException();
-        }
+        if (value is null) return;
+        if (value.AsSpan().IndexOfAny(";=\"".AsSpan()) >= 0) throw new UnsupportedIniCharacterException();
     }
 
     private bool ShouldAutoSave()

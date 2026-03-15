@@ -55,6 +55,14 @@ public sealed class NeoIniReaderOptions
     /// </summary>
     public bool AllowEmptyValues { get; set; } = true;
 
+    /// <summary>Determines whether data shielding is applied to the configuration.</summary>
+    /// Default value is <c>false</c>.
+    /// <exception cref="ModeConflictException">
+    /// Thrown when attempting to set this property while Human Mode is active. 
+    /// Shielding is incompatible with the manual editing capabilities of Human Mode.
+    /// </exception>
+    public bool UseShielding { get; set; } = false;
+
     /// <summary>
     /// Default behavior: automatic saving and backups enabled, checksum validation on,
     /// missing keys are added automatically and configuration is saved on dispose.

@@ -80,3 +80,27 @@ public class UnsupportedProviderOperationException : NotSupportedException
     /// <param name="message">The message that describes the error.</param>
     public UnsupportedProviderOperationException(string message) : base(message) { }
 }
+
+/// <summary>
+/// Represents the error that occurs when incompatible configuration modes, such as Shielding and Human Mode, are enabled together.
+/// </summary>
+public class ModeConflictException : InvalidOperationException
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ModeConflictException"/> class.
+    /// </summary>
+    public ModeConflictException()
+        : base("Shielding is incompatible with Human Mode. Disable Human Mode before modifying this setting.") { }
+}
+
+/// <summary>
+/// Represents the error that occurs when a shielded INI value is malformed, such as containing more than two double quotes.
+/// </summary>
+public class MalformedShieldingException : FormatException
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MalformedShieldingException"/> class.
+    /// </summary>
+    public MalformedShieldingException()
+        : base("A shielded value is malformed. It cannot contain more than two double quotes (\").") { }
+}
