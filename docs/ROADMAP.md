@@ -8,7 +8,7 @@ NeoIni 1.7.x focuses on bringing the library closer to enterprise-grade configur
 | 1.7.1 | ✅ Released | Hot-reload via file watcher (polling with checksum comparison). |
 | 1.7.2 | ✅ Released | Human-editable INI mode (comment preservation, no checksum). |
 | 1.7.3 | 🔧 In Progress | Pluggable provider abstraction (`INeoIniProvider`). |
-| 1.8 | 🕓 Planned | Async-safe concurrency: replace `ReaderWriterLockSlim` with async-compatible primitive. Fix lost `CancellationToken` in `AddKeyClampedAsync` / `SetValueClampedAsync`. |
+| 1.8 | 🕓 Planned | Async-safe concurrency: replace `ReaderWriterLockSlim` with async-compatible primitive. |
 | 1.9 | 🕓 Planned | Quoted value support: `key = "value ; not a comment"`. Broadens compatibility with real-world INI files (MySQL, PHP, Git config). |
 | 2.0 | 🕓 Planned | **Breaking.** Rename `NeoIniReader` → `NeoIniDocument`. Public exception types. Extract `HotReloadManager`. Eliminate sync/async code duplication. |
 | 2.1 | 🕓 Planned | Reactive API: `reader.Observe<int>("Section", "Key")` → `IObservable<int>` for per-key change subscriptions. |
