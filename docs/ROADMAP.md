@@ -52,5 +52,5 @@ Long-term development plan for NeoIni. The library evolves from a single-file IN
 |------|-------------|
 | Tests | Maintain ≥ 90 % line coverage. Add integration test suite for each `INeoIniProvider` implementation. Benchmark suite (BenchmarkDotNet) tracking parse, save, and hot-reload performance across releases. |
 | CI/CD | GitHub Actions pipeline: build → test → benchmark → NuGet publish. |
-| Documentation | XML-doc on every public member. `./README.md` quick-start kept in sync with latest release. Full migration guide published with every major version. |
+| Documentation | XML-doc on every public member. [README](./README.md) quick-start kept in sync with latest release. Full migration guide published with every major version. |
 | Examples | `NeoIniDemo` project covering: file creation, sections, keys/values, clamp & auto-add, search & rename, options & presets, encryption & password migration, async operations, auto-features (auto-save, hot-reload), file error recovery, events, read-only & performance modes, and attribute-based source generator mapping. |
