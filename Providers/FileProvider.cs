@@ -12,7 +12,7 @@ using Data = System.Collections.Generic.Dictionary<string, System.Collections.Ge
 
 namespace NeoIni.Providers;
 
-internal sealed class NeoIniFileProvider
+internal sealed class NeoIniFileProvider : INeoIniProvider
 {
     private const byte FileVersion = 1;
     private const int HeaderSize = 10;
@@ -31,13 +31,15 @@ internal sealed class NeoIniFileProvider
     private readonly byte[] Salt;
     private readonly bool AutoEncryption = false;
 
+    internal bool UseBackup = true;
+
     private string TempFilePath => FilePath + ".tmp";
     private string BackupFilePath => FilePath + ".backup";
 
     internal readonly bool Encryption = false;
 
-    internal event EventHandler<ProviderErrorEventArgs> Error;
-    internal event EventHandler<ChecksumMismatchEventArgs> ChecksumMismatch;
+    public event EventHandler<ProviderErrorEventArgs> Error;
+    public event EventHandler<ChecksumMismatchEventArgs> ChecksumMismatch;
 
     internal NeoIniFileProvider(string filePath) => FilePath = filePath;
 
@@ -58,7 +60,7 @@ internal sealed class NeoIniFileProvider
         if (File.Exists(TempFilePath)) File.Delete(TempFilePath);
     }
 
-    internal NeoIniData GetData(bool humanization = false)
+    public NeoIniData GetData(bool humanization = false)
     {
         Data data = new();
         Comments comments = new();
@@ -92,7 +94,7 @@ internal sealed class NeoIniFileProvider
         return new(data, comments);
     }
 
-    internal async Task<NeoIniData> GetDataAsync(bool humanization = false, CancellationToken ct = default)
+    public async Task<NeoIniData> GetDataAsync(bool humanization = false, CancellationToken ct = default)
     {
         Data data = new();
         Comments comments = new();
@@ -126,7 +128,7 @@ internal sealed class NeoIniFileProvider
         return new(data, comments);
     }
 
-    internal void SaveFile(string content, bool useChecksum, bool useBackup)
+    public void Save(string content, bool useChecksum)
     {
         byte[] plaintextBytes = Encoding.UTF8.GetBytes(content ?? string.Empty);
         byte[] dataWithChecksum;
@@ -163,7 +165,7 @@ internal sealed class NeoIniFileProvider
                 dataWithChecksum = AddChecksum(ms.ToArray(), useChecksum);
                 NeoIniIO.WriteBytes(TempFilePath, dataWithChecksum);
             }
-            if (File.Exists(FilePath)) File.Replace(TempFilePath, FilePath, useBackup ? BackupFilePath : null);
+            if (File.Exists(FilePath)) File.Replace(TempFilePath, FilePath, UseBackup ? BackupFilePath : null);
             else File.Move(TempFilePath, FilePath);
         }
         catch (Exception ex)
@@ -173,7 +175,7 @@ internal sealed class NeoIniFileProvider
         }
     }
 
-    internal async Task SaveFileAsync(string content, bool useChecksum, bool useBackup, CancellationToken ct)
+    public async Task SaveAsync(string content, bool useChecksum, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
         byte[] plaintextBytes = Encoding.UTF8.GetBytes(content ?? string.Empty);
@@ -215,7 +217,7 @@ internal sealed class NeoIniFileProvider
                 await NeoIniIO.WriteBytesAsync(TempFilePath, dataWithChecksum, ct).ConfigureAwait(false);
             }
             ct.ThrowIfCancellationRequested();
-            if (File.Exists(FilePath)) File.Replace(TempFilePath, FilePath, useBackup ? BackupFilePath : null);
+            if (File.Exists(FilePath)) File.Replace(TempFilePath, FilePath, UseBackup ? BackupFilePath : null);
             else File.Move(TempFilePath, FilePath);
         }
         catch (Exception ex)
@@ -498,11 +500,11 @@ internal sealed class NeoIniFileProvider
         return isValid;
     }
 
-    internal byte[] GetFileChecksum()
+    public byte[] GetStateChecksum()
     {
         var data = NeoIniIO.ReadAllBytes(FilePath);
         return NeoIniEncryptionProvider.HashData(data);
     }
 
-    internal void RaiseError(object sender, ProviderErrorEventArgs e) => Error?.Invoke(sender ?? this, e);
+    public void RaiseError(object sender, ProviderErrorEventArgs e) => Error?.Invoke(sender ?? this, e);
 }

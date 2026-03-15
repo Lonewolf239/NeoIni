@@ -9,7 +9,7 @@ dotnet add package NeoIni
 ```
 
 - **Package:** [nuget.org/packages/NeoIni](https://www.nuget.org/packages/NeoIni)
-- **Version:** `1.7.2` | **.NET 6+**
+- **Version:** `1.7.3` | **.NET 6+**
 - **Developer:** [Lonewolf239](https://github.com/Lonewolf239)
 
 ## Features
@@ -291,6 +291,7 @@ using NeoIniReader reader = new("config.ini");
 - Attribute‑based mapping & source generator (1.7+) — [detailed guide](https://github.com/Lonewolf239/NeoIni/blob/main/docs/ATTRIBUTE-MAPPING.md)
 - Hot Reload (1.7.1+) — [usage & caveats](https://github.com/Lonewolf239/NeoIni/blob/main/docs/HOT-RELOAD.md)
 - Human‑editable INI mode (1.7.2+) — [experimental mode](https://github.com/Lonewolf239/NeoIni/blob/main/docs/HUMAN-MODE.md)
+- Pluggable provider abstraction (1.7.3+) — [custom providers](https://github.com/Lonewolf239/NeoIni/blob/main/docs/PROVIDERS.md)
 
 ## API Reference
 

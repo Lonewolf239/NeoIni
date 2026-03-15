@@ -2,7 +2,7 @@
 	<PropertyGroup>
 		<TargetFrameworks>net6.0;net7.0;net8.0;net9.0;net10.0</TargetFrameworks>
 		<PackageId>NeoIni</PackageId>
-		<Version>1.7.2</Version>
+		<Version>1.7.3</Version>
 		<Authors>Lonewolf239</Authors>
 		<Description>Modern INI reader/writer for .NET 6+. AES encryption, thread-safe.</Description>
 		<PackageTags>ini;config;encryption;ini-parser;configuration;secure-config;aes-ini;.NET6;.NET7;.NET8;.NET9;.NET10</PackageTags>
@@ -45,6 +45,6 @@
 	<ItemGroup>
 		<None Include="icon.png" Pack="true" PackagePath="\" />
 		<None Include="docs\README-NUGET.md" Pack="true" PackagePath="\" />
-		<None Include="docs\LICENSE" Pack="true" PackagePath="\" />
+		<None Include="LICENSE" Pack="true" PackagePath="\" />
 	</ItemGroup>
 </Project>

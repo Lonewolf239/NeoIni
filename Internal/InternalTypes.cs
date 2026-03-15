@@ -39,23 +39,66 @@ internal sealed class HeaderParameters
     }
 }
 
-internal sealed class NeoIniData
+/// <summary>Represents the parsed data and comments extracted from an INI configuration source.</summary>
+public class NeoIniData
 {
-    internal Data Data { get; }
-    internal List<Comment> Comments { get; }
+    /// <summary>Gets the structured dictionary containing sections, keys, and their corresponding values.</summary>
+    public Data Data { get; }
 
-    internal NeoIniData(Data data, List<Comment> comments) { Data = data; Comments = comments; }
+    /// <summary>Gets the collection of comments preserved from the INI source.</summary>
+    public List<Comment> Comments { get; }
+
+    /// <summary>Initializes a new instance of the <see cref="NeoIniData"/> class.</summary>
+    /// <param name="data">The parsed INI data structure.</param>
+    /// <param name="comments">The list of parsed INI comments.</param>
+    public NeoIniData(Data data, List<Comment> comments)
+    {
+        Data = data;
+        Comments = comments;
+    }
 }
 
-internal enum CommentType { FreeSpace, Up, Right, Down }
-
-internal sealed class Comment
+/// <summary>Specifies the positional relationship of a comment relative to INI configuration elements.</summary>
+public enum CommentType
 {
-    internal string Line { get; }
-    internal CommentType CommentType { get; }
-    internal string Content { get; }
+    /// <summary>
+    /// A standalone comment that is not explicitly attached to any specific key or section (e.g., empty lines or floating comments).
+    /// </summary>
+    FreeSpace,
 
-    internal Comment(string line, CommentType commentType, string content)
+    /// <summary>
+    /// A comment placed directly above a section header or a key-value pair.
+    /// </summary>
+    Up,
+
+    /// <summary>
+    /// An inline comment placed to the right of a section header or a key-value pair on the same line.
+    /// </summary>
+    Right,
+
+    /// <summary>
+    /// A comment placed directly below a section header or a key-value pair.
+    /// </summary>
+    Down
+}
+
+/// <summary>Represents a single comment within an INI configuration, including its content and position.</summary>
+public class Comment
+{
+    /// <summary>Gets the associated identifier or line string this comment is bound to.</summary>
+    public string Line { get; }
+
+    /// <summary>Gets the positional type of the comment indicating where it was placed in the original source.</summary>
+    public CommentType CommentType { get; }
+
+    /// <summary>Gets the actual text content of the comment.</summary>
+    public string Content { get; }
+
+    /// <summary>Initializes a new instance of the <see cref="Comment"/> class.</summary>
+    /// <param name="line">The associated line or element identifier.</param>
+    /// <param name="commentType">The positional type of the comment.</param>
+    /// <param name="content">The text content of the comment.</param>
+    public Comment(string line, CommentType commentType, string content)
     {
         Line = line;
         CommentType = commentType;

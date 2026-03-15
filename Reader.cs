@@ -16,337 +16,12 @@ namespace NeoIni;
 /// <br/>
 /// <b>Target Framework: .NET 6+</b>
 /// <br/>
-/// <b>Version: 1.7.2</b>
+/// <b>Version: 1.7.3</b>
 /// <br/>
 /// <b>Black Box Philosophy:</b> This class follows a strict "black box" design principle - users interact only through the public API without needing to understand internal implementation details. Input goes in, processed output comes out, internals remain hidden and abstracted.
 /// </summary>
-public class NeoIniReader : IDisposable, IAsyncDisposable
+public partial class NeoIniReader : IDisposable, IAsyncDisposable
 {
-    private readonly NeoIniFileProvider FileProvider;
-    private readonly string FilePath;
-
-    private readonly bool AutoEncryption = false;
-    private bool CustomEncryptionPassword = false;
-
-    private Dictionary<string, Dictionary<string, string>> Data;
-    private List<Comment> Comments;
-    private readonly ReaderWriterLockSlim Lock = new(LockRecursionPolicy.NoRecursion);
-
-    private bool Disposed = false;
-    private int DisposeState = 0;
-
-    private int HotReloadState = 0;
-    private CancellationTokenSource HotReloadCts;
-    private byte[] PrevHotReloadChecksum;
-    private ManualResetEventSlim PauseHotReload = new(true);
-
-    private bool HumanMode = false;
-
-    /// <summary>
-    /// Determines whether changes are automatically written to the disk after every modification.
-	/// Default is <c>true</c>.
-    /// </summary>
-    public bool UseAutoSave { get; set; }
-
-    /// <summary>
-    /// Interval (in operations) between automatic saves when <see cref="UseAutoSave"/> is enabled.
-    /// Default value is 0.
-    /// </summary>
-    public int AutoSaveInterval
-    {
-        get => _AutoSaveInterval;
-        set
-        {
-            if (value < 0) throw new ArgumentException("Interval cannot be negative.");
-            _AutoSaveInterval = value;
-        }
-    }
-    private int _AutoSaveInterval;
-    private int SaveIterationCounter = 0;
-
-    /// <summary>
-    /// Determines whether backup files (.backup) are created during save operations.
-    /// Default value is <c>true</c>.
-    /// </summary>
-    public bool UseAutoBackup { get; set; }
-
-    /// <summary>
-    /// Determines whether missing keys are automatically added to the file with a default value when requested via <see cref="GetValue{T}"/>. 
-	/// Default is <c>true</c>.
-    /// </summary>
-    public bool UseAutoAdd { get; set; }
-
-    /// <summary>
-    /// Determines whether a checksum is calculated and verified during file load and save operations to ensure data integrity.
-    /// When enabled, the configuration file includes a checksum that detects corruption or tampering.
-    /// Default value is <c>true</c>.
-    /// </summary>
-    public bool UseChecksum
-    {
-        get => HumanMode ? false : _UseChecksum;
-        set => _UseChecksum = value;
-    }
-    private bool _UseChecksum;
-
-    /// <summary>
-    /// Determines whether the configuration is automatically saved when the instance is disposed.
-    /// Default value is <c>true</c>.
-    /// </summary>
-    public bool SaveOnDispose { get; set; }
-
-    /// <summary>
-    /// Determines whether empty strings or null values are permitted for configuration keys.
-    /// Default value is <c>true</c>.
-    /// </summary>
-    public bool AllowEmptyValues { get; set; }
-
-    /// <summary>Called before saving a file to disk</summary>
-    public event EventHandler Saved;
-
-    /// <summary>Called after successfully loading data from a file or reloading</summary>
-    public event EventHandler Loaded;
-
-    /// <summary>Called when the value of an existing key in a section changes</summary>
-    public event EventHandler<KeyEventArgs> KeyChanged;
-
-    /// <summary>Called when a key is renamed within a specific section.</summary>
-    public event EventHandler<KeyRenamedEventArgs> KeyRenamed;
-
-    /// <summary>Called when a new key is added to a section</summary>
-    public event EventHandler<KeyEventArgs> KeyAdded;
-
-    /// <summary>Called when a key is removed from a section</summary>
-    public event EventHandler<KeyRemovedEventArgs> KeyRemoved;
-
-    /// <summary>Called whenever a section changes (keys are changed/added/removed)</summary>
-    public event EventHandler<SectionEventArgs> SectionChanged;
-
-    /// <summary>Called when a section is renamed.</summary>
-    public event EventHandler<SectionRenamedEventArgs> SectionRenamed;
-
-    /// <summary>Called when a new section is added</summary>
-    public event EventHandler<SectionEventArgs> SectionAdded;
-
-    /// <summary>Called when a section is deleted</summary>
-    public event EventHandler<SectionEventArgs> SectionRemoved;
-
-    /// <summary>Called when the data is completely cleared</summary>
-    public event EventHandler DataCleared;
-
-    /// <summary>Called before automatic saving</summary>
-    public event EventHandler AutoSave;
-
-    /// <summary>Called when errors occur (parsing, saving, reading a file, etc.)</summary>
-    public event EventHandler<ProviderErrorEventArgs> Error
-    {
-        add => FileProvider.Error += value;
-        remove => FileProvider.Error -= value;
-    }
-
-    /// <summary>Called when the checksum does not match when loading a file</summary>
-    public event EventHandler<ChecksumMismatchEventArgs> ChecksumMismatch
-    {
-        add => FileProvider.ChecksumMismatch += value;
-        remove => FileProvider.ChecksumMismatch -= value;
-    }
-
-    /// <summary>Called after each search</summary>
-    public event EventHandler<SearchCompletedEventArgs> SearchCompleted;
-
-    private NeoIniReader(string path, EncryptionParameters encryptionParameters, bool autoEncryption, NeoIniReaderOptions options)
-    {
-        FilePath = path;
-        AutoEncryption = autoEncryption;
-        if (encryptionParameters.Key != null && encryptionParameters.Salt != null)
-            FileProvider = new(FilePath, encryptionParameters, autoEncryption);
-        else FileProvider = new(FilePath);
-        ApplyOptions(options);
-    }
-
-    /// <summary>
-    /// Creates a new <see cref="NeoIniReader"/> for the specified file path,
-    /// with optional configuration options.
-    /// </summary>
-    /// <param name="path">Path to the INI file.</param>
-    /// <param name="options">
-    /// Optional reader configuration; if <c>null</c>, <see cref="NeoIniReaderOptions.Default"/> is used.
-    /// </param>
-    public NeoIniReader(string path, NeoIniReaderOptions options = null) : this(path, new(null, null), false, options)
-    {
-        var neoIniData = FileProvider.GetData();
-        Data = neoIniData.Data;
-        Comments = neoIniData.Comments;
-    }
-
-    /// <summary>
-    /// Creates a new <see cref="NeoIniReader"/> for the specified file path,
-    /// with optional automatic encryption and configuration options.
-    /// </summary>
-    /// <param name="path">Path to the INI file.</param>
-    /// <param name="autoEncryption">
-    /// If <c>true</c>, the file is accessed through an encryption provider
-    /// using an automatically generated encryption key.
-    /// <para><b>Warning:</b> Enabling encryption ties the file to the specific machine/user 
-    /// environment. The file will be unreadable on other computers due to machine-specific key generation!</para>
-    /// </param>
-    /// <param name="options">
-    /// Optional reader configuration; if <c>null</c>, <see cref="NeoIniReaderOptions.Default"/> is used.
-    /// </param>
-    public NeoIniReader(string path, bool autoEncryption, NeoIniReaderOptions options = null) :
-        this(path, autoEncryption ?
-                NeoIniEncryptionProvider.GetEncryptionParameters(salt: NeoIniFileProvider.GetSalt(path)) :
-                new(null, null), autoEncryption, options)
-    {
-        var neoIniData = FileProvider.GetData();
-        Data = neoIniData.Data;
-        Comments = neoIniData.Comments;
-    }
-
-    /// <summary>Initializes a new instance of the <see cref="NeoIniReader"/> class with custom encryption</summary>
-    /// <param name="path">The absolute or relative path to the INI file.</param>
-    /// <param name="encryptionPassword">The password used to derive the encryption key.</param>
-    /// <param name="options">
-    /// Optional reader configuration; if <c>null</c>, <see cref="NeoIniReaderOptions.Default"/> is used.
-    /// </param>
-    public NeoIniReader(string path, string encryptionPassword, NeoIniReaderOptions options = null) :
-        this(path, NeoIniEncryptionProvider.GetEncryptionParameters(encryptionPassword, NeoIniFileProvider.GetSalt(path)), false, options)
-    {
-        CustomEncryptionPassword = true;
-        var neoIniData = FileProvider.GetData();
-        Data = neoIniData.Data;
-        Comments = neoIniData.Comments;
-    }
-
-    /// <summary>
-    /// Asynchronously creates a new <see cref="NeoIniReader"/> for the specified file path,
-    /// with optional configuration options.
-    /// </summary>
-    /// <param name="path">Path to the INI file.</param>
-    /// <param name="options">
-    /// Optional reader configuration; if <c>null</c>, <see cref="NeoIniReaderOptions.Default"/> is used.
-    /// </param>
-    /// <param name="cancellationToken">Token used to cancel the asynchronous initialization.</param>
-    /// <returns>
-    /// A task that represents the asynchronous creation operation,
-    /// containing the initialized <see cref="NeoIniReader"/>.
-    /// </returns>
-    public static async Task<NeoIniReader> CreateAsync(string path, NeoIniReaderOptions options = null,
-            CancellationToken cancellationToken = default)
-    {
-        NeoIniReader reader = new(path, new(null, null), false, options);
-        var neoIniData = await reader.FileProvider.GetDataAsync(ct: cancellationToken).ConfigureAwait(false);
-        reader.Data = neoIniData.Data;
-        reader.Comments = neoIniData.Comments;
-        return reader;
-    }
-
-    /// <summary>
-    /// Asynchronously creates a new <see cref="NeoIniReader"/> for the specified file path,
-    /// with optional automatic encryption and configuration options.
-    /// </summary>
-    /// <param name="path">Path to the INI file.</param>
-    /// <param name="autoEncryption">
-    /// If <c>true</c>, the file is accessed through an encryption provider
-    /// using an automatically generated encryption key.
-    /// <para><b>Warning:</b> Enabling encryption ties the file to the specific machine/user
-    /// environment. The file will be unreadable on other computers due to machine-specific key generation!</para>
-    /// </param>
-    /// <param name="options">
-    /// Optional reader configuration; if <c>null</c>, <see cref="NeoIniReaderOptions.Default"/> is used.
-    /// </param>
-    /// <param name="cancellationToken">Token used to cancel the asynchronous initialization.</param>
-    /// <returns>
-    /// A task that represents the asynchronous creation operation,
-    /// containing the initialized <see cref="NeoIniReader"/>.
-    /// </returns>
-    public static async Task<NeoIniReader> CreateAsync(string path, bool autoEncryption, NeoIniReaderOptions options = null,
-        CancellationToken cancellationToken = default)
-    {
-        NeoIniReader reader = new(path, autoEncryption ?
-                NeoIniEncryptionProvider.GetEncryptionParameters(salt: NeoIniFileProvider.GetSalt(path)) : new(null, null), autoEncryption, options);
-        var neoIniData = await reader.FileProvider.GetDataAsync(ct: cancellationToken).ConfigureAwait(false);
-        reader.Data = neoIniData.Data;
-        reader.Comments = neoIniData.Comments;
-        return reader;
-    }
-
-    /// <summary>
-    /// Asynchronously creates a new <see cref="NeoIniReader"/> for the specified file path
-    /// using a custom encryption password.
-    /// </summary>
-    /// <param name="path">The absolute or relative path to the INI file.</param>
-    /// <param name="encryptionPassword">The password used to derive the encryption key.</param>
-    /// <param name="options">
-    /// Optional reader configuration; if <c>null</c>, <see cref="NeoIniReaderOptions.Default"/> is used.
-    /// </param>
-    /// <param name="cancellationToken">Token used to cancel the asynchronous initialization.</param>
-    /// <returns>
-    /// A task that represents the asynchronous creation operation,
-    /// containing the initialized <see cref="NeoIniReader"/>.
-    /// </returns>
-    public static async Task<NeoIniReader> CreateAsync(string path, string encryptionPassword, NeoIniReaderOptions options = null,
-        CancellationToken cancellationToken = default)
-    {
-        NeoIniReader reader = new(path,
-                NeoIniEncryptionProvider.GetEncryptionParameters(encryptionPassword, NeoIniFileProvider.GetSalt(path)), false, options);
-        reader.CustomEncryptionPassword = true;
-        var neoIniData = await reader.FileProvider.GetDataAsync(ct: cancellationToken).ConfigureAwait(false);
-        reader.Data = neoIniData.Data;
-        reader.Comments = neoIniData.Comments;
-        return reader;
-    }
-
-    /// <summary>
-    /// Enables human mode, allowing the software user to manually edit the INI configuration.
-    /// </summary>
-    /// <remarks>
-    /// <para><b>Warning:</b> This is an <b>experimental</b> feature and its use is <b>not recommended for production environments</b>.</para>
-    /// <para>
-    /// Activating this mode automatically disables checksum validation (<c>UseChecksum = false</c>) 
-    /// to accommodate manual modifications to the file. This mode cannot be used concurrently with encryption.
-    /// </para>
-    /// </remarks>
-    /// <exception cref="InvalidOperationException">
-    /// Thrown when encryption is enabled on the associated <see cref="FileProvider"/>.
-    /// </exception>
-    public static NeoIniReader CreateHumanMode(string path, NeoIniReaderOptions options = null)
-    {
-        NeoIniReader reader = new(path, new(null, null), false, options);
-        reader.HumanMode = true;
-        var neoIniData = reader.FileProvider.GetData(true);
-        reader.Data = neoIniData.Data;
-        reader.Comments = neoIniData.Comments;
-        return reader;
-    }
-
-    /// <summary>
-    /// Asynchronously enables human mode, allowing the software user to manually edit the INI configuration.
-    /// </summary>
-    /// <param name="path">The file path to the INI configuration.</param>
-    /// <param name="options">Optional settings to configure the new <see cref="NeoIniReader"/>.</param>
-    /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
-    /// <returns>A task that represents the asynchronous operation. The task result contains the newly created <see cref="NeoIniReader"/>.</returns>
-    /// <remarks>
-    /// <para><b>Warning:</b> This is an <b>experimental</b> feature and its use is <b>not recommended for production environments</b>.</para>
-    /// <para>
-    /// Activating this mode automatically disables checksum validation (<c>UseChecksum = false</c>) 
-    /// to accommodate manual modifications to the file. This mode cannot be used concurrently with encryption.
-    /// </para>
-    /// </remarks>
-    /// <exception cref="InvalidOperationException">
-    /// Thrown when encryption is enabled on the associated <see cref="FileProvider"/>.
-    /// </exception>
-    public static async Task<NeoIniReader> CreateHumanModeAsync(string path, NeoIniReaderOptions options = null,
-        CancellationToken cancellationToken = default)
-    {
-        NeoIniReader reader = new(path, new(null, null), false, options);
-        reader.HumanMode = true;
-        var neoIniData = await reader.FileProvider.GetDataAsync(true, cancellationToken).ConfigureAwait(false);
-        reader.Data = neoIniData.Data;
-        reader.Comments = neoIniData.Comments;
-        return reader;
-    }
-
     /// <summary>Returns the INI data formatted as it would appear in the file</summary>
     /// <returns>
     /// A string containing the serialized INI content of this instance,
@@ -368,118 +43,6 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
     /// <summary>Asynchronously releases managed resources and saves changes to the file</summary>
     public async ValueTask DisposeAsync() { await DisposeAsync(true); GC.SuppressFinalize(this); }
 
-    private string ExtractContent()
-    {
-        Lock.EnterWriteLock();
-        try
-        {
-            string content = SaveOnDispose ? NeoIniParser.GetContent(Data, Comments, HumanMode) : null;
-            Data.Clear();
-            Comments.Clear();
-            return content;
-        }
-        finally { Lock.ExitWriteLock(); }
-    }
-
-    /// <summary>Releases managed resources and saves changes to the file</summary>
-    protected virtual void Dispose(bool disposing)
-    {
-        if (Interlocked.CompareExchange(ref DisposeState, 1, 0) != 0) return;
-        if (disposing)
-        {
-            StopHotReload();
-            if (ExtractContent() is string content)
-            {
-                FileProvider.SaveFile(content, UseChecksum, UseAutoBackup);
-                Saved?.Invoke(this, EventArgs.Empty);
-            }
-            DataCleared?.Invoke(this, EventArgs.Empty);
-            Lock.Dispose();
-        }
-        Disposed = true;
-    }
-
-    /// <summary>Asynchronously releases managed resources and saves changes to the file</summary>
-    protected virtual async Task DisposeAsync(bool disposing)
-    {
-        if (Interlocked.CompareExchange(ref DisposeState, 1, 0) != 0) return;
-        if (disposing)
-        {
-            StopHotReload();
-            if (ExtractContent() is string content)
-            {
-                await FileProvider.SaveFileAsync(content, UseChecksum, UseAutoBackup, CancellationToken.None).ConfigureAwait(false);
-                Saved?.Invoke(this, EventArgs.Empty);
-            }
-            DataCleared?.Invoke(this, EventArgs.Empty);
-            Lock.Dispose();
-        }
-        Disposed = true;
-    }
-
-    private void ApplyOptions(NeoIniReaderOptions options)
-    {
-        options ??= new();
-        UseAutoSave = options.UseAutoSave;
-        AutoSaveInterval = options.AutoSaveInterval;
-        UseAutoBackup = options.UseAutoBackup;
-        UseAutoAdd = options.UseAutoAdd;
-        UseChecksum = options.UseChecksum;
-        SaveOnDispose = options.SaveOnDispose;
-        AllowEmptyValues = options.AllowEmptyValues;
-    }
-
-    private void ThrowIfDisposed() { if (Disposed) throw new ObjectDisposedException(nameof(NeoIniReader)); }
-
-    private void ThrowIfEmpty(string value, bool useAEVRule = true) => ThrowIfEmpty(new[] { value }, useAEVRule);
-
-    private void ThrowIfEmpty(string[] values, bool useAEVRule = true)
-    {
-        if (useAEVRule && AllowEmptyValues) return;
-        foreach (var value in values)
-        {
-            if (string.IsNullOrEmpty(value))
-                throw new EmptyValueNotAllowedException(nameof(value));
-        }
-    }
-
-    private static void ThrowIfContainsUnsupportedChars(string value) => ThrowIfContainsUnsupportedChars(new[] { value });
-
-    private static void ThrowIfContainsUnsupportedChars(string[] values)
-    {
-        if (values is null) return;
-        ReadOnlySpan<char> invalid = ";\"=".AsSpan();
-        foreach (var value in values)
-        {
-            if (value is null) continue;
-            if (value.AsSpan().IndexOfAny(invalid) >= 0) throw new UnsupportedIniCharacterException();
-        }
-    }
-
-    private bool ShouldAutoSave()
-    {
-        if (!UseAutoSave) return false;
-        if (AutoSaveInterval == 0) return true;
-        return Interlocked.Increment(ref SaveIterationCounter) % AutoSaveInterval == 0;
-    }
-
-    private void DoAutoSave()
-    {
-        if (!ShouldAutoSave()) return;
-        AutoSave?.Invoke(this, EventArgs.Empty);
-        SaveFile();
-    }
-
-    private async Task DoAutoSaveAsync(CancellationToken ct)
-    {
-        ct.ThrowIfCancellationRequested();
-        if (!ShouldAutoSave()) return;
-        AutoSave?.Invoke(this, EventArgs.Empty);
-        await SaveFileAsync(ct).ConfigureAwait(false);
-    }
-
-    #region API
-
     /// <summary>Starts automatic hot reload monitoring for the underlying INI file.</summary>
     /// <param name="delayMs">The polling interval in milliseconds. Must be 1000 ms or greater.</param>
     /// <exception cref="ArgumentOutOfRangeException">Thrown if <paramref name="delayMs"/> is less than 1000.</exception>
@@ -496,7 +59,7 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
             PauseHotReload.Set();
         }
         finally { Lock.ExitWriteLock(); }
-        PrevHotReloadChecksum = FileProvider.GetFileChecksum();
+        PrevHotReloadChecksum = Provider.GetStateChecksum();
         _ = Task.Run(async () =>
         {
             try
@@ -504,7 +67,7 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
                 while (!HotReloadCts.IsCancellationRequested)
                 {
                     PauseHotReload.Wait(HotReloadCts.Token);
-                    var checksum = FileProvider.GetFileChecksum();
+                    var checksum = Provider.GetStateChecksum();
                     if (!PrevHotReloadChecksum.SequenceEqual(checksum))
                     {
                         await ReloadFromFileAsync(HotReloadCts.Token);
@@ -521,12 +84,7 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
     }
 
     /// <summary>Stops the hot reload monitoring if it is currently active.</summary>
-    public void StopHotReload()
-    {
-        ThrowIfDisposed();
-        if (Interlocked.CompareExchange(ref HotReloadState, 0, 1) != 1) return;
-        HotReloadCts.Cancel();
-    }
+    public void StopHotReload() { ThrowIfDisposed(); SafeStopHotReload(); }
 
     /// <summary>Saves the current data to an INI file with checksums and encryption applied, if enabled</summary>
     public void SaveFile()
@@ -545,13 +103,13 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
             content = NeoIniParser.GetContent(Data, Comments, HumanMode);
         }
         finally { Lock.ExitUpgradeableReadLock(); }
-        FileProvider.SaveFile(content, UseChecksum, UseAutoBackup);
+        Provider.Save(content, UseChecksum);
         if (HotReloadState == 1)
         {
             Lock.EnterWriteLock();
             try
             {
-                PrevHotReloadChecksum = FileProvider.GetFileChecksum();
+                PrevHotReloadChecksum = Provider.GetStateChecksum();
                 PauseHotReload.Set();
             }
             finally { Lock.ExitWriteLock(); }
@@ -578,13 +136,13 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
             content = NeoIniParser.GetContent(Data, Comments, HumanMode);
         }
         finally { Lock.ExitUpgradeableReadLock(); }
-        await FileProvider.SaveFileAsync(content, UseChecksum, UseAutoBackup, cancellationToken).ConfigureAwait(false);
+        await Provider.SaveAsync(content, UseChecksum, cancellationToken).ConfigureAwait(false);
         if (HotReloadState == 1)
         {
             Lock.EnterWriteLock();
             try
             {
-                PrevHotReloadChecksum = FileProvider.GetFileChecksum();
+                PrevHotReloadChecksum = Provider.GetStateChecksum();
                 PauseHotReload.Set();
             }
             finally { Lock.ExitWriteLock(); }
@@ -657,7 +215,8 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
     public void AddKey<T>(string section, string key, T value)
     {
         ThrowIfDisposed();
-        ThrowIfEmpty(new[] { section, key }, false);
+        ThrowIfEmpty(section, false);
+        ThrowIfEmpty(key, false);
         string valueString = NeoIniParser.ValueToString(value);
         ThrowIfEmpty(valueString);
         ThrowIfContainsUnsupportedChars(new[] { section, key, valueString });
@@ -677,7 +236,8 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
     public async Task AddKeyAsync<T>(string section, string key, T value, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
-        ThrowIfEmpty(new[] { section, key }, false);
+        ThrowIfEmpty(section, false);
+        ThrowIfEmpty(key, false);
         cancellationToken.ThrowIfCancellationRequested();
         string valueString = NeoIniParser.ValueToString(value);
         ThrowIfEmpty(valueString);
@@ -722,7 +282,7 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
             CancellationToken cancellationToken = default) where T : IComparable<T>
     {
         T clampedValue = NeoIniParser.Clamp(value, minValue, maxValue);
-        await AddKeyAsync(section, key, clampedValue);
+        await AddKeyAsync(section, key, clampedValue, cancellationToken);
     }
 
 
@@ -747,7 +307,7 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
                 value = default;
                 return false;
             }
-            value = NeoIniParser.TryParseValue(stringValue, default(T), FileProvider.RaiseError);
+            value = NeoIniParser.TryParseValue(stringValue, default(T), Provider.RaiseError);
             return true;
         }
         finally { Lock.ExitReadLock(); }
@@ -773,7 +333,8 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
             stringValue = NeoIniParser.GetStringRaw(Data, section, key);
             if (stringValue == null && UseAutoAdd)
             {
-                ThrowIfEmpty(new[] { section, key }, false);
+                ThrowIfEmpty(section, false);
+                ThrowIfEmpty(key, false);
                 Lock.EnterWriteLock();
                 try
                 {
@@ -793,7 +354,7 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
         finally { Lock.ExitUpgradeableReadLock(); }
         if (valueAdded) DoAutoSave();
         if (stringValue == null) return defaultValue;
-        return NeoIniParser.TryParseValue<T>(stringValue, defaultValue, FileProvider.RaiseError);
+        return NeoIniParser.TryParseValue<T>(stringValue, defaultValue, Provider.RaiseError);
     }
 
     /// <summary>
@@ -819,7 +380,8 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
             stringValue = NeoIniParser.GetStringRaw(Data, section, key);
             if (stringValue == null && UseAutoAdd)
             {
-                ThrowIfEmpty(new[] { section, key }, false);
+                ThrowIfEmpty(section, false);
+                ThrowIfEmpty(key, false);
                 Lock.EnterWriteLock();
                 try
                 {
@@ -840,7 +402,7 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
         finally { Lock.ExitUpgradeableReadLock(); }
         if (valueAdded) await DoAutoSaveAsync(cancellationToken).ConfigureAwait(false);
         if (stringValue == null) return defaultValue;
-        return NeoIniParser.TryParseValue<T>(stringValue, defaultValue, FileProvider.RaiseError);
+        return NeoIniParser.TryParseValue<T>(stringValue, defaultValue, Provider.RaiseError);
     }
 
     /// <summary>
@@ -898,7 +460,8 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
     public void SetValue<T>(string section, string key, T value)
     {
         ThrowIfDisposed();
-        ThrowIfEmpty(new[] { section, key }, false);
+        ThrowIfEmpty(section, false);
+        ThrowIfEmpty(key, false);
         bool keyExists = false;
         string valueString = NeoIniParser.ValueToString(value);
         ThrowIfEmpty(valueString);
@@ -920,7 +483,8 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
     public async Task SetValueAsync<T>(string section, string key, T value, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
-        ThrowIfEmpty(new[] { section, key }, false);
+        ThrowIfEmpty(section, false);
+        ThrowIfEmpty(key, false);
         cancellationToken.ThrowIfCancellationRequested();
         bool keyExists = false;
         string valueString = NeoIniParser.ValueToString(value);
@@ -967,7 +531,7 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
             CancellationToken cancellationToken = default) where T : IComparable<T>
     {
         T clampedValue = NeoIniParser.Clamp(value, minValue, maxValue);
-        await SetValueAsync(section, key, clampedValue);
+        await SetValueAsync(section, key, clampedValue, cancellationToken);
     }
 
     /// <summary>Removes a specific key from a section in the INI file</summary>
@@ -1116,7 +680,9 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
     public void RenameKey(string section, string oldKey, string newKey)
     {
         ThrowIfDisposed();
-        ThrowIfEmpty(new[] { section, oldKey, newKey }, false);
+        ThrowIfEmpty(section);
+        ThrowIfEmpty(oldKey);
+        ThrowIfEmpty(newKey);
         ThrowIfContainsUnsupportedChars(new[] { section, oldKey, newKey });
         Lock.EnterWriteLock();
         try { NeoIniReaderCore.RenameKey(Data, section, oldKey, newKey); }
@@ -1133,7 +699,9 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
     public async Task RenameKeyAsync(string section, string oldKey, string newKey, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
-        ThrowIfEmpty(new[] { section, oldKey, newKey }, false);
+        ThrowIfEmpty(section);
+        ThrowIfEmpty(oldKey);
+        ThrowIfEmpty(newKey);
         ThrowIfContainsUnsupportedChars(new[] { section, oldKey, newKey });
         cancellationToken.ThrowIfCancellationRequested();
         Lock.EnterWriteLock();
@@ -1153,7 +721,8 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
     public void RenameSection(string oldSection, string newSection)
     {
         ThrowIfDisposed();
-        ThrowIfEmpty(new[] { oldSection, newSection }, false);
+        ThrowIfEmpty(oldSection);
+        ThrowIfEmpty(newSection);
         ThrowIfContainsUnsupportedChars(new[] { oldSection, newSection });
         Lock.EnterWriteLock();
         try { NeoIniReaderCore.RenameSection(Data, oldSection, newSection); }
@@ -1169,7 +738,8 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
     public async Task RenameSectionAsync(string oldSection, string newSection, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
-        ThrowIfEmpty(new[] { oldSection, newSection }, false);
+        ThrowIfEmpty(oldSection);
+        ThrowIfEmpty(newSection);
         ThrowIfContainsUnsupportedChars(new[] { oldSection, newSection });
         cancellationToken.ThrowIfCancellationRequested();
         Lock.EnterWriteLock();
@@ -1204,7 +774,7 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
         Lock.EnterWriteLock();
         try
         {
-            var neoIniData = FileProvider.GetData(HumanMode);
+            var neoIniData = Provider.GetData(HumanMode);
             Data = neoIniData.Data;
             Comments = neoIniData.Comments;
         }
@@ -1221,7 +791,7 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
         Lock.EnterWriteLock();
         try
         {
-            var neoIniData = await FileProvider.GetDataAsync(HumanMode, cancellationToken).ConfigureAwait(false);
+            var neoIniData = await Provider.GetDataAsync(HumanMode, cancellationToken).ConfigureAwait(false);
             Data = neoIniData.Data;
             Comments = neoIniData.Comments;
         }
@@ -1233,7 +803,8 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
     public void DeleteFile()
     {
         ThrowIfDisposed();
-        FileProvider.DeleteFile();
+        if (Provider is NeoIniFileProvider fileProvider) fileProvider.DeleteFile();
+        else throw new UnsupportedProviderOperationException();
     }
 
     /// <summary>Deletes the INI file from disk and clears the internal data structure</summary>
@@ -1254,7 +825,8 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
     public void DeleteBackup()
     {
         ThrowIfDisposed();
-        FileProvider.DeleteBackup();
+        if (Provider is NeoIniFileProvider fileProvider) fileProvider.DeleteBackup();
+        else throw new UnsupportedProviderOperationException();
     }
 
     /// <summary>Clears the internal data structure</summary>
@@ -1280,10 +852,10 @@ public class NeoIniReader : IDisposable, IAsyncDisposable
     public string GetEncryptionPassword()
     {
         ThrowIfDisposed();
+        if (Provider is not NeoIniFileProvider)
+            throw new UnsupportedProviderOperationException("Retrieving the auto-generated encryption password is only supported when using the default file provider.");
         if (!AutoEncryption) return "AutoEncryption is disabled";
         if (CustomEncryptionPassword) return "CustomEncryptionPassword is used. For security reasons, the password is not saved.";
         return NeoIniEncryptionProvider.GetEncryptionPassword(NeoIniFileProvider.GetSalt(FilePath));
     }
-
-    #endregion
 }
