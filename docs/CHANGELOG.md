@@ -7,7 +7,7 @@
 
 #### List of changes
 
-- Fixed the display of escaping in the Search method.
+- Fixed the display of escaping in the `Search` method.
 - Eliminated unnecessary memory allocations.
 - Added optional support for quoted values via the `UseShielding` parameter (e.g., `key = "value ; not a comment"`).
 - Refactored code to remove duplication.
