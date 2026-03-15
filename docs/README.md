@@ -13,9 +13,7 @@
 
 # NeoIni
 
-NeoIni is a fully-featured C# library for working with INI files that provides secure, thread-safe read/write configuration with built-in integrity checking (checksum) and optional AES encryption.
-
-## Installation
+Secure, thread-safe INI configuration library for .NET with built-in integrity checking, AES-256 encryption, and a pluggable provider architecture.
 
 ```bash
 dotnet add package NeoIni
@@ -25,356 +23,165 @@ dotnet add package NeoIni
 - **Version:** `1.7.3` | **.NET 6+**
 - **Developer:** [Lonewolf239](https://github.com/Lonewolf239)
 
+---
+
 ## Features
 
-- **Typed Get**: read values as `bool`, `int`, `double`, `DateTime`, `enum`, `string` and others with automatic parsing and defaults.
-- **AutoAdd**: when reading via `GetValue<T>`, missing keys/sections can be automatically created with a default value.
-- **Thread-safe**: uses `ReaderWriterLockSlim` for safe access from multiple threads.
-- **AutoSave**: automatic saving after changes or at intervals (`UseAutoSave`, `AutoSaveInterval`).
-- **AutoBackup**: creates a `.backup` file when saving to protect against corruption.
-- **Checksum**: built-in SHA256 checksum validation to detect corruption/tampering.
-- **Optional AES-256 encryption**: transparent file-level encryption with IV and per-file salt; key is derived from user environment or a custom password.
-- **Full async API**: asynchronous versions for all major operations (`CreateAsync`, `GetValueAsync`, `SetValueAsync`, `SaveFileAsync`, `AddSectionAsync`, etc.).
-- **TryGet helpers**: `TryGetValue<T>` to read values **without** modifying the file or auto-creating keys.
-- **Convenient API**: for managing sections and keys (create, rename, search, clear, delete).
-- **Events**: hooks for saving, loading, key/section changes, autosave, errors, checksum mismatches, and search completion.
-- **Easy migration**: transfer encrypted configs between machines via `GetEncryptionPassword()` when using auto-encryption.
-- **Attribute‑based mapping (1.7+)**: annotate config POCO properties with NeoIniKeyAttribute and use source‑generated `NeoIniReader.Get<T>()` / `NeoIniReader.Set<T>()` to read/write whole configs in one call.
-- **Black‑box design**: single entrypoint NeoIniReader that owns and manages the INI file contents.
+| | Feature | Details |
+|---|---------|---------|
+| 🔒 | **AES-256 encryption** | Transparent file-level encryption (CBC, IV + per-file salt). Key derived from user environment or a custom password. |
+| 🛡️ | **SHA-256 checksum** | Integrity validation on every load/save. On mismatch — `ChecksumMismatch` event + automatic `.backup` fallback. |
+| 🔐 | **Thread-safe** | `ReaderWriterLockSlim` protects all read/write operations under concurrent access. |
+| 📦 | **Typed Get/Set** | Read and write `bool`, `int`, `double`, `DateTime`, `enum`, `string` and more with automatic parsing and defaults. |
+| ⚡ | **AutoSave & AutoBackup** | Automatic saving after N operations. Atomic writes via `.tmp` + `.backup` fallback on errors. |
+| 🔄 | **Hot-reload** | File watcher with polling and checksum comparison — live config updates without restart. |
+| 🧩 | **Pluggable providers** | `INeoIniProvider` interface — store configs in a database, remote service, memory, or any custom backend. |
+| 🗺️ | **Object mapping** | Source-generated `Get<T>()` / `Set<T>()` for POCO classes via `NeoIniKeyAttribute`. |
+| ✏️ | **Human-editable mode** | Preserve comments and formatting for hand-edited INI files (no checksum, no encryption). |
+| 📡 | **Full async API** | Async versions for all major operations — `CreateAsync`, `GetValueAsync`, `SaveFileAsync`, etc. |
+| 🔍 | **Search & TryGet** | Case-insensitive search across keys/values. `TryGetValue<T>` reads without modifying the file. |
+| 📢 | **Rich event system** | 14 events: save, load, key/section CRUD, autosave, checksum mismatch, errors, search completion. |
+| 🔑 | **Easy migration** | Transfer encrypted configs between machines via `GetEncryptionPassword()`. |
+| 📦 | **Black-box design** | Single entrypoint — `NeoIniReader` owns and manages everything behind a clean public API. |
 
-## Security Features
-
-- **Checksum (SHA256)**: when saving, a 32-byte checksum computed via SHA256 is appended to file contents; when reading it is verified, and if mismatched, you can handle the `ChecksumMismatch` event or fall back to `.backup`.
-- **AES-256**: when encryption is enabled, data is encrypted with AES in CBC mode using a 16-byte IV and a 32-byte key derived from a password (environment-based or custom) and a random 16-byte salt stored in the file.
-- **Environment-based key**: in auto-encryption mode, the key is deterministically derived from `Environment.UserName`, `Environment.MachineName`, and `Environment.UserDomainName` plus a per-file salt, making the file unreadable on another host without a special password.
-- **Backup fallback**: on read errors, checksum mismatch, or decryption errors, the library can automatically attempt to read the `.backup` file first.
-- **Thread-safe access**: all read/write operations are wrapped in `ReaderWriterLockSlim`, preventing races under high load.
+---
 
 ## Quick Start
 
-### Creating a NeoIniReader Instance
-
-#### Synchronous
+### Creating an instance
 
 ```csharp
 using NeoIni;
 
-// No encryption
+// Plain
 NeoIniReader reader = new("config.ini");
 
-// Auto-encryption by environment (machine-bound)
-NeoIniReader encryptedReader = new("config.ini", autoEncryption: true);
+// Auto-encryption (machine-bound)
+NeoIniReader encrypted = new("config.ini", autoEncryption: true);
 
-// Encryption with custom password (portable between machines)
-NeoIniReader customEncrypted = new("config.ini", "MySecretPas123");
+// Custom password (portable between machines)
+NeoIniReader portable = new("config.ini", "MySecretPass123");
+
+// Async
+NeoIniReader reader = await NeoIniReader.CreateAsync("config.ini", cancellationToken: ct);
 ```
 
-#### Asynchronous
+### Reading & writing values
 
 ```csharp
-using NeoIni;
-using var cts = new CancellationTokenSource();
+// Write
+reader.SetValue("Database", "Host", "localhost");
+reader.SetValue("Database", "Port", 5432);
 
-NeoIniReader reader = await NeoIniReader.CreateAsync("config.ini", cancellationToken: cts.Token);
-NeoIniReader encryptedReader = await NeoIniReader.CreateAsync("config.ini", autoEncryption: true, cancellationToken: cts.Token);
-NeoIniReader customEncrypted = await NeoIniReader.CreateAsync("config.ini", "MySecretPas123", cancellationToken: cts.Token);
-```
+// Read with typed defaults
+string host = reader.GetValue("Database", "Host", "127.0.0.1");
+int    port = reader.GetValue("Database", "Port", 3306);
 
-- When `autoEncryption = true`, the key is generated automatically and bound to the user/machine environment.
-- When an `encryptionPassword` is provided, the key is derived from that password and a per-file salt, which is useful for transferring configs between machines.
-
-### Reading Values
-
-```csharp
-string text = reader.GetValue("Section1", "Key1", "default");
-int number = reader.GetValue("Section1", "Number", 0);
-bool flag = reader.GetValue("Section1", "Enabled", false);
-double value = reader.GetValue("Section1", "Value", 0.0);
-DateTime when = reader.GetValue("Log", "LastRun", DateTime.Now);
-```
-
-Async:
-
-```csharp
-string text = await reader.GetValueAsync("Section1", "Key1", "default", cancellationToken);
-int number = await reader.GetValueAsync("Section1", "Number", 0);
-bool flag = await reader.GetValueAsync("Section1", "Enabled", false, cancellationToken);
-double value = await reader.GetValueAsync("Section1", "Value", 0.0);
-DateTime when = await reader.GetValueAsync("Log", "LastRun", DateTime.Now, cancellationToken);
-```
-
-- If a section/key is missing, `defaultValue` is returned; with `UseAutoAdd` enabled, the key may be automatically created in the file with that default.
-- Reading `enum` and `DateTime` is supported via `Enum.TryParse`, `DateTime.TryParse`, and `Convert.ChangeType` (invariant culture).
-
-### TryGet (without AutoAdd or file modification)
-
-If you want pure read without auto-creation of keys and without touching the file, use `TryGetValue`:
-
-```csharp
+// Read without side effects (no AutoAdd, no file modification)
 int level = reader.TryGetValue("Game", "Level", 1);
 ```
 
-- These methods **never** write to the file and do not depend on `UseAutoAdd`: if the section or key does not exist, they simply return `defaultValue`.
-
-### Writing Values
-
 ```csharp
-reader.SetValue("Section1", "Key1", "Value1");
-reader.SetValue("Section1", "Number", 42);
-reader.SetValue("Section1", "Enabled", true);
-reader.SetValue("Section1", "LastUpdate", DateTime.Now);
+// Async
+await reader.SetValueAsync("Database", "Host", "localhost");
+string host = await reader.GetValueAsync("Database", "Host", "127.0.0.1", ct);
 ```
 
-Async:
+- Missing sections/keys return `defaultValue`; with `UseAutoAdd` enabled the key is created automatically.
+- Supports `enum`, `DateTime`, and any `IConvertible` type via invariant-culture parsing.
+
+### Section & key management
 
 ```csharp
-await reader.SetValueAsync("Section1", "Key1", "Value1");
-await reader.SetValueAsync("Section1", "Number", 42, cancellationToken);
-```
+reader.AddSection("Cache");
+reader.RemoveKey("Cache", "OldKey");
+reader.RenameSection("Cache", "AppCache");
 
-- If a section/key doesn't exist, it will be created; changes trigger `KeyAdded` / `KeyChanged` and may trigger autosave.
-
-### Example
-
-```csharp
-using NeoIni;
-
-using NeoIniReader reader = new("config.ini");
-
-// Initialize database settings
-reader.SetValue("Database", "Host", "localhost");
-reader.SetValue("Database", "Port", 5432);
-reader.SetValue("Settings", "AutoSave", true);
-
-// Read
-string host = reader.GetValue<string>("Database", "Host", "127.0.0.1");
-int port = reader.GetValue<int>("Database", "Port", 3306);
-
-Console.WriteLine($"DB: {host}:{port}");
-```
-
-- On first run the file is created; on subsequent runs, values are read and reused/updated.
-
-### Section/Key Management
-
-```csharp
-// Checks
-bool sectionExists = reader.SectionExists("Section1");
-bool keyExists = reader.KeyExists("Section1", "Key1");
-
-// Create/delete
-reader.AddSection("NewSection");
-reader.RemoveKey("Section1", "Key1");
-reader.RemoveSection("Section1");
-
-// Get lists
 string[] sections = reader.GetAllSections();
-string[] keys = reader.GetAllKeys("NewSection");
-
-// Clear
-reader.ClearSection("NewSection");
-```
-
-Async counterparts:
-
-```csharp
-await reader.AddSectionAsync("NewSection");
-await reader.RemoveKeyAsync("Section1", "Key1");
-await reader.RemoveSectionAsync("Section1", cancellationToken);
-await reader.ClearSectionAsync("NewSection", cancellationToken);
-```
-
-- Section/key management methods are available in both sync and async variants where it makes sense.
-
-### File Operations
-
-```csharp
-// Explicit save
-reader.SaveFile();
-await reader.SaveFileAsync();
-
-// Reload data from disk
-reader.ReloadFromFile();
-
-// Delete file
-reader.DeleteFile();          // file only
-reader.DeleteFileWithData();  // file + clear Data
-```
-
-- When saving, an intermediate `.tmp` file is used, and if `UseAutoBackup` is enabled, a `.backup` is created and used as a fallback on read errors.
-
-### Options
-
-```csharp
-reader.UseAutoSave = true;        // enable autosave
-reader.AutoSaveInterval = 3;      // save every 3 write operations (if AutoSave is true)
-
-reader.UseAutoBackup = true;      // enable .backup
-reader.UseAutoAdd = true;         // auto-create keys on GetValue
-reader.UseChecksum = true;        // enable checksum
-reader.SaveOnDispose = true;      // save when Dispose() is called
-reader.AllowEmptyValues = true;   // allow empty values
-```
-
-You can also use presets via `NeoIniReaderOptions` when constructing the reader (e.g. `Default`, `Safe`, `Performance`, `ReadOnly`, `BufferedAutoSave(interval)`).
-
-### Events (Callbacks)
-
-```csharp
-reader.Saved += (_, _) => Console.WriteLine("Saved");
-reader.Loaded += (_, _) => Console.WriteLine("Loaded");
-
-reader.KeyChanged += (_, e) =>
-    Console.WriteLine($"[{e.Section}] {e.Key} changed to {e.Value}");
-
-reader.KeyAdded += (_, e) =>
-    Console.WriteLine($"[{e.Section}] {e.Key} added: {e.Value}");
-
-reader.KeyRemoved += (_, e) =>
-    Console.WriteLine($"[{section}] {key} removed");
-
-reader.SectionAdded += (_, e) =>
-    Console.WriteLine($"Section added: {e.Section}");
-
-reader.SectionRemoved += (_, e) =>
-    Console.WriteLine($"Section removed: {e.Section}");
-
-reader.SectionChanged += (_, e) =>
-    Console.WriteLine($"Section changed: {e.Section}");
-
-reader.ChecksumMismatch += (_, _) =>
-    Console.WriteLine("Checksum mismatch detected!");
-
-reader.AutoSave += (_, _) =>
-    Console.WriteLine("AutoSave triggered");
-
-reader.Error += (_, e) =>
-    Console.WriteLine($"Error: {e.Exception.Message}");
+string[] keys     = reader.GetAllKeys("AppCache");
+bool exists       = reader.SectionExists("AppCache");
 ```
 
 ### Search
 
 ```csharp
 var results = reader.Search("token");
-foreach (var item in results)
-    Console.WriteLine($"[{item.Section}] {item.Key} = {item.Value}");
+foreach (var r in results)
+    Console.WriteLine($"[{r.Section}] {r.Key} = {r.Value}");
 ```
 
-- Search is performed on keys and values (case-insensitive); result is a list of `SearchResult`. After search, `SearchCompleted` is called with the pattern and match count.
-
-### Encryption & Migration
-
-#### Auto-encryption (machine-bound)
+### File operations
 
 ```csharp
-NeoIniReader reader = new("secure.ini", autoEncryption: true);
+reader.SaveFile();
+reader.ReloadFromFile();
+reader.DeleteFile();
+reader.DeleteFileWithData();
 ```
 
-- The key is deterministically generated from the current user/machine/domain plus a random per-file salt. The file cannot be read on another machine without using the generated password.
-
-To migrate to another machine, you can retrieve the password:
+### Options & presets
 
 ```csharp
-string password = reader.GetEncryptionPassword();
-// Save securely somewhere and use on the new machine
+reader.UseAutoSave = true;
+reader.AutoSaveInterval = 3;    // save every 3 writes
+reader.UseAutoBackup = true;
+reader.UseAutoAdd = true;
+reader.UseChecksum = true;
+reader.SaveOnDispose = true;
+reader.AllowEmptyValues = true;
 ```
 
-On the new machine:
-
-```csharp
-NeoIniReader migrated = new("secure.ini", password);
-```
-
-- If a custom password was used (`new NeoIniReader(path, "secret")`), `GetEncryptionPassword()` returns an informational status string and does **not** reveal the password itself.
-
-### Disposal & Lifetime
-
-```csharp
-using NeoIniReader reader = new("config.ini");
-// work with reader
-// on leaving the using block:
-//  - SaveFile() is called if SaveOnDispose is true
-//  - Data is cleared and internal resources are freed
-```
-
-- After disposal any attempt to use the instance will throw `ObjectDisposedException`.
-
-## Advanced features
-
-- Attribute‑based mapping & source generator (1.7+) — [detailed guide](./ATTRIBUTE-MAPPING.md)
-- Hot Reload (1.7.1+) — [usage & caveats](./HOT-RELOAD.md)
-- Human‑editable INI mode (1.7.2+) — [experimental mode](./HUMAN-MODE.md)
-- Pluggable provider abstraction (1.7.3+) — [custom providers](./PROVIDERS.md)
-
-## API Reference
-
-### Core methods
-
-| Method | Description | Async Version |
-|--------|-------------|---------------|
-| `GetValue<T>` | Read typed value with default fallback (optionally auto-adding) | `GetValueAsync<T>` |
-| `GetValueClamped<T>` | Read typed value and clamp it between min/max | `GetValueClampedAsync<T>` |
-| `TryGetValue<T>` | Read typed value without modifying the file and without AutoAdd | - |
-| `SetValue<T>` | Set/create key-value | `SetValueAsync<T>` |
-| `SetValueClamped<T>` | Set/create key-value and clamp it within range | `SetValueClampedAsync<T>` |
-| `AddSection` | Create section if missing | `AddSectionAsync` |
-| `AddKey<T>` | Add unique key-value | `AddKeyAsync<T>` |
-| `AddKeyClamped<T>` | Add unique key-value and clamp it within range | `AddKeyClampedAsync<T>` |
-| `RemoveKey` | Delete specific key | `RemoveKeyAsync` |
-| `RemoveSection` | Delete entire section | `RemoveSectionAsync` |
-| `ClearSection` | Remove all keys from section | `ClearSectionAsync` |
-| `RenameKey` | Rename key in section | `RenameKeyAsync ` |
-| `RenameSection` | Rename entire section | `RenameSectionAsync ` |
-| `Search` | Search keys/values by pattern | – |
-| `FindKey` | Search a key across all sections | – |
-| `GetAllSections` | List all sections | – |
-| `GetAllKeys` | List keys in section | – |
-| `GetSection` | Get all key-value pairs in section | – |
-| `SectionExists` | Check if section exists | – |
-| `KeyExists` | Check if key exists in section | – |
-| `SaveFile` | Save data to a file | `SaveFileAsync` |
-| `ToString` | Serialize INI data to formatted string (as in file) | – |
-| `ReloadFromFile` | Reload data from file | `ReloadFromFileAsync` |
-| `DeleteFile` | Delete file from disk | – |
-| `DeleteFileWithData` | Delete file and clear data | – |
-| `DeleteBackup` | Delete the backup file from disk | – |
-| `Clear` | Clear internal data structure completely | – |
-| `GetEncryptionPassword` | Get the encryption password (or status) | – |
-| `CreateAsync` | Asynchronously create and initialize reader (static factory) | `CreateAsync (only async)` |
-
-### Options (NeoIniReaderOptions)
-
-| Option | Description | Default |
-|--------|-------------|---------|
-| `UseAutoSave` | Automatically saves changes to disk after modifications | `true` |
-| `AutoSaveInterval` | Number of operations between automatic saves when AutoSave is enabled | `0` (every change) |
-| `UseAutoBackup` | Creates `.backup` files during save operations for safety | `true` |
-| `UseAutoAdd` | Automatically creates missing sections/keys with default values when reading via `GetValue<T>` | `true` |
-| `UseChecksum` | Calculates and verifies checksums during load/save operations | `true` |
-| `SaveOnDispose` | Automatically saves the configuration when the instance is disposed | `true` |
-| `AllowEmptyValues` | Permits configuration keys to be saved with empty or null values | `true` |
+Or use built-in presets: `NeoIniReaderOptions.Default`, `Safe`, `Performance`, `ReadOnly`, `BufferedAutoSave(n)`.
 
 ### Events
 
-| Event | Description |
-|--------|-------------|
-| `Saved` | Called after saving a file to disk |
-| `Loaded` | Called after successfully loading data from a file or reloading |
-| `KeyChanged` | Called when the value of an existing key in a section changes |
-| `KeyRenamed` | Called when a key is renamed within a section |
-| `KeyAdded` | Called when a new key is added to a section |
-| `KeyRemoved` | Called when a key is removed from a section |
-| `SectionChanged` | Called whenever a section changes (keys are changed/added/removed) |
-| `SectionRenamed` | Called when a section is renamed |
-| `SectionAdded` | Called when a new section is added |
-| `SectionRemoved` | Called when a section is deleted |
-| `DataCleared` | Called when the data is completely cleared |
-| `AutoSave` | Called before automatic saving |
-| `ChecksumMismatch` | Called when the checksum does not match while loading a file |
-| `SearchCompleted` | Called after each search with the pattern and match count |
-| `Error` | Called when errors occur (parsing, saving, reading a file, etc.) |
+```csharp
+reader.Saved            += (_, _) => Console.WriteLine("Saved");
+reader.Loaded           += (_, _) => Console.WriteLine("Loaded");
+reader.KeyChanged       += (_, e) => Console.WriteLine($"[{e.Section}] {e.Key} → {e.Value}");
+reader.KeyAdded         += (_, e) => Console.WriteLine($"[{e.Section}] +{e.Key}");
+reader.ChecksumMismatch += (_, _) => Console.WriteLine("Checksum mismatch!");
+reader.Error            += (_, e) => Console.WriteLine($"Error: {e.Exception.Message}");
+```
+
+### Encryption & migration
+
+```csharp
+// Auto-encryption — key is derived from user/machine/domain + per-file salt
+NeoIniReader reader = new("secure.ini", autoEncryption: true);
+
+// Retrieve password to migrate to another machine
+string password = reader.GetEncryptionPassword();
+
+// On the new machine
+NeoIniReader migrated = new("secure.ini", password);
+```
+
+### Disposal
+
+```csharp
+using NeoIniReader reader = new("config.ini");
+// SaveFile() is called automatically if SaveOnDispose is true
+// After disposal — ObjectDisposedException on any access
+```
+
+---
+
+## Advanced Features
+
+- Attribute-based mapping & source generator (1.7+) — [detailed guide](./ATTRIBUTE-MAPPING.md)
+- Hot-reload (1.7.1+) — [usage & caveats](./HOT-RELOAD.md)
+- Human-editable INI mode (1.7.2+) — [experimental mode](./HUMAN-MODE.md)
+- Pluggable provider abstraction (1.7.3+) — [custom providers](./PROVIDERS.md)
+
+---
+
+## API Reference
+
+Full method, options, and event reference — [API.md](./API.md)
+
+---
 
 ## Philosophy
 
-**Black Box Design**: all internal logic is hidden behind the simple public API of the `NeoIniReader` class. You work only with methods and events, without thinking about implementation details.
-NeoIni config files are meant to be owned and managed by the library, not by humans editing them in Notepad — human comments are intentionally not preserved, and the warning header clearly signals this.
+**Black Box Design** — all internal logic is hidden behind the simple public API of `NeoIniReader`. You work only with methods and events, without thinking about implementation details. NeoIni config files are owned and managed by the library; human comments are intentionally not preserved in standard mode (the in-file warning header signals this). For hand-edited configs, use [Human-editable mode](./HUMAN-MODE.md).
