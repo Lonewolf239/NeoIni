@@ -1,7 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using NeoIni.Internal;
+using NeoIni.Models;
 using NeoIni.Providers;
 
 namespace NeoIni;

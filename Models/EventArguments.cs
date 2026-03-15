@@ -1,6 +1,6 @@
 using System;
 
-namespace NeoIni.Internal;
+namespace NeoIni.Models;
 
 /// <summary>Provides data for the event that is raised when a file checksum mismatch occurs.</summary>
 public sealed class ChecksumMismatchEventArgs : EventArgs

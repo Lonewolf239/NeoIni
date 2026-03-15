@@ -1,6 +1,6 @@
 using System;
 
-namespace NeoIni.Internal;
+namespace NeoIni.Models;
 
 /// <summary>
 /// Represents the error that occurs when an encrypted configuration file is accessed without providing the required password.

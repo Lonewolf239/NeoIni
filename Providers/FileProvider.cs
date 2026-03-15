@@ -6,8 +6,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using NeoIni.Core;
-using NeoIni.Internal;
-using Comments = System.Collections.Generic.List<NeoIni.Internal.Comment>;
+using NeoIni.Models;
+using Comments = System.Collections.Generic.List<NeoIni.Models.Comment>;
 using Data = System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<string, string>>;
 
 namespace NeoIni.Providers;

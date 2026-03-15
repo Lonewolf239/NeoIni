@@ -1,5 +1,5 @@
 using System;
-using NeoIni.Internal;
+using NeoIni.Models;
 
 namespace NeoIni;
 

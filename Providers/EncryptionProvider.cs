@@ -1,6 +1,6 @@
 using System;
 using System.Security.Cryptography;
-using NeoIni.Internal;
+using NeoIni.Models;
 
 namespace NeoIni.Providers;
 

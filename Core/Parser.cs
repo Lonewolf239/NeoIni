@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
-using NeoIni.Internal;
-using Comments = System.Collections.Generic.List<NeoIni.Internal.Comment>;
+using NeoIni.Models;
+using Comments = System.Collections.Generic.List<NeoIni.Models.Comment>;
 using Data = System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<string, string>>;
 
 namespace NeoIni.Core;

@@ -1,6 +1,6 @@
 using System;
 
-namespace NeoIni;
+namespace NeoIni.Models;
 
 /// <summary>
 /// Represents configuration options that are applied when constructing a <see cref="NeoIniReader"/> instance.

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using NeoIni.Core;
-using NeoIni.Internal;
+using NeoIni.Models;
 using NeoIni.Providers;
 
 namespace NeoIni;
