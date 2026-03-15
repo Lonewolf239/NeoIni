@@ -177,4 +177,4 @@ Full method, options, and event reference — [API.md](https://github.com/Lonewo
 
 ## Changelog
 
-Full version history and release notes — (CHANGELOG.md)[https://github.com/Lonewolf239/NeoIni/blob/main/docs/CHANGELOG.md]
+Full version history and release notes — [CHANGELOG.md](https://github.com/Lonewolf239/NeoIni/blob/main/docs/CHANGELOG.md)
