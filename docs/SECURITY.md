@@ -13,7 +13,7 @@ Please note that **all previous versions** (`< 1.6.1`) are deprecated. They are 
 | Version | Supported | State | Notes |
 |---------|-----------|-------|-------|
 | 1.7.3 | :white_check_mark: | *CSR* | Current Stable Release |
-| 1.7.2 | :white_check_mark: | *LSR* | Legacy Stable Release |
+| 1.7.2 | :package: | *LSR* | Legacy Stable Release |
 | 1.7.1 | :package: | **LSR** | Using the weaker Set methods is not recommended if you accept untrusted input. |
 | 1.7 | :package: | **LSR** | Using the weaker Set methods is not recommended if you accept untrusted input. |
 | 1.6.1 | :package: | **LSR** | Using the weaker Set methods is not recommended if you accept untrusted input. |
