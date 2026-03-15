@@ -3,6 +3,15 @@
 
 ## Changelog · NeoIni
 
+### 1.8-pre1 — March 15, 2026
+
+#### List of changes
+
+- Fixed the display of escaping in the Search method.
+- Eliminated unnecessary memory allocations.
+- Added optional support for quoted values via the `UseShielding` parameter (e.g., `key = "value ; not a comment"`).
+- Refactored code to remove duplication.
+
 ### 1.7.3 — March 15, 2026
 
 #### List of changes
