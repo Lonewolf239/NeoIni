@@ -30,7 +30,7 @@
 
 | Version | Status | Description |
 |--------|--------|----------|
-| 1.9 | 🕓 Planned | Async-safe конкурентность: замена `ReaderWriterLockSlim` на async-совместимый примитив. Устранение дублирования sync/async кода через единое асинхронное ядро. |
+| 1.9 | 🕓 Planned | Async-safe конкурентность: замена `ReaderWriterLockSlim` на async-совместимый примитив. |
 
 ---
 
