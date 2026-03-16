@@ -23,10 +23,11 @@ public partial class NeoIniReader
         finally { Lock.ExitUpgradeableReadLock(); }
     }
 
-    internal void FinalizeSave()
+    internal void FinalizeSave(CancellationToken cancellationToken = default)
     {
         if (HotReloadState == 1)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             Lock.EnterWriteLock();
             try
             {
@@ -59,11 +60,11 @@ public partial class NeoIniReader
         ThrowIfDisposed();
         ThrowIfEmpty(section, false);
         ThrowIfEmpty(key, false);
+        ThrowIfContainsUnsupportedChars(section);
+        ThrowIfContainsUnsupportedChars(key);
         cancellationToken.ThrowIfCancellationRequested();
         string valueString = NeoIniParser.ValueToString(value);
         ThrowIfEmpty(valueString);
-        ThrowIfContainsUnsupportedChars(section);
-        ThrowIfContainsUnsupportedChars(key);
         ThrowIfContainsUnsupportedChars(valueString);
         Lock.EnterWriteLock();
         try
@@ -78,6 +79,10 @@ public partial class NeoIniReader
     internal (bool, string) GetValueHelper<T>(string section, string key, T defaultValue, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
+        ThrowIfEmpty(section, false);
+        ThrowIfEmpty(key, false);
+        ThrowIfContainsUnsupportedChars(section);
+        ThrowIfContainsUnsupportedChars(key);
         cancellationToken.ThrowIfCancellationRequested();
         string stringValue;
         bool valueAdded = false;
@@ -88,8 +93,6 @@ public partial class NeoIniReader
             stringValue = NeoIniParser.GetStringRaw(Data, section, key);
             if (stringValue == null && UseAutoAdd)
             {
-                ThrowIfEmpty(section, false);
-                ThrowIfEmpty(key, false);
                 Lock.EnterWriteLock();
                 try
                 {
@@ -99,8 +102,6 @@ public partial class NeoIniReader
                     {
                         string defaultValueString = NeoIniParser.ValueToString(defaultValue);
                         ThrowIfEmpty(defaultValueString);
-                        ThrowIfContainsUnsupportedChars(section);
-                        ThrowIfContainsUnsupportedChars(key);
                         ThrowIfContainsUnsupportedChars(defaultValueString);
                         NeoIniReaderCore.AddKey(Data, section, key, defaultValueString);
                         valueAdded = true;
@@ -118,12 +119,12 @@ public partial class NeoIniReader
         ThrowIfDisposed();
         ThrowIfEmpty(section, false);
         ThrowIfEmpty(key, false);
+        ThrowIfContainsUnsupportedChars(section);
+        ThrowIfContainsUnsupportedChars(key);
         cancellationToken.ThrowIfCancellationRequested();
         bool keyExists = false;
         string valueString = NeoIniParser.ValueToString(value);
         ThrowIfEmpty(valueString);
-        ThrowIfContainsUnsupportedChars(section);
-        ThrowIfContainsUnsupportedChars(key);
         ThrowIfContainsUnsupportedChars(valueString);
         Lock.EnterWriteLock();
         try

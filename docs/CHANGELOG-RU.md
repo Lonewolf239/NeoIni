@@ -3,6 +3,14 @@
 
 ## Changelog · NeoIni
 
+### 1.8 — 16 марта 2026
+
+#### List of changes
+
+- Добавлены недостающие вызовы `ConfigureAwait(false)`.
+- В метод `FinalizeSave` добавлен параметр `CancellationToken`.
+- Улучшена обработка некорректного ввода в методах `Set`.
+
 ### 1.8-pre1 — 15 марта 2026
 
 #### List of changes

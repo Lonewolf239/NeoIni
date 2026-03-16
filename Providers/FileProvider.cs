@@ -266,7 +266,7 @@ internal sealed class NeoIniFileProvider : INeoIniProvider
     private async Task<string[]> CheckBackupAsync(CancellationToken ct)
     {
         if (!File.Exists(BackupFilePath)) return null;
-        return await ReadFileAsync(BackupFilePath, true, ct);
+        return await ReadFileAsync(BackupFilePath, true, ct).ConfigureAwait(false);
     }
 
     private EncryptionParameters GetEncryptionParameters(string path, bool autoModeEncryption)
@@ -369,7 +369,7 @@ internal sealed class NeoIniFileProvider : INeoIniProvider
         }
     }
 
-    private async Task<string[]> ReadFileAsync(CancellationToken ct) => await ReadFileAsync(FilePath, false, ct);
+    private async Task<string[]> ReadFileAsync(CancellationToken ct) => await ReadFileAsync(FilePath, false, ct).ConfigureAwait(false);
 
     private async Task<string[]> ReadFileAsync(string path, bool isBackup, CancellationToken ct)
     {

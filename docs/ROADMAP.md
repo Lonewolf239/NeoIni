@@ -22,7 +22,7 @@ Long-term development plan for NeoIni. The library evolves from a single-file IN
 
 | Version | Status | Description |
 |---------|--------|-------------|
-| 1.8 | 🧪 Pre‑release | Quoted value support: `key = "value ; not a comment"`. Broadens compatibility with real-world INI files (MySQL, PHP, Git config). |
+| 1.8 | ✅ Released | Quoted value support: `key = "value ; not a comment"`. Broadens compatibility with real-world INI files (MySQL, PHP, Git config). |
 
 ---
 

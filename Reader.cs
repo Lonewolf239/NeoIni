@@ -16,7 +16,7 @@ namespace NeoIni;
 /// <br/>
 /// <b>Target Framework: .NET 6+</b>
 /// <br/>
-/// <b>Version: 1.8-pre1</b>
+/// <b>Version: 1.8</b>
 /// <br/>
 /// <b>Black Box Philosophy:</b> This class follows a strict "black box" design principle - users interact only through the public API without needing to understand internal implementation details. Input goes in, processed output comes out, internals remain hidden and abstracted.
 /// </summary>
@@ -41,7 +41,7 @@ public partial class NeoIniReader : IDisposable, IAsyncDisposable
     public void Dispose() { Dispose(true); GC.SuppressFinalize(this); }
 
     /// <summary>Asynchronously releases managed resources and saves changes to the file</summary>
-    public async ValueTask DisposeAsync() { await DisposeAsync(true); GC.SuppressFinalize(this); }
+    public async ValueTask DisposeAsync() { await DisposeAsync(true).ConfigureAwait(false); GC.SuppressFinalize(this); }
 
     /// <summary>Starts automatic hot reload monitoring for the underlying INI file.</summary>
     /// <param name="delayMs">The polling interval in milliseconds. Must be 1000 ms or greater.</param>
@@ -70,7 +70,7 @@ public partial class NeoIniReader : IDisposable, IAsyncDisposable
                     var checksum = Provider.GetStateChecksum();
                     if (!PrevHotReloadChecksum.SequenceEqual(checksum))
                     {
-                        await ReloadFromFileAsync(HotReloadCts.Token);
+                        await ReloadFromFileAsync(HotReloadCts.Token).ConfigureAwait(false);
                         Lock.EnterWriteLock();
                         try { PrevHotReloadChecksum = checksum; }
                         finally { Lock.ExitWriteLock(); }
@@ -102,7 +102,7 @@ public partial class NeoIniReader : IDisposable, IAsyncDisposable
         cancellationToken.ThrowIfCancellationRequested();
         string content = GetSaveContent(cancellationToken);
         await Provider.SaveAsync(content, UseChecksum, cancellationToken).ConfigureAwait(false);
-        FinalizeSave();
+        FinalizeSave(cancellationToken);
     }
 
     /// <summary>Determines whether a specific section exists in the loaded data</summary>
@@ -197,7 +197,7 @@ public partial class NeoIniReader : IDisposable, IAsyncDisposable
             CancellationToken cancellationToken = default) where T : IComparable<T>
     {
         T clampedValue = NeoIniParser.Clamp(value, minValue, maxValue);
-        await AddKeyAsync(section, key, clampedValue, cancellationToken);
+        await AddKeyAsync(section, key, clampedValue, cancellationToken).ConfigureAwait(false);
     }
 
 
@@ -365,7 +365,7 @@ public partial class NeoIniReader : IDisposable, IAsyncDisposable
             CancellationToken cancellationToken = default) where T : IComparable<T>
     {
         T clampedValue = NeoIniParser.Clamp(value, minValue, maxValue);
-        await SetValueAsync(section, key, clampedValue, cancellationToken);
+        await SetValueAsync(section, key, clampedValue, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>Removes a specific key from a section in the INI file</summary>

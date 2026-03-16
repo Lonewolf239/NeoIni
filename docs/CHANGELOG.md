@@ -3,6 +3,14 @@
 
 ## Changelog · NeoIni
 
+### 1.8 — March 16, 2026
+
+#### List of changes
+
+- Added missing `ConfigureAwait(false)` calls.
+- Added a `CancellationToken` parameter to the `FinalizeSave` method.
+- Improved invalid input handling in `Set` methods.
+
 ### 1.8-pre1 — March 15, 2026
 
 #### List of changes

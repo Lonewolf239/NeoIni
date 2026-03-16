@@ -104,7 +104,7 @@ internal partial class NeoIniParser
     internal static string GetContent(Data data, Comments commentsData, bool humanization, bool useShielding)
     {
         if (data == null || data.Count == 0) return string.Empty;
-        var estimatedSize = Environment.NewLine.Length;
+        int estimatedSize = Environment.NewLine.Length;
         Comments comments = new(commentsData);
         foreach (var section in data)
         {
@@ -118,7 +118,7 @@ internal partial class NeoIniParser
             foreach (var comment in comments)
                 estimatedSize += (comment.Content?.Length ?? 0) + 3 + Environment.NewLine.Length;
         }
-        var content = new StringBuilder(estimatedSize);
+        StringBuilder content = new(estimatedSize);
         content.AppendLine();
         foreach (var section in data)
         {

@@ -22,7 +22,7 @@
 
 | Version | Status | Description |
 |--------|--------|----------|
-| 1.8 | 🧪 Pre‑release | Поддержка значений в кавычках: `key = "value ; not a comment"`. Расширяет совместимость с реальными INI-файлами (MySQL, PHP, Git config). |
+| 1.8 | ✅ Released | Поддержка значений в кавычках: `key = "value ; not a comment"`. Расширяет совместимость с реальными INI-файлами (MySQL, PHP, Git config). |
 
 ---
 
