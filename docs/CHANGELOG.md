@@ -3,6 +3,12 @@
 
 ## Changelog · NeoIni
 
+### 1.9-pre1 — March 17, 2026
+
+#### List of changes
+
+- `ReaderWriterLock` replaced with `AsyncReaderWriterLock`
+
 ### 1.8 — March 16, 2026
 
 #### List of changes
