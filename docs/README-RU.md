@@ -21,7 +21,7 @@ dotnet add package NeoIni
 ```
 
 - **Пакет:** [nuget.org/packages/NeoIni](https://www.nuget.org/packages/NeoIni)
-- **Версия:** `1.8` | **.NET 6+**
+- **Версия:** `1.9-pre1` | **.NET 6+**
 - **Разработчик:** [Lonewolf239](https://github.com/Lonewolf239)
 
 ---
@@ -32,7 +32,7 @@ dotnet add package NeoIni
 |---|---------|---------|
 | 🔒 | **AES-256 encryption** | Прозрачное шифрование на уровне файла (CBC, IV + per-file salt). Ключ генерируется из окружения пользователя или задаётся вручную. |
 | 🛡️ | **SHA-256 checksum** | Проверка целостности при каждой загрузке/сохранении. При несовпадении — событие `ChecksumMismatch` + автоматический откат на `.backup`. |
-| 🔐 | **Thread-safe** | `ReaderWriterLockSlim` защищает все операции чтения/записи при многопоточном доступе. |
+| 🔐 | **Thread-safe** | `AsyncReaderWriterLock` защищает все операции чтения и записи при конкурентном доступе и полностью поддерживает `async`/`await`. |
 | 📦 | **Typed Get/Set** | Чтение и запись `bool`, `int`, `double`, `DateTime`, `enum`, `string` и других типов с автоматическим парсингом и значениями по умолчанию. |
 | ⚡ | **AutoSave & AutoBackup** | Автоматическое сохранение после N операций. Атомарная запись через `.tmp` + откат на `.backup` при ошибках. |
 | 🔄 | **Hot-reload** | File watcher с поллингом и сравнением контрольных сумм — обновление конфига без перезапуска. |

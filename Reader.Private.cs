@@ -18,7 +18,7 @@ public partial class NeoIniReader
 
     private Dictionary<string, Dictionary<string, string>> Data;
     private List<Comment> Comments;
-    private readonly ReaderWriterLockSlim Lock = new(LockRecursionPolicy.NoRecursion);
+    private readonly AsyncReaderWriterLock Lock = new();
 
     private bool Disposed = false;
     private int DisposeState = 0;
@@ -39,15 +39,13 @@ public partial class NeoIniReader
 
     private string ExtractContent()
     {
-        Lock.EnterWriteLock();
-        try
+        using (Lock.WriteLock())
         {
             string content = SaveOnDispose ? NeoIniParser.GetContent(Data, Comments, HumanMode, UseShielding) : null;
             Data.Clear();
             Comments.Clear();
             return content;
         }
-        finally { Lock.ExitWriteLock(); }
     }
 
     /// <summary>Releases managed resources and saves changes to the file</summary>
@@ -139,5 +137,35 @@ public partial class NeoIniReader
     {
         if (Interlocked.CompareExchange(ref HotReloadState, 0, 1) != 1) return;
         HotReloadCts.Cancel();
+    }
+
+    private async Task ExecuteWithReadLockAsync(Action action, CancellationToken ct)
+    {
+        using (await Lock.ReadLockAsync(ct).ConfigureAwait(false))
+        {
+            ct.ThrowIfCancellationRequested();
+            action();
+        }
+    }
+
+    private async Task ExecuteWithWriteLockAsync(Action action, CancellationToken ct)
+    {
+        using (await Lock.WriteLockAsync(ct).ConfigureAwait(false))
+        {
+            ct.ThrowIfCancellationRequested();
+            action();
+        }
+    }
+
+    private void ValidateValue(string value, bool useAEVRule = false)
+    {
+        ThrowIfEmpty(value, useAEVRule);
+        ThrowIfContainsUnsupportedChars(value);
+    }
+
+    private void ValidateTwoValue(string value1, string value2, bool useAEVRule = false)
+    {
+        ValidateValue(value1, useAEVRule);
+        ValidateValue(value2, useAEVRule);
     }
 }

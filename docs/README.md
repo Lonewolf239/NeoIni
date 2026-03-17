@@ -21,7 +21,7 @@ dotnet add package NeoIni
 ```
 
 - **Package:** [nuget.org/packages/NeoIni](https://www.nuget.org/packages/NeoIni)
-- **Version:** `1.8` | **.NET 6+**
+- **Version:** `1.9-pre1` | **.NET 6+**
 - **Developer:** [Lonewolf239](https://github.com/Lonewolf239)
 
 ---
@@ -32,7 +32,7 @@ dotnet add package NeoIni
 |---|---------|---------|
 | 🔒 | **AES-256 encryption** | Transparent file-level encryption (CBC, IV + per-file salt). Key derived from user environment or a custom password. |
 | 🛡️ | **SHA-256 checksum** | Integrity validation on every load/save. On mismatch — `ChecksumMismatch` event + automatic `.backup` fallback. |
-| 🔐 | **Thread-safe** | `ReaderWriterLockSlim` protects all read/write operations under concurrent access. |
+| 🔐 | **Thread-safe** | `AsyncReaderWriterLock` protects all read/write operations under concurrent access with full `async`/`await` support. |
 | 📦 | **Typed Get/Set** | Read and write `bool`, `int`, `double`, `DateTime`, `enum`, `string` and more with automatic parsing and defaults. |
 | ⚡ | **AutoSave & AutoBackup** | Automatic saving after N operations. Atomic writes via `.tmp` + `.backup` fallback on errors. |
 | 🔄 | **Hot-reload** | File watcher with polling and checksum comparison — live config updates without restart. |
