@@ -7,7 +7,7 @@
 
 #### List of changes
 
-- `ReaderWriterLock` replaced with `AsyncReaderWriterLock`
+- `System.Threading.ReaderWriterLock` replaced with `NeoIni.Models.AsyncReaderWriterLock`
 
 ### 1.8 — March 16, 2026
 
