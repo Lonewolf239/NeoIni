@@ -5,7 +5,7 @@
 [![Changelog](https://img.shields.io/badge/CHANGELOG-2D2D2D?style=for-the-badge&logo=history&logoColor=FFFFFF)](./CHANGELOG-RU.md)
 
 [![MIT](https://img.shields.io/badge/License-MIT-2D2D2D?style=for-the-badge&logo=heart&logoColor=FFFFFF)](https://opensource.org/licenses/MIT)
-[![Thread-Safe](https://img.shields.io/badge/Thread-Safe-2D2D2D?style=for-the-badge&logo=verified&logoColor=FFFFFF)](https://github.com/Lonewolf239/NeoIni)
+[![Thread-Safe](https://img.shields.io/badge/Thread-Safe-2D2D2D?style=for-the-badge&logo=verified&logoColor=FFFFFF)](#thread-safe)
 [![Downloads](https://img.shields.io/nuget/dt/NeoIni?style=for-the-badge&logo=download&logoColor=FFFFFF)](https://www.nuget.org/packages/NeoIni)
 
 ## Languages
@@ -32,7 +32,7 @@ dotnet add package NeoIni
 |---|---------|---------|
 | 🔒 | **AES-256 encryption** | Прозрачное шифрование на уровне файла (CBC, IV + per-file salt). Ключ генерируется из окружения пользователя или задаётся вручную. |
 | 🛡️ | **SHA-256 checksum** | Проверка целостности при каждой загрузке/сохранении. При несовпадении — событие `ChecksumMismatch` + автоматический откат на `.backup`. |
-| 🔐 | **Thread-safe** | `AsyncReaderWriterLock` защищает все операции чтения и записи при конкурентном доступе и полностью поддерживает `async`/`await`. |
+| 🔐 | <a name="thread-safe"></a> **Thread-safe** | `AsyncReaderWriterLock` защищает все операции чтения и записи при конкурентном доступе и полностью поддерживает `async`/`await`. |
 | 📦 | **Typed Get/Set** | Чтение и запись `bool`, `int`, `double`, `DateTime`, `enum`, `string` и других типов с автоматическим парсингом и значениями по умолчанию. |
 | ⚡ | **AutoSave & AutoBackup** | Автоматическое сохранение после N операций. Атомарная запись через `.tmp` + откат на `.backup` при ошибках. |
 | 🔄 | **Hot-reload** | File watcher с поллингом и сравнением контрольных сумм — обновление конфига без перезапуска. |
