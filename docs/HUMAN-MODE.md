@@ -1,5 +1,5 @@
-[![EN](https://img.shields.io/badge/README-EN-2D2D2D?style=for-the-badge&logo=github&logoColor=FFFFFF)](./HUMAN-MODE.md)
-[![RU](https://img.shields.io/badge/README-RU-2D2D2D?style=for-the-badge&logo=google-translate&logoColor=FFFFFF)](./HUMAN-MODE-RU.md)
+[![EN](https://img.shields.io/badge/HUMAN_MODE-EN-2D2D2D?style=for-the-badge&logo=github&logoColor=FFFFFF)](./HUMAN-MODE.md)
+[![RU](https://img.shields.io/badge/HUMAN_MODE-RU-2D2D2D?style=for-the-badge&logo=google-translate&logoColor=FFFFFF)](./HUMAN-MODE-RU.md)
 
 ## Human-editable mode (1.7.2+)
 
