@@ -45,17 +45,6 @@ dotnet add package NeoIni
 | 🔑 | **Easy migration** | Transfer encrypted configs between machines via `GetEncryptionPassword()`. |
 | 📦 | **Black-box design** | Single entrypoint — `NeoIniReader` owns and manages everything behind a clean public API. |
 
-## Thread Safety
-
-NeoIni guarantees thread safety using a custom `AsyncReaderWriterLock`. 
-This lock allows multiple concurrent readers but only one writer at a time, 
-and it fully supports asynchronous operations (`await`). All public methods 
-that read or modify the internal data acquire the appropriate read or write 
-lock, ensuring that concurrent access from multiple threads is safe and 
-race-condition-free.
-
-For more details, see the [source code](link-to-code) or the [API reference](./API.md).
-
 ---
 
 ## Quick Start
