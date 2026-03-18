@@ -44,7 +44,7 @@
 
 | Step | Detail |
 |------|--------|
-| 2.0-beta | `NeoIniDocument` поставляется параллельно с `NeoIniReader`, помеченным `[Obsolete]`. Оба класса работают на одном внутреннем движке. |
+| 2.0-pre1 | `NeoIniDocument` поставляется параллельно с `NeoIniReader`, помеченным `[Obsolete]`. Оба класса работают на одном внутреннем движке. |
 | 2.0 | Удаление `NeoIniReader`. Однострочный гайд по миграции в release notes (`NeoIniReader` → `NeoIniDocument`, API не меняется кроме имени). |
 
 ---
