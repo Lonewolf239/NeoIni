@@ -44,7 +44,7 @@ Long-term development plan for NeoIni. The library evolves from a single-file IN
 
 | Step | Detail |
 |------|--------|
-| 2.0-beta | Ship `NeoIniDocument` alongside `NeoIniReader` marked `[Obsolete]`. Both classes share the same internal engine. |
+| 2.0-pre1 | Ship `NeoIniDocument` alongside `NeoIniReader` marked `[Obsolete]`. Both classes share the same internal engine. |
 | 2.0 | Remove `NeoIniReader`. Provide a one-line migration guide in release notes (`NeoIniReader` → `NeoIniDocument`, no API changes beyond the rename). |
 
 ---
