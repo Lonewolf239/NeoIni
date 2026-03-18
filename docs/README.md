@@ -5,7 +5,7 @@
 [![Changelog](https://img.shields.io/badge/CHANGELOG-2D2D2D?style=for-the-badge&logo=history&logoColor=FFFFFF)](./CHANGELOG.md)
 
 [![MIT](https://img.shields.io/badge/License-MIT-2D2D2D?style=for-the-badge&logo=heart&logoColor=FFFFFF)](https://opensource.org/licenses/MIT)
-[![Thread-Safe](https://img.shields.io/badge/Thread-Safe-2D2D2D?style=for-the-badge&logo=verified&logoColor=FFFFFF)](https://github.com/Lonewolf239/NeoIni)
+[![Thread-Safe](https://img.shields.io/badge/Thread-Safe-2D2D2D?style=for-the-badge&logo=verified&logoColor=FFFFFF)](#thread-safe)
 [![Downloads](https://img.shields.io/nuget/dt/NeoIni?style=for-the-badge&logo=download&logoColor=FFFFFF)](https://www.nuget.org/packages/NeoIni)
 
 ## Languages
@@ -32,7 +32,7 @@ dotnet add package NeoIni
 |---|---------|---------|
 | 🔒 | **AES-256 encryption** | Transparent file-level encryption (CBC, IV + per-file salt). Key derived from user environment or a custom password. |
 | 🛡️ | **SHA-256 checksum** | Integrity validation on every load/save. On mismatch — `ChecksumMismatch` event + automatic `.backup` fallback. |
-| 🔐 | **Thread-safe** | `AsyncReaderWriterLock` protects all read/write operations under concurrent access with full `async`/`await` support. |
+| 🔐 | <a name="thread-safe"></a> **Thread-safe** | `AsyncReaderWriterLock` protects all read/write operations under concurrent access with full `async`/`await` support. |
 | 📦 | **Typed Get/Set** | Read and write `bool`, `int`, `double`, `DateTime`, `enum`, `string` and more with automatic parsing and defaults. |
 | ⚡ | **AutoSave & AutoBackup** | Automatic saving after N operations. Atomic writes via `.tmp` + `.backup` fallback on errors. |
 | 🔄 | **Hot-reload** | File watcher with polling and checksum comparison — live config updates without restart. |
@@ -44,6 +44,17 @@ dotnet add package NeoIni
 | 📢 | **Rich event system** | 14 events: save, load, key/section CRUD, autosave, checksum mismatch, errors, search completion. |
 | 🔑 | **Easy migration** | Transfer encrypted configs between machines via `GetEncryptionPassword()`. |
 | 📦 | **Black-box design** | Single entrypoint — `NeoIniReader` owns and manages everything behind a clean public API. |
+
+## Thread Safety
+
+NeoIni guarantees thread safety using a custom `AsyncReaderWriterLock`. 
+This lock allows multiple concurrent readers but only one writer at a time, 
+and it fully supports asynchronous operations (`await`). All public methods 
+that read or modify the internal data acquire the appropriate read or write 
+lock, ensuring that concurrent access from multiple threads is safe and 
+race-condition-free.
+
+For more details, see the [source code](link-to-code) or the [API reference](./API.md).
 
 ---
 
