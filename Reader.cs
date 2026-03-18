@@ -16,7 +16,7 @@ namespace NeoIni;
 /// <br/>
 /// <b>Target Framework: .NET 6+</b>
 /// <br/>
-/// <b>Version: 1.9-pre1</b>
+/// <b>Version: 1.9-pre2</b>
 /// <br/>
 /// <b>Black Box Philosophy:</b> This class follows a strict "black box" design principle - users interact only through the public API without needing to understand internal implementation details. Input goes in, processed output comes out, internals remain hidden and abstracted.
 /// </summary>
@@ -48,8 +48,7 @@ public partial class NeoIniReader : IDisposable, IAsyncDisposable
     public void StartHotReload(int delayMs)
     {
         ThrowIfDisposed();
-        if (delayMs < 1000)
-            throw new InvalidHotReloadDelayException(nameof(delayMs));
+        if (delayMs < 1000) throw new InvalidHotReloadDelayException(nameof(delayMs));
         if (Interlocked.CompareExchange(ref HotReloadState, 1, 0) != 0) return;
         using (Lock.WriteLock())
         {
@@ -61,22 +60,22 @@ public partial class NeoIniReader : IDisposable, IAsyncDisposable
         {
             try
             {
-                while (!HotReloadCts.IsCancellationRequested)
+                while (!HotReloadCts!.IsCancellationRequested)
                 {
-                    PauseHotReload.Wait(HotReloadCts.Token);
+                    PauseHotReload.Wait(HotReloadCts!.Token);
                     var checksum = Provider.GetStateChecksum();
-                    if (!PrevHotReloadChecksum.SequenceEqual(checksum))
+                    if (!PrevHotReloadChecksum!.SequenceEqual(checksum))
                     {
-                        await ReloadFromFileAsync(HotReloadCts.Token).ConfigureAwait(false);
-                        using (await Lock.WriteLockAsync().ConfigureAwait(false))
+                        await ReloadFromFileAsync(HotReloadCts!.Token).ConfigureAwait(false);
+                        using (await Lock.WriteLockAsync(HotReloadCts!.Token).ConfigureAwait(false))
                             PrevHotReloadChecksum = checksum;
                     }
-                    await Task.Delay(delayMs, HotReloadCts.Token).ConfigureAwait(false);
+                    await Task.Delay(delayMs, HotReloadCts!.Token).ConfigureAwait(false);
                 }
             }
             catch (OperationCanceledException) { }
             finally { Interlocked.Exchange(ref HotReloadState, 0); }
-        }, HotReloadCts.Token);
+        }, HotReloadCts!.Token);
     }
 
     /// <summary>Stops the hot reload monitoring if it is currently active.</summary>
@@ -202,13 +201,13 @@ public partial class NeoIniReader : IDisposable, IAsyncDisposable
     /// or the default value for <typeparamref name="T"/> if it is not.
     /// </param>
     /// <returns><c>true</c> if the key is found and read successfully; otherwise, <c>false</c>.</returns>
-    public bool TryGetValue<T>(string section, string key, out T value)
+    public bool TryGetValue<T>(string section, string key, out T? value)
     {
         ThrowIfDisposed();
         using (Lock.ReadLock())
         {
-            string stringValue = NeoIniParser.GetStringRaw(Data, section, key);
-            if (stringValue == null)
+            string? stringValue = NeoIniParser.GetStringRaw(Data, section, key);
+            if (stringValue is null)
             {
                 value = default;
                 return false;
@@ -227,12 +226,12 @@ public partial class NeoIniReader : IDisposable, IAsyncDisposable
     /// <param name="key">The name of the key to retrieve.</param>
     /// <param name="defaultValue">The value to return if the key or section does not exist, or if parsing fails.</param>
     /// <returns>The parsed value, or <paramref name="defaultValue"/> if retrieval fails.</returns>
-    public T GetValue<T>(string section, string key, T defaultValue = default)
+    public T? GetValue<T>(string section, string key, T? defaultValue = default)
     {
         ThrowIfDisposed();
         var (valueAdded, stringValue) = GetValueHelper<T>(section, key, defaultValue);
         if (valueAdded) DoAutoSave();
-        if (stringValue == null) return defaultValue;
+        if (stringValue is null) return defaultValue;
         return NeoIniParser.TryParseValue<T>(stringValue, defaultValue, Provider.RaiseError);
     }
 
@@ -246,13 +245,13 @@ public partial class NeoIniReader : IDisposable, IAsyncDisposable
     /// <param name="defaultValue">The value to return if the key or section does not exist, or if parsing fails.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task that represents the asynchronous operation. The task result contains the parsed value, or <paramref name="defaultValue"/> if retrieval fails.</returns>
-    public async Task<T> GetValueAsync<T>(string section, string key, T defaultValue, CancellationToken cancellationToken = default)
+    public async Task<T?> GetValueAsync<T>(string section, string key, T? defaultValue = default, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
         cancellationToken.ThrowIfCancellationRequested();
         var (valueAdded, stringValue) = await GetValueHelperAsync<T>(section, key, defaultValue, cancellationToken).ConfigureAwait(false);
         if (valueAdded) await DoAutoSaveAsync(cancellationToken).ConfigureAwait(false);
-        if (stringValue == null) return defaultValue;
+        if (stringValue is null) return defaultValue;
         return NeoIniParser.TryParseValue<T>(stringValue, defaultValue, Provider.RaiseError);
     }
 
@@ -272,9 +271,9 @@ public partial class NeoIniReader : IDisposable, IAsyncDisposable
     /// <returns>
     /// The parsed and clamped value. If retrieval or parsing fails, returns <paramref name="defaultValue"/>.
     /// </returns>
-    public T GetValueClamped<T>(string section, string key, T minValue, T maxValue, T defaultValue = default(T)) where T : IComparable<T>
+    public T GetValueClamped<T>(string section, string key, T minValue, T maxValue, T? defaultValue = default) where T : IComparable<T>
     {
-        T value = GetValue<T>(section, key, defaultValue);
+        T? value = GetValue<T>(section, key, defaultValue);
         return NeoIniParser.Clamp(value, minValue, maxValue);
     }
 
@@ -296,10 +295,10 @@ public partial class NeoIniReader : IDisposable, IAsyncDisposable
     /// A task that represents the asynchronous operation. The task result contains the parsed and clamped value,
     /// or <paramref name="defaultValue"/> if retrieval fails.
     /// </returns>
-    public async Task<T> GetValueClampedAsync<T>(string section, string key, T minValue, T maxValue, T defaultValue,
+    public async Task<T> GetValueClampedAsync<T>(string section, string key, T minValue, T maxValue, T? defaultValue = default,
             CancellationToken cancellationToken = default) where T : IComparable<T>
     {
-        T value = await GetValueAsync(section, key, defaultValue, cancellationToken).ConfigureAwait(false);
+        T? value = await GetValueAsync(section, key, defaultValue, cancellationToken).ConfigureAwait(false);
         return NeoIniParser.Clamp(value, minValue, maxValue);
     }
 
@@ -396,10 +395,10 @@ public partial class NeoIniReader : IDisposable, IAsyncDisposable
 
     /// <summary>Returns an array of all sections contained in the INI file</summary>
     /// <returns>An array of strings containing the names of all sections.</returns>
-    public string[] GetAllSections()
+    public string[]? GetAllSections()
     {
         ThrowIfDisposed();
-        using (Lock.ReadLock()) return Data.Keys.ToArray();
+        using (Lock.ReadLock()) return Data?.Keys.ToArray();
     }
 
     /// <summary>Returns an array of all keys in the specified INI file section</summary>
@@ -540,8 +539,8 @@ public partial class NeoIniReader : IDisposable, IAsyncDisposable
         DeleteFile();
         using (Lock.WriteLock())
         {
-            Data.Clear();
-            Comments.Clear();
+            Data?.Clear();
+            Comments?.Clear();
         }
         DataCleared?.Invoke(this, EventArgs.Empty);
     }
@@ -560,8 +559,8 @@ public partial class NeoIniReader : IDisposable, IAsyncDisposable
         ThrowIfDisposed();
         using (Lock.WriteLock())
         {
-            Data.Clear();
-            Comments.Clear();
+            Data?.Clear();
+            Comments?.Clear();
         }
         DataCleared?.Invoke(this, EventArgs.Empty);
     }

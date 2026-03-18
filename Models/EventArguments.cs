@@ -6,15 +6,15 @@ namespace NeoIni.Models;
 public sealed class ChecksumMismatchEventArgs : EventArgs
 {
     /// <summary>Gets the expected checksum value.</summary>
-    public byte[] Expected { get; }
+    public byte[]? Expected { get; }
 
     /// <summary>Gets the actual checksum value that was calculated.</summary>
-    public byte[] Actual { get; }
+    public byte[]? Actual { get; }
 
     /// <summary>Initializes a new instance of the <see cref="ChecksumMismatchEventArgs"/> class.</summary>
     /// <param name="expected">The expected checksum array.</param>
     /// <param name="actual">The actual calculated checksum array.</param>
-    public ChecksumMismatchEventArgs(byte[] expected, byte[] actual)
+    public ChecksumMismatchEventArgs(byte[]? expected, byte[]? actual)
     {
         Expected = expected;
         Actual = actual;
@@ -29,7 +29,7 @@ public sealed class ProviderErrorEventArgs : EventArgs
 
     /// <summary>Initializes a new instance of the <see cref="ProviderErrorEventArgs"/> class.</summary>
     /// <param name="exception">The exception containing information about the error.</param>
-    public ProviderErrorEventArgs(Exception exception) => Exception = exception;
+    public ProviderErrorEventArgs(Exception exception) => Exception = exception ?? throw new ArgumentNullException(nameof(exception));
 }
 
 /// <summary>Provides data for events related to a specific key and its value within a section.</summary>
@@ -48,11 +48,11 @@ public sealed class KeyEventArgs : EventArgs
     /// <param name="section">The name of the section.</param>
     /// <param name="key">The name of the key.</param>
     /// <param name="value">The value of the key.</param>
-    public KeyEventArgs(string section, string key, string value)
+    public KeyEventArgs(string? section, string? key, string? value)
     {
-        Section = section;
-        Key = key;
-        Value = value;
+        Section = section ?? string.Empty;
+        Key = key ?? string.Empty;
+        Value = value ?? string.Empty;
     }
 }
 
@@ -72,11 +72,11 @@ public sealed class KeyRenamedEventArgs : EventArgs
     /// <param name="section">The name of the section.</param>
     /// <param name="oldName">The original name of the key.</param>
     /// <param name="newName">The new name of the key.</param>
-    public KeyRenamedEventArgs(string section, string oldName, string newName)
+    public KeyRenamedEventArgs(string? section, string? oldName, string? newName)
     {
-        Section = section;
-        OldName = oldName;
-        NewName = newName;
+        Section = section ?? string.Empty;
+        OldName = oldName ?? string.Empty;
+        NewName = newName ?? string.Empty;
     }
 }
 
@@ -92,10 +92,10 @@ public sealed class KeyRemovedEventArgs : EventArgs
     /// <summary>Initializes a new instance of the <see cref="KeyRemovedEventArgs"/> class.</summary>
     /// <param name="section">The name of the section.</param>
     /// <param name="key">The name of the removed key.</param>
-    public KeyRemovedEventArgs(string section, string key)
+    public KeyRemovedEventArgs(string? section, string? key)
     {
-        Section = section;
-        Key = key;
+        Section = section ?? string.Empty;
+        Key = key ?? string.Empty;
     }
 }
 
@@ -107,7 +107,7 @@ public sealed class SectionEventArgs : EventArgs
 
     /// <summary>Initializes a new instance of the <see cref="SectionEventArgs"/> class.</summary>
     /// <param name="section">The name of the section.</param>
-    public SectionEventArgs(string section) => Section = section;
+    public SectionEventArgs(string? section) => Section = section ?? string.Empty;
 }
 
 /// <summary>Provides data for the event that is raised when a section is renamed.</summary>
@@ -122,10 +122,10 @@ public sealed class SectionRenamedEventArgs : EventArgs
     /// <summary>Initializes a new instance of the <see cref="SectionRenamedEventArgs"/> class.</summary>
     /// <param name="oldSection">The original name of the section.</param>
     /// <param name="newSection">The new name of the section.</param>
-    public SectionRenamedEventArgs(string oldSection, string newSection)
+    public SectionRenamedEventArgs(string? oldSection, string? newSection)
     {
-        OldSection = oldSection;
-        NewSection = newSection;
+        OldSection = oldSection ?? string.Empty;
+        NewSection = newSection ?? string.Empty;
     }
 }
 
@@ -141,9 +141,9 @@ public sealed class SearchCompletedEventArgs : EventArgs
     /// <summary>Initializes a new instance of the <see cref="SearchCompletedEventArgs"/> class.</summary>
     /// <param name="searchPattern">The pattern used for the search.</param>
     /// <param name="matchesCount">The number of successful matches found.</param>
-    public SearchCompletedEventArgs(string searchPattern, int matchesCount)
+    public SearchCompletedEventArgs(string? searchPattern, int matchesCount)
     {
-        SearchPattern = searchPattern;
+        SearchPattern = searchPattern ?? string.Empty;
         MatchesCount = matchesCount;
     }
 }

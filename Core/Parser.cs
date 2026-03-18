@@ -11,10 +11,10 @@ namespace NeoIni.Core;
 
 internal partial class NeoIniParser
 {
-    internal static string FormatInvariant<T>(T value) =>
+    internal static string FormatInvariant<T>(T? value) =>
         value is IFormattable formattable ? formattable.ToString(null, CultureInfo.InvariantCulture) : value?.ToString() ?? string.Empty;
 
-    internal static string ValueToString<T>(T value)
+    internal static string ValueToString<T>(T? value)
     {
         var s = FormatInvariant(value);
         if (s.Length == 0) return s;
@@ -39,37 +39,46 @@ internal partial class NeoIniParser
         return FormatInvariant(sb);
     }
 
-    internal static string GetStringRaw(string raw) => Unescape(raw);
+    internal static string? GetStringRaw(string? raw) => Unescape(raw);
 
-    internal static string GetStringRaw(Data data, string section, string keyName)
+
+    internal static string? GetStringRaw(Data? data, string section, string keyName)
     {
-        string raw = data.TryGetValue(section, out var sec) && sec.TryGetValue(keyName, out var val) ? val.Trim() : null;
+        string? raw = null;
+        if (data is not null && data.TryGetValue(section, out var sec) && sec.TryGetValue(keyName, out var val))
+            raw = val.Trim();
         return Unescape(raw);
     }
 
-    internal static T TryParseValue<T>(string value, T defaultValue, EventHandler<ProviderErrorEventArgs> onError)
+    internal static T? TryParseValue<T>(string? value, T? defaultValue, EventHandler<ProviderErrorEventArgs>? onError)
     {
         if (string.IsNullOrWhiteSpace(value)) return defaultValue;
         Type targetType = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
         try
         {
             if (targetType.IsEnum)
-                return Enum.TryParse(targetType, value, true, out object enumResult) ? (T)enumResult : defaultValue;
+                return Enum.TryParse(targetType, value, true, out object? enumResult) && enumResult is not null ? (T)enumResult : defaultValue;
             if (targetType == typeof(bool))
                 return bool.TryParse(value, out bool boolResult) ? (T)(object)boolResult : defaultValue;
             if (targetType == typeof(DateTime))
                 return DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out DateTime dtResult) ?
                      (T)(object)dtResult : defaultValue;
-            return (T)Convert.ChangeType(value, targetType, CultureInfo.InvariantCulture);
+
+            return (T?)Convert.ChangeType(value, targetType, CultureInfo.InvariantCulture);
         }
-        catch (Exception ex)
+        catch (FormatException ex)
+        {
+            onError?.Invoke(null, new(ex));
+            return defaultValue;
+        }
+        catch (InvalidCastException ex)
         {
             onError?.Invoke(null, new(ex));
             return defaultValue;
         }
     }
 
-    internal static bool TryMatchKey(ReadOnlySpan<char> line, out string key, out string value)
+    internal static bool TryMatchKey(ReadOnlySpan<char> line, out string? key, out string? value)
     {
         key = null;
         value = null;
@@ -91,21 +100,22 @@ internal partial class NeoIniParser
         return true;
     }
 
-    internal static T Clamp<T>(T value, T minValue, T maxValue) where T : IComparable<T>
+    internal static T Clamp<T>(T? value, T minValue, T maxValue) where T : IComparable<T>
     {
         var comparer = Comparer<T>.Default;
         if (comparer.Compare(minValue, maxValue) > 0)
             throw new ArgumentException($"'{nameof(minValue)}' cannot be greater than '{nameof(maxValue)}'.");
+        if (value is null) return minValue;
         if (comparer.Compare(value, minValue) < 0) return minValue;
         if (comparer.Compare(value, maxValue) > 0) return maxValue;
         return value;
     }
 
-    internal static string GetContent(Data data, Comments commentsData, bool humanization, bool useShielding)
+    internal static string GetContent(Data? data, Comments? commentsData, bool humanization, bool useShielding)
     {
-        if (data == null || data.Count == 0) return string.Empty;
+        if (data is null || data.Count == 0) return string.Empty;
         int estimatedSize = Environment.NewLine.Length;
-        Comments comments = new(commentsData);
+        Comments comments = commentsData is not null ? new(commentsData) : new();
         foreach (var section in data)
         {
             estimatedSize += section.Key.Length + 2 + Environment.NewLine.Length;
@@ -113,7 +123,7 @@ internal partial class NeoIniParser
                 estimatedSize += kvp.Key.Length + (kvp.Value?.Length ?? 0) + 3 + (useShielding ? 2 : 0) + Environment.NewLine.Length;
             estimatedSize += Environment.NewLine.Length;
         }
-        if (comments != null && comments.Count > 0)
+        if (comments.Count > 0)
         {
             foreach (var comment in comments)
                 estimatedSize += (comment.Content?.Length ?? 0) + 3 + Environment.NewLine.Length;
@@ -127,12 +137,12 @@ internal partial class NeoIniParser
             foreach (var kvp in section.Value)
             {
                 string keyValueLine = $"{kvp.Key} = " +
-                    $"{(useShielding ? '"' : string.Empty) + kvp.Value + (useShielding ? '"' : string.Empty)}";
+                    $"{(useShielding ? '"' : string.Empty)}{kvp.Value}{(useShielding ? '"' : string.Empty)}";
                 content.AppendLine(GetContentHelper(kvp.Key, keyValueLine, comments));
             }
             content.AppendLine();
         }
-        if (comments != null && comments.Count > 0)
+        if (comments.Count > 0)
         {
             var remainingComments = comments.Where(c => c.CommentType == CommentType.FreeSpace &&
                     !string.IsNullOrEmpty(c.Content)).Select(c => $"; {c.Content}");
@@ -143,21 +153,19 @@ internal partial class NeoIniParser
         return content.ToString();
     }
 
-    internal static bool IsCommentLine(string trimmed) => !string.IsNullOrEmpty(trimmed) && trimmed[0] == ';';
+    internal static bool IsCommentLine(string? trimmed) => !string.IsNullOrEmpty(trimmed) && trimmed[0] == ';';
 
-    internal static bool IsSectionLine(string trimmed)
+    internal static bool IsSectionLine(string? trimmed)
     {
         if (string.IsNullOrEmpty(trimmed)) return false;
         TryParseLine(trimmed, out var section, out _);
         return section.Length > 1 && section[0] == '[' && section[^1] == ']';
     }
 
-    internal static void HandleCommentLine(string[] lines, int index, string trimmed, bool humanization, Comments comments)
+    internal static void HandleCommentLine(string[] lines, int index, string? trimmed, bool humanization, Comments? comments)
     {
-        if (!humanization) return;
-        if (comments == null) return;
-        if (string.IsNullOrEmpty(trimmed)) return;
-        string nearestString = string.Empty;
+        if (!humanization || comments is null || string.IsNullOrEmpty(trimmed)) return;
+        string? nearestString = string.Empty;
         var commentType = CommentType.FreeSpace;
         if (index + 1 < lines.Length)
         {
@@ -182,20 +190,23 @@ internal partial class NeoIniParser
         comments.Add(new Comment(nearestString, commentType, commentText));
     }
 
-    internal static string HandleSectionLine(string trimmed, bool humanization, Data data, Comments comments)
+    internal static string HandleSectionLine(string? trimmed, bool humanization, Data data, Comments? comments)
     {
         TryParseLine(trimmed, out var sectionPart, out var comment);
         var section = sectionPart.Trim('[', ']');
-        if (!data.TryGetValue(section, out var dict)) data[section] = new();
-        if (humanization && !string.IsNullOrEmpty(comment) && comments != null)
+        if (!data.ContainsKey(section)) data[section] = new();
+        if (humanization && !string.IsNullOrEmpty(comment) && comments is not null)
             comments.Add(new Comment(section, CommentType.Right, comment));
         return section;
     }
 
-    internal static void HandleKeyValueLine(string trimmed, string currentSection, string key, string value, bool humanization, Data data, Comments comments)
+    internal static void HandleKeyValueLine(string? trimmed, string? currentSection, string? key, string? value, bool humanization, Data? data, Comments? comments)
     {
-        data[currentSection][key] = value;
-        if (!humanization || comments == null) return;
+        if (data is null) return;
+        if (string.IsNullOrEmpty(currentSection) || string.IsNullOrEmpty(key)) return;
+        if (!data.ContainsKey(currentSection)) data[currentSection] = new();
+        data[currentSection][key] = value ?? string.Empty;
+        if (!humanization || comments is null) return;
         if (!TryParseLine(trimmed, out _, out var afterSemicolon)) return;
         if (!string.IsNullOrEmpty(afterSemicolon)) comments.Add(new Comment(key, CommentType.Right, afterSemicolon));
     }

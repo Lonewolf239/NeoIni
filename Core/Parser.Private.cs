@@ -20,7 +20,7 @@ internal partial class NeoIniParser
         return valueSpan;
     }
 
-    private static string Unescape(string s)
+    private static string? Unescape(string? s)
     {
         if (string.IsNullOrEmpty(s)) return s;
         if (s.Length >= 2 && s[0] == '"' && s[^1] == '"') s = s[1..^1];
@@ -55,17 +55,17 @@ internal partial class NeoIniParser
         return FormatInvariant(sb);
     }
 
-    private static string GetContentHelper(string key, string lineContent, Comments comments)
+    private static string GetContentHelper(string key, string lineContent, Comments? comments)
     {
-        if (comments == null || comments.Count == 0) return lineContent;
-        Comment matched = null;
+        if (comments is null || comments.Count == 0) return lineContent;
+        Comment? matched = null;
         foreach (var item in comments)
         {
             if (item.Line != key) continue;
             matched = item;
             break;
         }
-        if (matched == null || string.IsNullOrEmpty(matched.Content)) return lineContent;
+        if (matched is null || string.IsNullOrEmpty(matched.Content)) return lineContent;
         comments.Remove(matched);
         return matched.CommentType switch
         {
@@ -76,15 +76,15 @@ internal partial class NeoIniParser
         };
     }
 
-    private static string ParseNearestLine(string line)
+    private static string? ParseNearestLine(string line)
     {
         if (TryMatchKey(line.AsSpan(), out var key, out _)) return key;
         return line.Trim('[', ']');
     }
 
-    private static bool TryParseLine(string trimmed, out string beforeSemicolon, out string afterSemicolon)
+    private static bool TryParseLine(string? trimmed, out string beforeSemicolon, out string afterSemicolon)
     {
-        beforeSemicolon = trimmed;
+        beforeSemicolon = trimmed ?? string.Empty;
         afterSemicolon = string.Empty;
         if (string.IsNullOrEmpty(trimmed)) return false;
         var semicolonIndex = trimmed.IndexOf(';');

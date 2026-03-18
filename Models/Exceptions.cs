@@ -12,6 +12,23 @@ public class MissingEncryptionKeyException : Exception
     /// </summary>
     public MissingEncryptionKeyException()
         : base("The configuration file is encrypted with a custom password. Please provide a password string to the NeoIniReader constructor.") { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MissingEncryptionKeyException"/> class.
+    /// </summary>
+    /// <param name="message">The message that describes the error.</param>
+    public MissingEncryptionKeyException(string message) : base(message) { }
+}
+
+/// <summary>
+/// Represents errors that occur when a required cryptographic salt is missing or null.
+/// </summary>
+public class MissingSaltException : Exception
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MissingSaltException"/> class.
+    /// </summary>
+    public MissingSaltException() : base("The cryptographic salt cannot be null.") { }
 }
 
 /// <summary>
@@ -35,7 +52,7 @@ public class UnsupportedIniCharacterException : ArgumentException
     /// <summary>
     /// Initializes a new instance of the <see cref="UnsupportedIniCharacterException"/> class.
     /// </summary>
-    public UnsupportedIniCharacterException() : base("The string contains unsupported characters (such as ; \" ' =).") { }
+    public UnsupportedIniCharacterException(string chars) : base($"The string contains unsupported characters (such as {chars}).") { }
 }
 
 /// <summary>

@@ -7,99 +7,106 @@ namespace NeoIni.Models;
 
 internal sealed class AsyncReaderWriterLock : IDisposable
 {
-    private sealed class Releaser : IDisposable
+    internal struct Releaser : IDisposable
     {
-        private AsyncReaderWriterLock Owner;
+        private AsyncReaderWriterLock? Owner;
         private readonly bool IsWrite;
 
-        public Releaser(AsyncReaderWriterLock owner, bool isWrite)
+        internal Releaser(AsyncReaderWriterLock owner, bool isWrite)
         {
             Owner = owner;
             IsWrite = isWrite;
         }
 
-        public void Dispose() => Interlocked.Exchange(ref Owner, null)?.Release(IsWrite);
+        public void Dispose()
+        {
+            var owner = Interlocked.Exchange(ref Owner, null);
+            owner?.Release(IsWrite);
+        }
     }
 
     private abstract class Waiter
     {
-        public bool IsWrite { get; }
-        public LinkedListNode<Waiter> Node { get; set; }
+        internal bool IsWrite { get; }
+        internal LinkedListNode<Waiter>? Node { get; set; }
 
         protected Waiter(bool isWrite) => IsWrite = isWrite;
 
-        public abstract void Complete(Releaser releaser);
-        public abstract void Fail(Exception ex);
+        internal abstract void Complete(Releaser releaser);
+        internal abstract void Fail(Exception ex);
     }
 
     private sealed class AsyncWaiter : Waiter
     {
-        public AsyncReaderWriterLock Owner { get; }
-        public CancellationToken Ct { get; }
-        public TaskCompletionSource<IDisposable> Tcs { get; }
+        internal AsyncReaderWriterLock Owner { get; }
+        internal CancellationToken Ct { get; }
+        internal TaskCompletionSource<Releaser> Tcs { get; }
 
-        public AsyncWaiter(AsyncReaderWriterLock owner, bool isWrite, CancellationToken ct) : base(isWrite)
+        internal AsyncWaiter(AsyncReaderWriterLock owner, bool isWrite, CancellationToken ct) : base(isWrite)
         {
             Owner = owner;
             Ct = ct;
-            Tcs = new TaskCompletionSource<IDisposable>(TaskCreationOptions.RunContinuationsAsynchronously);
+            Tcs = new TaskCompletionSource<Releaser>(TaskCreationOptions.RunContinuationsAsynchronously);
         }
 
-        public override void Complete(Releaser releaser) => Tcs.TrySetResult(releaser);
-        public override void Fail(Exception ex) => Tcs.TrySetException(ex);
+        internal override void Complete(Releaser releaser) => Tcs.TrySetResult(releaser);
+        internal override void Fail(Exception ex) => Tcs.TrySetException(ex);
     }
 
     private sealed class SyncWaiter : Waiter
     {
-        public ManualResetEventSlim Event { get; } = new(false);
-        public Releaser Result { get; private set; }
-        public Exception Error { get; private set; }
+        internal ManualResetEventSlim Event { get; } = new(false);
+        internal Exception? Error { get; private set; }
 
-        public SyncWaiter(bool isWrite) : base(isWrite) { }
+        internal SyncWaiter(bool isWrite) : base(isWrite) { }
 
-        public override void Complete(Releaser releaser)
-        {
-            Result = releaser;
-            Event.Set();
-        }
+        internal override void Complete(Releaser releaser) => Event.Set();
 
-        public override void Fail(Exception ex)
+        internal override void Fail(Exception ex)
         {
             Error = ex;
             Event.Set();
         }
     }
 
+#if NET9_0_OR_GREATER
+    private readonly Lock Gate = new();
+#else
     private readonly object Gate = new();
+#endif
     private readonly LinkedList<Waiter> Waiters = new();
 
     private int ActiveReaders;
     private bool WriterActive;
     private bool Disposed;
 
-    private static readonly Action<object> CancelWaiterAction = state =>
+    private static readonly Action<object?> CancelWaiterAction = state =>
     {
         var waiter = (AsyncWaiter)state!;
         waiter.Owner.CancelWaiter(waiter);
     };
 
-    public IDisposable ReadLock() => Acquire(false);
+    internal Releaser ReadLock() => Acquire(false);
 
-    public Task<IDisposable> ReadLockAsync(CancellationToken ct = default) => AcquireAsync(false, ct);
+    internal ValueTask<Releaser> ReadLockAsync(CancellationToken ct = default) => AcquireAsync(false, ct);
 
-    public IDisposable WriteLock() => Acquire(true);
+    internal Releaser WriteLock() => Acquire(true);
 
-    public Task<IDisposable> WriteLockAsync(CancellationToken ct = default) => AcquireAsync(true, ct);
+    internal ValueTask<Releaser> WriteLockAsync(CancellationToken ct = default) => AcquireAsync(true, ct);
 
-    private IDisposable Acquire(bool isWrite)
+    private Releaser Acquire(bool isWrite)
     {
         SyncWaiter waiter;
+#if NET9_0_OR_GREATER
+        using (var _ = Gate.EnterScope())
+#else
         lock (Gate)
+#endif
         {
-            ThrowIfDisposed_NoLock();
-            if (CanAcquireImmediately_NoLock(isWrite))
+            ThrowIfDisposed();
+            if (CanAcquireImmediately(isWrite))
             {
-                GrantImmediate_NoLock(isWrite);
+                GrantImmediate(isWrite);
                 return new Releaser(this, isWrite);
             }
             waiter = new SyncWaiter(isWrite);
@@ -107,20 +114,41 @@ internal sealed class AsyncReaderWriterLock : IDisposable
         }
         waiter.Event.Wait();
         waiter.Event.Dispose();
-        if (waiter.Error != null) throw waiter.Error;
-        return waiter.Result!;
+        if (waiter.Error is not null) throw waiter.Error;
+        return new Releaser(this, isWrite);
     }
 
-    private async Task<IDisposable> AcquireAsync(bool isWrite, CancellationToken ct)
+    private ValueTask<Releaser> AcquireAsync(bool isWrite, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
-        AsyncWaiter waiter;
+#if NET9_0_OR_GREATER
+        using (var _ = Gate.EnterScope())
+#else
         lock (Gate)
+#endif
         {
-            ThrowIfDisposed_NoLock();
-            if (CanAcquireImmediately_NoLock(isWrite))
+            ThrowIfDisposed();
+            if (CanAcquireImmediately(isWrite))
             {
-                GrantImmediate_NoLock(isWrite);
+                GrantImmediate(isWrite);
+                return new ValueTask<Releaser>(new Releaser(this, isWrite));
+            }
+        }
+        return new ValueTask<Releaser>(AcquireAsyncSlow(isWrite, ct));
+    }
+
+    private async Task<Releaser> AcquireAsyncSlow(bool isWrite, CancellationToken ct)
+    {
+        AsyncWaiter waiter;
+#if NET9_0_OR_GREATER
+        using (var _ = Gate.EnterScope())
+#else
+        lock (Gate)
+#endif
+        {
+            if (CanAcquireImmediately(isWrite))
+            {
+                GrantImmediate(isWrite);
                 return new Releaser(this, isWrite);
             }
             waiter = new AsyncWaiter(this, isWrite, ct);
@@ -132,24 +160,36 @@ internal sealed class AsyncReaderWriterLock : IDisposable
 
     private void CancelWaiter(AsyncWaiter waiter)
     {
-        List<Waiter> toWake = null;
+        List<Waiter>? toWake = null;
+#if NET9_0_OR_GREATER
+        using (var _ = Gate.EnterScope())
+#else
         lock (Gate)
+#endif
         {
-            if (waiter.Node != null)
+            if (waiter.Node is not null)
             {
                 Waiters.Remove(waiter.Node);
                 waiter.Node = null;
                 waiter.Fail(new OperationCanceledException(waiter.Ct));
-                toWake = DrainReadyWaiters_NoLock();
+                toWake = DrainReadyWaiters();
             }
         }
-        if (toWake != null) { foreach (var w in toWake) w.Complete(new Releaser(this, w.IsWrite)); }
+        if (toWake is not null)
+        {
+            foreach (var w in toWake)
+                w.Complete(new Releaser(this, w.IsWrite));
+        }
     }
 
     private void Release(bool isWrite)
     {
-        List<Waiter> toWake;
+        List<Waiter>? toWake;
+#if NET9_0_OR_GREATER
+        using (var _ = Gate.EnterScope())
+#else
         lock (Gate)
+#endif
         {
             if (isWrite)
             {
@@ -161,25 +201,29 @@ internal sealed class AsyncReaderWriterLock : IDisposable
                 if (ActiveReaders <= 0) throw new SynchronizationLockException("No reader lock is currently held.");
                 ActiveReaders--;
             }
-            toWake = DrainReadyWaiters_NoLock();
+            toWake = DrainReadyWaiters();
         }
-        if (toWake != null) { foreach (var waiter in toWake) waiter.Complete(new Releaser(this, waiter.IsWrite)); }
+        if (toWake is not null)
+        {
+            foreach (var waiter in toWake)
+                waiter.Complete(new Releaser(this, waiter.IsWrite));
+        }
     }
 
-    private bool CanAcquireImmediately_NoLock(bool isWrite)
+    private bool CanAcquireImmediately(bool isWrite)
     {
-        if (Waiters.Count > 0) return false;
-        if (isWrite) return !WriterActive && ActiveReaders == 0;
-        return !WriterActive;
+        if (Waiters.Count > 0 || WriterActive) return false;
+        if (isWrite && ActiveReaders > 0) return false;
+        return true;
     }
 
-    private void GrantImmediate_NoLock(bool isWrite)
+    private void GrantImmediate(bool isWrite)
     {
         if (isWrite) WriterActive = true;
         else ActiveReaders++;
     }
 
-    private List<Waiter> DrainReadyWaiters_NoLock()
+    private List<Waiter>? DrainReadyWaiters()
     {
         if (Disposed || WriterActive) return null;
         if (Waiters.Count == 0) return null;
@@ -194,8 +238,8 @@ internal sealed class AsyncReaderWriterLock : IDisposable
         }
         else
         {
-            var readers = new List<Waiter>();
-            while (Waiters.First != null && !Waiters.First.Value.IsWrite)
+            List<Waiter> readers = new();
+            while (Waiters.First is not null && !Waiters.First.Value.IsWrite)
             {
                 var reader = Waiters.First.Value;
                 Waiters.RemoveFirst();
@@ -207,12 +251,23 @@ internal sealed class AsyncReaderWriterLock : IDisposable
         }
     }
 
-    private void ThrowIfDisposed_NoLock() { if (Disposed) throw new ObjectDisposedException(nameof(AsyncReaderWriterLock)); }
+    private void ThrowIfDisposed()
+    {
+#if NET7_0_OR_GREATER
+        ObjectDisposedException.ThrowIf(Disposed, nameof(AsyncReaderWriterLock));
+#else
+        if (Disposed) throw new ObjectDisposedException(nameof(AsyncReaderWriterLock));
+#endif
+    }
 
     public void Dispose()
     {
-        List<Waiter> toFail = null;
+        List<Waiter>? toFail = null;
+#if NET9_0_OR_GREATER
+        using (var _ = Gate.EnterScope())
+#else
         lock (Gate)
+#endif
         {
             if (Disposed) return;
             Disposed = true;
@@ -227,7 +282,7 @@ internal sealed class AsyncReaderWriterLock : IDisposable
                 Waiters.Clear();
             }
         }
-        if (toFail != null)
+        if (toFail is not null)
         {
             var ex = new ObjectDisposedException(nameof(AsyncReaderWriterLock));
             foreach (var waiter in toFail) waiter.Fail(ex);

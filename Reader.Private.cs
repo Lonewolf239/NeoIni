@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using NeoIni.Core;
@@ -11,22 +12,22 @@ namespace NeoIni;
 public partial class NeoIniReader
 {
     private readonly INeoIniProvider Provider;
-    private readonly string FilePath;
+    private readonly string? FilePath;
 
     private readonly bool AutoEncryption = false;
     private bool CustomEncryptionPassword = false;
 
-    private Dictionary<string, Dictionary<string, string>> Data;
-    private List<Comment> Comments;
+    private Dictionary<string, Dictionary<string, string>>? Data;
+    private List<Comment>? Comments;
     private readonly AsyncReaderWriterLock Lock = new();
 
     private bool Disposed = false;
     private int DisposeState = 0;
 
     private int HotReloadState = 0;
-    private CancellationTokenSource HotReloadCts;
-    private byte[] PrevHotReloadChecksum;
-    private ManualResetEventSlim PauseHotReload = new(true);
+    private CancellationTokenSource? HotReloadCts;
+    private byte[]? PrevHotReloadChecksum;
+    private readonly ManualResetEventSlim PauseHotReload = new(true);
 
     private bool HumanMode = false;
 
@@ -37,13 +38,13 @@ public partial class NeoIniReader
 
     private bool _UseShielding;
 
-    private string ExtractContent()
+    private string? ExtractContent()
     {
         using (Lock.WriteLock())
         {
-            string content = SaveOnDispose ? NeoIniParser.GetContent(Data, Comments, HumanMode, UseShielding) : null;
-            Data.Clear();
-            Comments.Clear();
+            string? content = SaveOnDispose ? NeoIniParser.GetContent(Data, Comments, HumanMode, UseShielding) : null;
+            Data?.Clear();
+            Comments?.Clear();
             return content;
         }
     }
@@ -84,7 +85,7 @@ public partial class NeoIniReader
         Disposed = true;
     }
 
-    private void ApplyOptions(NeoIniReaderOptions options)
+    private void ApplyOptions(NeoIniReaderOptions? options)
     {
         options ??= new();
         UseAutoSave = options.UseAutoSave;
@@ -97,7 +98,15 @@ public partial class NeoIniReader
         UseShielding = options.UseShielding;
     }
 
-    private void ThrowIfDisposed() { if (Disposed) throw new ObjectDisposedException(nameof(NeoIniReader)); }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void ThrowIfDisposed()
+    {
+#if NET7_0_OR_GREATER
+        ObjectDisposedException.ThrowIf(Disposed, nameof(NeoIniReader));
+#else
+        if (Disposed) throw new ObjectDisposedException(nameof(NeoIniReader));
+#endif
+    }
 
     private void ThrowIfEmpty(string value, bool useAEVRule = true)
     {
@@ -105,10 +114,15 @@ public partial class NeoIniReader
         if (string.IsNullOrEmpty(value)) throw new EmptyValueNotAllowedException(nameof(value));
     }
 
-    private void ThrowIfContainsUnsupportedChars(string value)
+    private void ThrowIfContainsUnsupportedChars(string? value, bool isValue)
     {
         if (value is null) return;
-        if (value.AsSpan().IndexOfAny(";=\"".AsSpan()) >= 0) throw new UnsupportedIniCharacterException();
+        if (isValue && UseShielding)
+        {
+            if (value.AsSpan().IndexOfAny("\"".AsSpan()) >= 0) throw new UnsupportedIniCharacterException("\"");
+            return;
+        }
+        if (value.AsSpan().IndexOfAny(";=\"".AsSpan()) >= 0) throw new UnsupportedIniCharacterException("; = \"");
     }
 
     private bool ShouldAutoSave()
@@ -136,7 +150,7 @@ public partial class NeoIniReader
     private void SafeStopHotReload()
     {
         if (Interlocked.CompareExchange(ref HotReloadState, 0, 1) != 1) return;
-        HotReloadCts.Cancel();
+        HotReloadCts?.Cancel();
     }
 
     private async Task ExecuteWithReadLockAsync(Action action, CancellationToken ct)
@@ -157,15 +171,15 @@ public partial class NeoIniReader
         }
     }
 
-    private void ValidateValue(string value, bool useAEVRule = false)
+    private void ValidateValue(string value, bool isValue = false)
     {
-        ThrowIfEmpty(value, useAEVRule);
-        ThrowIfContainsUnsupportedChars(value);
+        ThrowIfEmpty(value, isValue);
+        ThrowIfContainsUnsupportedChars(value, isValue);
     }
 
-    private void ValidateTwoValue(string value1, string value2, bool useAEVRule = false)
+    private void ValidateTwoValue(string value1, string value2)
     {
-        ValidateValue(value1, useAEVRule);
-        ValidateValue(value2, useAEVRule);
+        ValidateValue(value1, false);
+        ValidateValue(value2, false);
     }
 }

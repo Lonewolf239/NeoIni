@@ -3,6 +3,15 @@
 
 ## Changelog · NeoIni
 
+### 1.9-pre2 — 18 марта 2026
+
+#### List of changes
+
+- Улучшена реализация `AsyncReaderWriterLock`
+- Заменены широкие блоки `catch (Exception)` на обработку только ожидаемых исключений в `NeoIniFileProvider` и `NeoIniEncryptionProvider`
+- Выполнен небольшой рефакторинг кода для повышения читаемости и поддерживаемости
+- Включена поддержка `nullable reference types`, устранены все связанные предупреждения и ошибки по всему кодовой базе
+
 ### 1.9-pre1 — 17 марта 2026
 
 #### List of changes

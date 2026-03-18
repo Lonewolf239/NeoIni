@@ -13,25 +13,15 @@ namespace NeoIni.Generators
     [Generator]
     public sealed class NeoIniMappingGenerator : IIncrementalGenerator
     {
-        private sealed class PropertyMeta
+        private sealed class PropertyMeta(string containingTypeName, string propertyName, string propertyTypeName,
+                string section, string key, string? defaultValueLiteral)
         {
-            public string ContainingTypeName { get; private set; }
-            public string PropertyName { get; private set; }
-            public string PropertyTypeName { get; private set; }
-            public string Section { get; private set; }
-            public string Key { get; private set; }
-            public string? DefaultValueLiteral { get; private set; }
-
-            public PropertyMeta(string containingTypeName, string propertyName, string propertyTypeName,
-                    string section, string key, string? defaultValueLiteral)
-            {
-                ContainingTypeName = containingTypeName;
-                PropertyName = propertyName;
-                PropertyTypeName = propertyTypeName;
-                Section = section;
-                Key = key;
-                DefaultValueLiteral = defaultValueLiteral;
-            }
+            public string ContainingTypeName { get; private set; } = containingTypeName;
+            public string PropertyName { get; private set; } = propertyName;
+            public string PropertyTypeName { get; private set; } = propertyTypeName;
+            public string Section { get; private set; } = section;
+            public string Key { get; private set; } = key;
+            public string? DefaultValueLiteral { get; private set; } = defaultValueLiteral;
         }
 
         public void Initialize(IncrementalGeneratorInitializationContext context)
@@ -40,18 +30,18 @@ namespace NeoIni.Generators
                 .CreateSyntaxProvider(
                     predicate: static (node, _) => IsCandidateProperty(node),
                     transform: static (ctx, _) => GetPropertyInfo(ctx))
-                .Where(static info => info != null)!;
+                .Where(static info => info is not null)!;
             var groupedByType = propertyDeclarations
                 .Collect()
                 .Select(static (props, _) =>
                 {
-                    Dictionary<string, List<PropertyMeta>> dict = new();
+                    Dictionary<string, List<PropertyMeta>> dict = [];
                     foreach (var p in props)
                     {
                         if (p is null) continue;
                         if (!dict.TryGetValue(p.ContainingTypeName, out var list))
                         {
-                            list = new();
+                            list = [];
                             dict[p.ContainingTypeName] = list;
                         }
                         list.Add(p);
@@ -77,7 +67,7 @@ namespace NeoIni.Generators
             sb.AppendLine("    {");
             sb.AppendLine("        public static T Get<T>(this NeoIniReader reader) where T : new()");
             sb.AppendLine("        {");
-            sb.AppendLine("            if (reader == null) throw new ArgumentNullException(nameof(reader));");
+            sb.AppendLine("            if (reader is null) throw new ArgumentNullException(nameof(reader));");
             sb.AppendLine("            Type t = typeof(T);");
             sb.AppendLine();
             foreach (var kvp in grouped)
@@ -101,8 +91,8 @@ namespace NeoIni.Generators
             sb.AppendLine();
             sb.AppendLine("        public static void Set<T>(this NeoIniReader reader, T config)");
             sb.AppendLine("        {");
-            sb.AppendLine("            if (reader == null) throw new ArgumentNullException(nameof(reader));");
-            sb.AppendLine("            if (config == null) throw new ArgumentNullException(nameof(config));");
+            sb.AppendLine("            if (reader is null) throw new ArgumentNullException(nameof(reader));");
+            sb.AppendLine("            if (config is null) throw new ArgumentNullException(nameof(config));");
             sb.AppendLine("            Type t = typeof(T);");
             sb.AppendLine();
             foreach (var kvp in grouped)
@@ -129,7 +119,7 @@ namespace NeoIni.Generators
 
         private static string EscapeStringLiteral(string? value)
         {
-            if (value == null) return "null";
+            if (value is null) return "null";
             return "@\"" + value.Replace("\"", "\"\"") + "\"";
         }
 
@@ -139,14 +129,12 @@ namespace NeoIni.Generators
 
         private static PropertyMeta? GetPropertyInfo(GeneratorSyntaxContext context)
         {
-            var propertySyntax = context.Node as PropertyDeclarationSyntax;
-            if (propertySyntax == null) return null;
+            if (context.Node is not PropertyDeclarationSyntax propertySyntax) return null;
             var model = context.SemanticModel;
-            var propertySymbol = model.GetDeclaredSymbol(propertySyntax) as IPropertySymbol;
-            if (propertySymbol == null) return null;
+            if (model.GetDeclaredSymbol(propertySyntax) is not IPropertySymbol propertySymbol) return null;
             var attr = propertySymbol.GetAttributes()
-                .FirstOrDefault(a => a.AttributeClass != null && a.AttributeClass.ToDisplayString() == "NeoIni.Annotations.NeoIniKeyAttribute");
-            if (attr == null) return null;
+                .FirstOrDefault(a => a.AttributeClass is not null && a.AttributeClass.ToDisplayString() == "NeoIni.Annotations.NeoIniKeyAttribute");
+            if (attr is null) return null;
             string section = "";
             string key = "";
             string? defaultValueLiteral = null;
@@ -155,15 +143,18 @@ namespace NeoIni.Generators
                 section = (string?)attr.ConstructorArguments[0].Value ?? "";
                 key = (string?)attr.ConstructorArguments[1].Value ?? "";
             }
-            var defaultValueArg = attr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "DefaultValue");
-            if (defaultValueArg.Value.Value != null)
+            if (attr.ConstructorArguments.Length >= 3)
             {
-                object dv = defaultValueArg.Value.Value;
-                if (dv is string) defaultValueLiteral = EscapeStringLiteral((string)dv);
-                else if (dv is bool) defaultValueLiteral = ((bool)dv) ? "true" : "false";
-                else if (dv is char) defaultValueLiteral = "'" + dv.ToString().Replace("'", "\\'") + "'";
-                else if (dv is IFormattable) defaultValueLiteral = ((IFormattable)dv).ToString(null, CultureInfo.InvariantCulture);
-                else defaultValueLiteral = dv.ToString();
+                var dvConstant = attr.ConstructorArguments[2];
+                if (dvConstant.Value is not null)
+                {
+                    object dv = dvConstant.Value;
+                    if (dv is string s) defaultValueLiteral = EscapeStringLiteral(s);
+                    else if (dv is bool b) defaultValueLiteral = b ? "true" : "false";
+                    else if (dv is char c) defaultValueLiteral = "'" + c.ToString().Replace("'", "\\'") + "'";
+                    else if (dv is IFormattable f) defaultValueLiteral = f.ToString(null, CultureInfo.InvariantCulture);
+                    else defaultValueLiteral = dv.ToString();
+                }
             }
             var containingType = propertySymbol.ContainingType;
             string typeName = containingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);

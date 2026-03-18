@@ -9,7 +9,7 @@ internal sealed class NeoIniEncryptionProvider
     private const int Pbkdf2Iterations = 320000;
     private const int KeySizeBytes = 32;
 
-    private static byte[] DeriveKeyFromString(string password, byte[] salt, int keySize = KeySizeBytes)
+    private static byte[] DeriveKeyFromString(string? password, byte[]? salt, int keySize = KeySizeBytes)
     {
         if (password is null) throw new ArgumentNullException(nameof(password));
         if (salt is null) throw new ArgumentNullException(nameof(salt));
@@ -24,15 +24,16 @@ internal sealed class NeoIniEncryptionProvider
         return salt;
     }
 
-    private static string GeneratePasswordFromUserId(byte[] salt)
+    private static string GeneratePasswordFromUserId(byte[]? salt)
     {
+        salt ??= GenerateRandomSalt();
         string userId = Environment.UserName ?? Environment.GetEnvironmentVariable("USER") ?? "unknown";
         string envSeed = $"{userId}:{Environment.MachineName}:{Environment.UserDomainName ?? "local"}";
         byte[] passwordBytes = DeriveKeyFromString(envSeed, salt, KeySizeBytes);
         return Convert.ToHexString(passwordBytes).ToLowerInvariant();
     }
 
-    internal static EncryptionParameters GetEncryptionParameters(string password = null, byte[] salt = null)
+    internal static EncryptionParameters GetEncryptionParameters(string? password = null, byte[]? salt = null)
     {
         salt ??= GenerateRandomSalt();
         password ??= GeneratePasswordFromUserId(salt);
@@ -41,5 +42,5 @@ internal sealed class NeoIniEncryptionProvider
 
     internal static byte[] HashData(byte[] data) => SHA256.HashData(data);
 
-    internal static string GetEncryptionPassword(byte[] salt) => GeneratePasswordFromUserId(salt);
+    internal static string GetEncryptionPassword(byte[]? salt) => GeneratePasswordFromUserId(salt);
 }

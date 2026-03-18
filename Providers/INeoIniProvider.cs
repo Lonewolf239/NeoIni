@@ -49,5 +49,5 @@ public interface INeoIniProvider
     /// <summary>Raises the <see cref="Error"/> event with the specified sender and error details.</summary>
     /// <param name="sender">The source of the error, or <c>null</c> to use the provider itself.</param>
     /// <param name="e">The event arguments containing the exception.</param>
-    void RaiseError(object sender, ProviderErrorEventArgs e);
+    void RaiseError(object? sender, ProviderErrorEventArgs e);
 }

@@ -20,19 +20,19 @@ public sealed class NeoIniKeyAttribute : Attribute
     /// Optional default value (as string) used when the key is missing.
     /// If null, NeoIniReader's default handling is used.
     /// </summary>
-    public string DefaultValue { get; set; }
+    public string? DefaultValue { get; }
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="NeoIniKeyAttribute"/> class.
-    /// </summary>
+    /// <summary>Initializes a new instance of the <see cref="NeoIniKeyAttribute"/> class.</summary>
     /// <param name="section">The INI section name.</param>
     /// <param name="key">The INI key name inside the section.</param>
+    /// <param name="defaultValue">The default value.</param>
     /// <exception cref="ArgumentNullException">
     /// Thrown if <paramref name="section"/> or <paramref name="key"/> is <see langword="null"/>.
     /// </exception>
-    public NeoIniKeyAttribute(string section, string key)
+    public NeoIniKeyAttribute(string section, string key, object? defaultValue = null)
     {
         Section = section ?? throw new ArgumentNullException(nameof(section));
         Key = key ?? throw new ArgumentNullException(nameof(key));
+        DefaultValue = defaultValue?.ToString();
     }
 }

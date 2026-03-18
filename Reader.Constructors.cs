@@ -8,11 +8,11 @@ namespace NeoIni;
 
 public partial class NeoIniReader
 {
-    private NeoIniReader(string path, EncryptionParameters encryptionParameters, bool autoEncryption, NeoIniReaderOptions options)
+    private NeoIniReader(string path, EncryptionParameters encryptionParameters, bool autoEncryption, NeoIniReaderOptions? options)
     {
         FilePath = path;
         AutoEncryption = autoEncryption;
-        if (encryptionParameters.Key != null && encryptionParameters.Salt != null)
+        if (encryptionParameters.Key is not null && encryptionParameters.Salt is not null)
             Provider = new NeoIniFileProvider(path, encryptionParameters, autoEncryption);
         else Provider = new NeoIniFileProvider(path);
         ApplyOptions(options);
@@ -25,7 +25,7 @@ public partial class NeoIniReader
     /// </summary>
     /// <param name="provider">The pluggable data provider responsible for underlying data operations.</param>
     /// <param name="options">Optional reader configuration; if null, default settings are used.</param>
-    public NeoIniReader(INeoIniProvider provider, NeoIniReaderOptions options = null)
+    public NeoIniReader(INeoIniProvider provider, NeoIniReaderOptions? options = null)
     {
         Provider = provider ?? throw new ArgumentNullException(nameof(provider));
         ApplyOptions(options);
@@ -39,7 +39,7 @@ public partial class NeoIniReader
     /// <param name="options">
     /// Optional reader configuration; if <c>null</c>, <see cref="NeoIniReaderOptions.Default"/> is used.
     /// </param>
-    public NeoIniReader(string path, NeoIniReaderOptions options = null) : this(path, new(null, null), false, options)
+    public NeoIniReader(string path, NeoIniReaderOptions? options = null) : this(path, new(null, null), false, options)
     {
         var neoIniData = Provider.GetData();
         Data = neoIniData.Data;
@@ -60,7 +60,7 @@ public partial class NeoIniReader
     /// <param name="options">
     /// Optional reader configuration; if <c>null</c>, <see cref="NeoIniReaderOptions.Default"/> is used.
     /// </param>
-    public NeoIniReader(string path, bool autoEncryption, NeoIniReaderOptions options = null) :
+    public NeoIniReader(string path, bool autoEncryption, NeoIniReaderOptions? options = null) :
         this(path, autoEncryption ?
                 NeoIniEncryptionProvider.GetEncryptionParameters(salt: NeoIniFileProvider.GetSalt(path)) :
                 new(null, null), autoEncryption, options)
@@ -76,7 +76,7 @@ public partial class NeoIniReader
     /// <param name="options">
     /// Optional reader configuration; if <c>null</c>, <see cref="NeoIniReaderOptions.Default"/> is used.
     /// </param>
-    public NeoIniReader(string path, string encryptionPassword, NeoIniReaderOptions options = null) :
+    public NeoIniReader(string path, string encryptionPassword, NeoIniReaderOptions? options = null) :
         this(path, NeoIniEncryptionProvider.GetEncryptionParameters(encryptionPassword, NeoIniFileProvider.GetSalt(path)), false, options)
     {
         CustomEncryptionPassword = true;
@@ -96,7 +96,7 @@ public partial class NeoIniReader
     /// A task that represents the asynchronous creation operation, 
     /// containing the fully initialized <see cref="NeoIniReader"/> ready for use.
     /// </returns>
-    public static async Task<NeoIniReader> CreateAsync(INeoIniProvider provider, NeoIniReaderOptions options = null,
+    public static async Task<NeoIniReader> CreateAsync(INeoIniProvider provider, NeoIniReaderOptions? options = null,
             CancellationToken cancellationToken = default)
     {
         NeoIniReader reader = new(provider, options);
@@ -119,7 +119,7 @@ public partial class NeoIniReader
     /// A task that represents the asynchronous creation operation,
     /// containing the initialized <see cref="NeoIniReader"/>.
     /// </returns>
-    public static async Task<NeoIniReader> CreateAsync(string path, NeoIniReaderOptions options = null,
+    public static async Task<NeoIniReader> CreateAsync(string path, NeoIniReaderOptions? options = null,
             CancellationToken cancellationToken = default)
     {
         NeoIniReader reader = new(path, new(null, null), false, options);
@@ -148,7 +148,7 @@ public partial class NeoIniReader
     /// A task that represents the asynchronous creation operation,
     /// containing the initialized <see cref="NeoIniReader"/>.
     /// </returns>
-    public static async Task<NeoIniReader> CreateAsync(string path, bool autoEncryption, NeoIniReaderOptions options = null,
+    public static async Task<NeoIniReader> CreateAsync(string path, bool autoEncryption, NeoIniReaderOptions? options = null,
         CancellationToken cancellationToken = default)
     {
         NeoIniReader reader = new(path, autoEncryption ?
@@ -173,12 +173,12 @@ public partial class NeoIniReader
     /// A task that represents the asynchronous creation operation,
     /// containing the initialized <see cref="NeoIniReader"/>.
     /// </returns>
-    public static async Task<NeoIniReader> CreateAsync(string path, string encryptionPassword, NeoIniReaderOptions options = null,
+    public static async Task<NeoIniReader> CreateAsync(string path, string encryptionPassword, NeoIniReaderOptions? options = null,
         CancellationToken cancellationToken = default)
     {
         NeoIniReader reader = new(path,
-                NeoIniEncryptionProvider.GetEncryptionParameters(encryptionPassword, NeoIniFileProvider.GetSalt(path)), false, options);
-        reader.CustomEncryptionPassword = true;
+                NeoIniEncryptionProvider.GetEncryptionParameters(encryptionPassword, NeoIniFileProvider.GetSalt(path)), false, options)
+        { CustomEncryptionPassword = true };
         var neoIniData = await reader.Provider.GetDataAsync(ct: cancellationToken).ConfigureAwait(false);
         reader.Data = neoIniData.Data;
         reader.Comments = neoIniData.Comments;
@@ -197,10 +197,9 @@ public partial class NeoIniReader
     /// Activating this mode automatically disables checksum validation to accommodate manual 
     /// modifications to the data source. This mode cannot be used concurrently with encryption.
     /// </remarks>
-    public static NeoIniReader CreateHumanMode(INeoIniProvider provider, NeoIniReaderOptions options = null)
+    public static NeoIniReader CreateHumanMode(INeoIniProvider provider, NeoIniReaderOptions? options = null)
     {
-        NeoIniReader reader = new(provider, options);
-        reader.HumanMode = true;
+        NeoIniReader reader = new(provider, options) { HumanMode = true };
         var neoIniData = reader.Provider.GetData(true);
         reader.Data = neoIniData.Data;
         reader.Comments = neoIniData.Comments;
@@ -223,11 +222,10 @@ public partial class NeoIniReader
     /// Activating this mode automatically disables checksum validation to accommodate manual 
     /// modifications to the data source. This mode cannot be used concurrently with encryption.
     /// </remarks>
-    public static async Task<NeoIniReader> CreateHumanModeAsync(INeoIniProvider provider, NeoIniReaderOptions options = null,
+    public static async Task<NeoIniReader> CreateHumanModeAsync(INeoIniProvider provider, NeoIniReaderOptions? options = null,
             CancellationToken cancellationToken = default)
     {
-        NeoIniReader reader = new(provider, options);
-        reader.HumanMode = true;
+        NeoIniReader reader = new(provider, options) { HumanMode = true };
         var neoIniData = await reader.Provider.GetDataAsync(true, cancellationToken).ConfigureAwait(false);
         reader.Data = neoIniData.Data;
         reader.Comments = neoIniData.Comments;
@@ -247,10 +245,9 @@ public partial class NeoIniReader
     /// <exception cref="InvalidOperationException">
     /// Thrown when encryption is enabled on the associated <see cref="Provider"/>.
     /// </exception>
-    public static NeoIniReader CreateHumanMode(string path, NeoIniReaderOptions options = null)
+    public static NeoIniReader CreateHumanMode(string path, NeoIniReaderOptions? options = null)
     {
-        NeoIniReader reader = new(path, new(null, null), false, options);
-        reader.HumanMode = true;
+        NeoIniReader reader = new(path, new(null, null), false, options) { HumanMode = true };
         var neoIniData = reader.Provider.GetData(true);
         reader.Data = neoIniData.Data;
         reader.Comments = neoIniData.Comments;
@@ -274,11 +271,10 @@ public partial class NeoIniReader
     /// <exception cref="InvalidOperationException">
     /// Thrown when encryption is enabled on the associated <see cref="Provider"/>.
     /// </exception>
-    public static async Task<NeoIniReader> CreateHumanModeAsync(string path, NeoIniReaderOptions options = null,
+    public static async Task<NeoIniReader> CreateHumanModeAsync(string path, NeoIniReaderOptions? options = null,
         CancellationToken cancellationToken = default)
     {
-        NeoIniReader reader = new(path, new(null, null), false, options);
-        reader.HumanMode = true;
+        NeoIniReader reader = new(path, new(null, null), false, options) { HumanMode = true };
         var neoIniData = await reader.Provider.GetDataAsync(true, cancellationToken).ConfigureAwait(false);
         reader.Data = neoIniData.Data;
         reader.Comments = neoIniData.Comments;

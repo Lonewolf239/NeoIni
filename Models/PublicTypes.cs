@@ -15,15 +15,15 @@ public record SearchResult(string Section, string Key, string Value);
 public class NeoIniData
 {
     /// <summary>Gets the structured dictionary containing sections, keys, and their corresponding values.</summary>
-    public Data Data { get; }
+    public Data? Data { get; }
 
     /// <summary>Gets the collection of comments preserved from the INI source.</summary>
-    public List<Comment> Comments { get; }
+    public List<Comment>? Comments { get; }
 
     /// <summary>Initializes a new instance of the <see cref="NeoIniData"/> class.</summary>
     /// <param name="data">The parsed INI data structure.</param>
     /// <param name="comments">The list of parsed INI comments.</param>
-    public NeoIniData(Data data, List<Comment> comments)
+    public NeoIniData(Data? data, List<Comment>? comments)
     {
         Data = data;
         Comments = comments;
@@ -58,7 +58,7 @@ public enum CommentType
 public class Comment
 {
     /// <summary>Gets the associated identifier or line string this comment is bound to.</summary>
-    public string Line { get; }
+    public string? Line { get; }
 
     /// <summary>Gets the positional type of the comment indicating where it was placed in the original source.</summary>
     public CommentType CommentType { get; }
@@ -70,7 +70,7 @@ public class Comment
     /// <param name="line">The associated line or element identifier.</param>
     /// <param name="commentType">The positional type of the comment.</param>
     /// <param name="content">The text content of the comment.</param>
-    public Comment(string line, CommentType commentType, string content)
+    public Comment(string? line, CommentType commentType, string content)
     {
         Line = line;
         CommentType = commentType;

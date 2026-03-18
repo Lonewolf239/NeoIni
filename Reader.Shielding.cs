@@ -15,9 +15,9 @@ public partial class NeoIniReader
 
     internal async Task<string> GetSaveContentAsync(CancellationToken ct = default)
     {
-        if (HotReloadState == 1) await ExecuteWithWriteLockAsync(() => PauseHotReload.Reset(), ct).ConfigureAwait(false);
+        if (HotReloadState == 1) await ExecuteWithWriteLockAsync(PauseHotReload.Reset, ct).ConfigureAwait(false);
         ct.ThrowIfCancellationRequested();
-        using (await Lock.ReadLockAsync().ConfigureAwait(false)) return NeoIniParser.GetContent(Data, Comments, HumanMode, UseShielding);
+        using (await Lock.ReadLockAsync(ct).ConfigureAwait(false)) return NeoIniParser.GetContent(Data, Comments, HumanMode, UseShielding);
     }
 
     internal void FinalizeSave()
@@ -81,23 +81,22 @@ public partial class NeoIniReader
         KeyAdded?.Invoke(this, new(section, key, valueString));
     }
 
-    internal (bool, string) GetValueHelper<T>(string section, string key, T defaultValue)
+    internal (bool, string?) GetValueHelper<T>(string section, string key, T? defaultValue)
     {
         ThrowIfDisposed();
         ValidateTwoValue(section, key);
-        string stringValue = null;
+        string? stringValue = null;
         bool valueAdded = false;
         using (Lock.ReadLock()) stringValue = NeoIniParser.GetStringRaw(Data, section, key);
-        if (stringValue == null && UseAutoAdd)
+        if (stringValue is null && UseAutoAdd)
         {
             using (Lock.WriteLock())
             {
                 stringValue = NeoIniParser.GetStringRaw(Data, section, key);
-                if (stringValue == null)
+                if (stringValue is null)
                 {
                     string defaultValueString = NeoIniParser.ValueToString(defaultValue);
-                    ThrowIfEmpty(defaultValueString);
-                    ThrowIfContainsUnsupportedChars(defaultValueString);
+                    ValidateValue(defaultValueString, true);
                     NeoIniReaderCore.AddKey(Data, section, key, defaultValueString);
                     stringValue = defaultValueString;
                     valueAdded = true;
@@ -107,23 +106,22 @@ public partial class NeoIniReader
         return (valueAdded, stringValue);
     }
 
-    internal async Task<(bool, string)> GetValueHelperAsync<T>(string section, string key, T defaultValue, CancellationToken ct = default)
+    internal async Task<(bool, string?)> GetValueHelperAsync<T>(string section, string key, T? defaultValue, CancellationToken ct = default)
     {
         ThrowIfDisposed();
         ValidateTwoValue(section, key);
         ct.ThrowIfCancellationRequested();
-        string stringValue = null;
+        string? stringValue = null;
         bool valueAdded = false;
         await ExecuteWithReadLockAsync(() => stringValue = NeoIniParser.GetStringRaw(Data, section, key), ct).ConfigureAwait(false);
-        if (stringValue == null && UseAutoAdd)
+        if (stringValue is null && UseAutoAdd)
             await ExecuteWithWriteLockAsync(() =>
                 {
                     stringValue = NeoIniParser.GetStringRaw(Data, section, key);
-                    if (stringValue == null)
+                    if (stringValue is null)
                     {
                         string defaultValueString = NeoIniParser.ValueToString(defaultValue);
-                        ThrowIfEmpty(defaultValueString);
-                        ThrowIfContainsUnsupportedChars(defaultValueString);
+                        ValidateValue(defaultValueString, true);
                         NeoIniReaderCore.AddKey(Data, section, key, defaultValueString);
                         stringValue = defaultValueString;
                         valueAdded = true;
