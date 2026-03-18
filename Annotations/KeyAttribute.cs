@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 
 namespace NeoIni.Annotations;
 
@@ -33,6 +34,7 @@ public sealed class NeoIniKeyAttribute : Attribute
     {
         Section = section ?? throw new ArgumentNullException(nameof(section));
         Key = key ?? throw new ArgumentNullException(nameof(key));
-        DefaultValue = defaultValue?.ToString();
+        if (defaultValue is IFormattable formattable) DefaultValue = formattable.ToString(null, CultureInfo.InvariantCulture);
+        else DefaultValue = defaultValue?.ToString();
     }
 }

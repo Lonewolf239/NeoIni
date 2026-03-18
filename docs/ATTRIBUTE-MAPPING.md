@@ -11,6 +11,13 @@ Map INI configuration to typed C# classes with zero reflection overhead. NeoIni'
 
 Decorate properties with `NeoIniKeyAttribute`. The attribute takes two required constructor parameters (`Section`, `Key`) and one optional property (`DefaultValue`).
 
+#### Syntax changes between versions
+
+- **NeoIni 1.8 and earlier** – default value is set via the named property `DefaultValue`:
+```csharp
+[NeoIniKey("General", "AppName", DefaultValue = "MyApp")]
+```
+
 ```csharp
 using NeoIni.Annotations;
 
@@ -18,19 +25,19 @@ namespace MyApp.Config;
 
 public sealed class AppConfig
 {
-    [NeoIniKey("General", "AppName", DefaultValue = "MyApp")]
+    [NeoIniKey("General", "AppName", "MyApp")]
     public string AppName { get; set; }
 
-    [NeoIniKey("General", "LogLevel", DefaultValue = "Info")]
+    [NeoIniKey("General", "LogLevel", "Info")]
     public string LogLevel { get; set; }
 
-    [NeoIniKey("Database", "Host", DefaultValue = "localhost")]
+    [NeoIniKey("Database", "Host", "localhost")]
     public string DbHost { get; set; }
 
-    [NeoIniKey("Database", "Port", DefaultValue = "5432")]
+    [NeoIniKey("Database", "Port", 5432)]
     public int DbPort { get; set; }
 
-    [NeoIniKey("Features", "EnableMetrics", DefaultValue = "true")]
+    [NeoIniKey("Features", "EnableMetrics", true)]
     public bool EnableMetrics { get; set; }
 }
 ```
