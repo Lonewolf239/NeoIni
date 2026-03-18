@@ -38,7 +38,7 @@ Long-term development plan for NeoIni. The library evolves from a single-file IN
 
 | Version | Status | Description |
 |---------|--------|-------------|
-| 2.0 | 🕓 Planned | Rename `NeoIniReader` → `NeoIniDocument`. Extract `HotReloadManager` into a standalone component. |
+| 2.0 | 🕓 Planned | Rename `NeoIniReader` → `NeoIniDocument`. Introduce `IEncryptionProvider` interface to allow pluggable encryption algorithms (AES, custom implementations). |
 
 #### Migration strategy
 

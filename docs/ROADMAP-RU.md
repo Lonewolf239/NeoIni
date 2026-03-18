@@ -38,7 +38,7 @@
 
 | Version | Status | Description |
 |--------|--------|----------|
-| 2.0 | 🕓 Planned | Переименование `NeoIniReader` → `NeoIniDocument`. Выделение `HotReloadManager` в самостоятельный компонент. |
+| 2.0 | 🕓 Planned | Переименование `NeoIniReader` → `NeoIniDocument`. Введение интерфейса `IEncryptionProvider` для подключаемых алгоритмов шифрования (AES, пользовательские реализации). |
 
 #### Стратегия миграции
 
