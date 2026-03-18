@@ -23,8 +23,7 @@ NeoIniReader reader = await NeoIniReader.CreateHumanModeAsync("config.ini", canc
 
 ### Behavior when enabled
 
-- **Comments preserved:** Lines starting with `;` or `#` are kept intact across load/save cycles.
-- **Blank lines preserved:** Empty lines between sections and keys are not removed.
+- **Comments preserved:** Lines starting with `;` are kept intact across load/save cycles.
 - **Original ordering:** Sections and keys remain in their original order.
 - **No checksum:** `UseChecksum` is disabled — the file is not checksummed or integrity-checked.
 - **No encryption:** AES-256 encryption is not available in human mode.
@@ -34,7 +33,6 @@ NeoIniReader reader = await NeoIniReader.CreateHumanModeAsync("config.ini", canc
 ### Limitations
 
 - Human mode is **read/write but not merge-safe** — if the file is modified externally while the reader holds unsaved changes, the external edits may be overwritten on save.
-- Inline comments (after a value on the same line) are not preserved.
 - All other `NeoIniReader` features (typed get/set, events, auto-save, sections, search) work as normal.
 
 ---
