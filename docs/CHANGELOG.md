@@ -8,7 +8,7 @@
 #### List of changes
 
 - Improved `AsyncReaderWriterLock` implementation for better performance and reliability
-- Replaced broad `catch (Exception)` blocks with specific exception handling in `NeoIniFileProvider` and `NeoIniEncryptionProvider`
+- Replaced broad `catch (Exception)` blocks with specific exception handling in `NeoIniFileProvider` and `NeoIniParser`
 - Performed minor code refactoring to enhance readability and maintainability
 - Enabled `nullable reference types` and resolved all related warnings and errors throughout the codebase
 
