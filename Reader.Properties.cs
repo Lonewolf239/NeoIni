@@ -62,7 +62,7 @@ public partial class NeoIniReader
     /// </summary>
     public bool UseChecksum
     {
-        get => HumanMode ? false : _UseChecksum;
+        get => !HumanMode && _UseChecksum;
         set => _UseChecksum = value;
     }
 

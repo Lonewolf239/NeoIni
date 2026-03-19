@@ -10,14 +10,15 @@ public partial class NeoIniReader
     internal string GetSaveContent()
     {
         if (HotReloadState == 1) { using (Lock.WriteLock()) PauseHotReload.Reset(); }
-        using (Lock.ReadLock()) return NeoIniParser.GetContent(Data, Comments, HumanMode, UseShielding);
+        using (Lock.ReadLock()) return NeoIniParser.GetContent(Data, Comments, UseShielding);
     }
 
     internal async Task<string> GetSaveContentAsync(CancellationToken ct = default)
     {
         if (HotReloadState == 1) await ExecuteWithWriteLockAsync(PauseHotReload.Reset, ct).ConfigureAwait(false);
         ct.ThrowIfCancellationRequested();
-        using (await Lock.ReadLockAsync(ct).ConfigureAwait(false)) return NeoIniParser.GetContent(Data, Comments, HumanMode, UseShielding);
+        using (await Lock.ReadLockAsync(ct).ConfigureAwait(false))
+            return NeoIniParser.GetContent(Data, Comments, UseShielding);
     }
 
     internal void FinalizeSave()

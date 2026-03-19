@@ -63,7 +63,6 @@ internal partial class NeoIniParser
             if (targetType == typeof(DateTime))
                 return DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out DateTime dtResult) ?
                      (T)(object)dtResult : defaultValue;
-
             return (T?)Convert.ChangeType(value, targetType, CultureInfo.InvariantCulture);
         }
         catch (FormatException ex)
@@ -111,7 +110,7 @@ internal partial class NeoIniParser
         return value;
     }
 
-    internal static string GetContent(Data? data, Comments? commentsData, bool humanization, bool useShielding)
+    internal static string GetContent(Data? data, Comments? commentsData, bool useShielding)
     {
         if (data is null || data.Count == 0) return string.Empty;
         int estimatedSize = Environment.NewLine.Length;
@@ -158,7 +157,7 @@ internal partial class NeoIniParser
     internal static bool IsSectionLine(string? trimmed)
     {
         if (string.IsNullOrEmpty(trimmed)) return false;
-        TryParseLine(trimmed, out var section, out _);
+        _ = TryParseLine(trimmed, out var section, out _);
         return section.Length > 1 && section[0] == '[' && section[^1] == ']';
     }
 
@@ -192,7 +191,7 @@ internal partial class NeoIniParser
 
     internal static string HandleSectionLine(string? trimmed, bool humanization, Data data, Comments? comments)
     {
-        TryParseLine(trimmed, out var sectionPart, out var comment);
+        _ = TryParseLine(trimmed, out var sectionPart, out var comment);
         var section = sectionPart.Trim('[', ']');
         if (!data.ContainsKey(section)) data[section] = new();
         if (humanization && !string.IsNullOrEmpty(comment) && comments is not null)

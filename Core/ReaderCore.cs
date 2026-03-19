@@ -20,7 +20,7 @@ internal sealed class NeoIniReaderCore
     internal static void AddSection(Data? data, string? section)
     {
         if (data is not null && section is not null)
-            data.TryAdd(section, new Dictionary<string, string>());
+            _ = data.TryAdd(section, new Dictionary<string, string>());
     }
 
     internal static void AddKey(Data? data, string? section, string? key, string? value)
@@ -89,8 +89,8 @@ internal sealed class NeoIniReaderCore
     internal static void RenameSection(Data? data, string? oldSection, string? newSection)
     {
         if (data is null || oldSection is null || newSection is null) return;
-        if (!data.ContainsKey(oldSection) || data.ContainsKey(newSection)) return;
-        data[newSection] = data[oldSection];
+        if (!data.TryGetValue(oldSection, out Dictionary<string, string>? value) || data.ContainsKey(newSection)) return;
+        data[newSection] = value;
         data.Remove(oldSection);
     }
 

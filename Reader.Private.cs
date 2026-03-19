@@ -42,7 +42,7 @@ public partial class NeoIniReader
     {
         using (Lock.WriteLock())
         {
-            string? content = SaveOnDispose ? NeoIniParser.GetContent(Data, Comments, HumanMode, UseShielding) : null;
+            string? content = SaveOnDispose ? NeoIniParser.GetContent(Data, Comments, UseShielding) : null;
             Data?.Clear();
             Comments?.Clear();
             return content;

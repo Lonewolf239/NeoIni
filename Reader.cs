@@ -10,13 +10,13 @@ using NeoIni.Providers;
 namespace NeoIni;
 
 /// <summary>
-/// A class for working with INI files.
+/// Secure, thread-safe INI configuration library for .NET with built-in integrity checking, AES-256 encryption, and a pluggable provider architecture.
 /// <br/>
 /// Developer: <a href="https://github.com/Lonewolf239">Lonewolf239</a>
 /// <br/>
 /// <b>Target Framework: .NET 6+</b>
 /// <br/>
-/// <b>Version: 1.9-pre2</b>
+/// <b>Version: 1.9</b>
 /// <br/>
 /// <b>Black Box Philosophy:</b> This class follows a strict "black box" design principle - users interact only through the public API without needing to understand internal implementation details. Input goes in, processed output comes out, internals remain hidden and abstracted.
 /// </summary>
@@ -32,7 +32,7 @@ public partial class NeoIniReader : IDisposable, IAsyncDisposable
         ThrowIfDisposed();
         string content;
         using (Lock.ReadLock())
-            content = NeoIniParser.GetContent(Data, Comments, HumanMode, UseShielding);
+            content = NeoIniParser.GetContent(Data, Comments, UseShielding);
         return content;
     }
 

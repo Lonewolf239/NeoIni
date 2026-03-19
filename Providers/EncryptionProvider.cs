@@ -11,8 +11,8 @@ internal sealed class NeoIniEncryptionProvider
 
     private static byte[] DeriveKeyFromString(string? password, byte[]? salt, int keySize = KeySizeBytes)
     {
-        if (password is null) throw new ArgumentNullException(nameof(password));
-        if (salt is null) throw new ArgumentNullException(nameof(salt));
+        ArgumentNullException.ThrowIfNull(password, nameof(password));
+        ArgumentNullException.ThrowIfNull(salt, nameof(salt));
         return Rfc2898DeriveBytes.Pbkdf2(password, salt, Pbkdf2Iterations, HashAlgorithmName.SHA256, keySize);
     }
 
