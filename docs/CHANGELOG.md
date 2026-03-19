@@ -3,6 +3,13 @@
 
 ## Changelog · NeoIni
 
+### 1.9 — March 19, 2026
+
+#### List of changes
+
+- Minor code refactoring
+- Minor bug fixes
+
 ### 1.9-pre2 — March 18, 2026
 
 #### List of changes

@@ -30,7 +30,7 @@
 
 | Version | Status | Description |
 |--------|--------|----------|
-| 1.9 | 🔄 In Progress | Async-safe конкурентность: замена `ReaderWriterLockSlim` на async-совместимый примитив. |
+| 1.9 | ✅ Released | Async-safe конкурентность: замена `ReaderWriterLockSlim` на async-совместимый примитив. |
 
 ---
 

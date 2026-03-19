@@ -19,7 +19,8 @@ NeoIni follows a tiered support model:
 
 | Version | Status | Support |
 |---------|--------|---------|
-| 1.8 | **CSR** | Security patches + bug fixes |
+| 1.9 | **CSR** | Security patches + bug fixes |
+| 1.8 | LSR | Available for download |
 | 1.7.3 | LSR | Available for download |
 | 1.7.2 | LSR | Available for download |
 | 1.7.1 | LSR | Available for download. Using the weaker Set methods is not recommended if you accept untrusted input. |

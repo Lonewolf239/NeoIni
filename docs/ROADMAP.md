@@ -30,7 +30,7 @@ Long-term development plan for NeoIni. The library evolves from a single-file IN
 
 | Version | Status | Description |
 |---------|--------|-------------|
-| 1.9 | 🔄 In Progress | Async-safe concurrency: replace `ReaderWriterLockSlim` with async-compatible primitive. |
+| 1.9 | ✅ Released | Async-safe concurrency: replace `ReaderWriterLockSlim` with async-compatible primitive. |
 
 ---
 
