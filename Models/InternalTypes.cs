@@ -2,8 +2,6 @@ using System;
 
 namespace NeoIni.Models;
 
-internal record EncryptionParameters(byte[]? Key, byte[]? Salt);
-
 [Flags]
 internal enum HeaderFlags : byte
 {

@@ -14,6 +14,7 @@ public partial class NeoIniReader
     private readonly INeoIniProvider Provider;
     private readonly string? FilePath;
 
+    private readonly IEncryptionProvider EncryptionProvider;
     private readonly bool AutoEncryption = false;
     private bool CustomEncryptionPassword = false;
 
@@ -83,6 +84,20 @@ public partial class NeoIniReader
             Lock.Dispose();
         }
         Disposed = true;
+    }
+
+    internal void Load()
+    {
+        var neoIniData = Provider.GetData();
+        Data = neoIniData.Data;
+        Comments = neoIniData.Comments;
+    }
+
+    internal async Task LoadAsync(CancellationToken cancellationToken = default)
+    {
+        var neoIniData = await Provider.GetDataAsync(ct: cancellationToken).ConfigureAwait(false);
+        Data = neoIniData.Data;
+        Comments = neoIniData.Comments;
     }
 
     private void ApplyOptions(NeoIniReaderOptions? options)

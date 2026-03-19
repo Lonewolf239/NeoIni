@@ -3,9 +3,12 @@ using Data = System.Collections.Generic.Dictionary<string, System.Collections.Ge
 
 namespace NeoIni.Models;
 
-/// <summary>
-/// Represents a matched entry found during a search operation in the INI file.
-/// </summary>
+/// <summary>Represents encryption parameters consisting of a key and a salt.</summary>
+/// <param name="Key">The encryption key as a byte array. May be null if not applicable.</param>
+/// <param name="Salt">The salt used in key derivation as a byte array. May be null if not applicable.</param>
+public record EncryptionParameters(byte[]? Key, byte[]? Salt);
+
+/// <summary>Represents a matched entry found during a search operation in the INI file.</summary>
 /// <param name="Section">The name of the section where the match was found.</param>
 /// <param name="Key">The key of the matched entry.</param>
 /// <param name="Value">The value of the matched entry.</param>

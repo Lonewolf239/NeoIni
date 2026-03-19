@@ -4,7 +4,7 @@ using NeoIni.Models;
 
 namespace NeoIni.Providers;
 
-internal sealed class NeoIniEncryptionProvider
+internal sealed class NeoIniEncryptionProvider : IEncryptionProvider
 {
     private const int Pbkdf2Iterations = 320000;
     private const int KeySizeBytes = 32;
@@ -33,12 +33,12 @@ internal sealed class NeoIniEncryptionProvider
         return Convert.ToHexString(passwordBytes).ToLowerInvariant();
     }
 
-    internal static EncryptionParameters GetEncryptionParameters(string? password = null, byte[]? salt = null)
+    public EncryptionParameters GetEncryptionParameters(string? password = null, byte[]? salt = null)
     {
         salt ??= GenerateRandomSalt();
         password ??= GeneratePasswordFromUserId(salt);
         return new(DeriveKeyFromString(password, salt, KeySizeBytes), salt);
     }
 
-    internal static string GetEncryptionPassword(byte[]? salt) => GeneratePasswordFromUserId(salt);
+    public string GetEncryptionPassword(byte[]? salt) => GeneratePasswordFromUserId(salt);
 }

@@ -578,6 +578,6 @@ public partial class NeoIniReader : IDisposable, IAsyncDisposable
             throw new UnsupportedProviderOperationException("Retrieving the auto-generated encryption password is only supported when using the default file provider.");
         if (!AutoEncryption) return "AutoEncryption is disabled";
         if (CustomEncryptionPassword) return "CustomEncryptionPassword is used. For security reasons, the password is not saved.";
-        return NeoIniEncryptionProvider.GetEncryptionPassword(NeoIniFileProvider.GetSalt(FilePath));
+        return EncryptionProvider.GetEncryptionPassword(NeoIniFileProvider.GetSalt(FilePath));
     }
 }

@@ -14,6 +14,8 @@ namespace NeoIni.Providers;
 
 internal sealed class NeoIniFileProvider : INeoIniProvider
 {
+    private IEncryptionProvider EncryptionProvider;
+
     private const byte FileVersion = 1;
     private const int HeaderSize = 10;
     private const int IvSize = 16;
@@ -40,15 +42,20 @@ internal sealed class NeoIniFileProvider : INeoIniProvider
     public event EventHandler<ProviderErrorEventArgs>? Error;
     public event EventHandler<ChecksumMismatchEventArgs>? ChecksumMismatch;
 
-    internal NeoIniFileProvider(string filePath) => FilePath = filePath;
+    internal NeoIniFileProvider(string filePath, IEncryptionProvider encryptionProvider)
+    {
+        FilePath = filePath;
+        EncryptionProvider = encryptionProvider;
+    }
 
-    internal NeoIniFileProvider(string filePath, EncryptionParameters encryptionParameters, bool autoModeEncryption)
+    internal NeoIniFileProvider(string filePath, EncryptionParameters encryptionParameters, bool autoModeEncryption, IEncryptionProvider encryptionProvider)
     {
         FilePath = filePath;
         EncryptionKey = encryptionParameters.Key;
         Salt = encryptionParameters.Salt;
         Encryption = true;
         AutoEncryption = autoModeEncryption;
+        EncryptionProvider = encryptionProvider;
     }
 
     internal void DeleteBackup() { if (File.Exists(BackupFilePath)) File.Delete(BackupFilePath); }
@@ -270,13 +277,13 @@ internal sealed class NeoIniFileProvider : INeoIniProvider
     {
         if (EncryptionKey is null)
         {
-            if (autoModeEncryption) return NeoIniEncryptionProvider.GetEncryptionParameters(salt: GetSalt(path));
+            if (autoModeEncryption) return EncryptionProvider.GetEncryptionParameters(salt: GetSalt(path));
             else throw new MissingEncryptionKeyException();
         }
         else
         {
             if (!AutoEncryption && autoModeEncryption)
-                return NeoIniEncryptionProvider.GetEncryptionParameters(salt: GetSalt(path));
+                return EncryptionProvider.GetEncryptionParameters(salt: GetSalt(path));
             if (Salt is null) throw new MissingSaltException();
             return new EncryptionParameters((byte[])EncryptionKey.Clone(), (byte[])Salt.Clone());
         }
