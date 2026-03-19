@@ -515,7 +515,7 @@ internal sealed class NeoIniFileProvider : INeoIniProvider
     public byte[] GetStateChecksum()
     {
         var data = NeoIniIO.ReadAllBytes(FilePath);
-        return NeoIniEncryptionProvider.HashData(data);
+        return SHA256.HashData(data);
     }
 
     public void RaiseError(object? sender, ProviderErrorEventArgs e) => Error?.Invoke(sender, e);
