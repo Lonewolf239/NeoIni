@@ -52,9 +52,9 @@ The source generator creates a `Get<T>()` extension method that instantiates the
 using NeoIni;
 using MyApp.Config;
 
-NeoIniReader reader = new("config.ini");
+NeoIniDocument document = new("config.ini");
 
-AppConfig config = reader.Get<AppConfig>();
+AppConfig config = document.Get<AppConfig>();
 
 Console.WriteLine($"App: {config.AppName}, DB: {config.DbHost}:{config.DbPort}");
 ```
@@ -69,7 +69,7 @@ Use `Set<T>()` to write all mapped properties back to the INI file.
 using NeoIni;
 using MyApp.Config;
 
-NeoIniReader reader = new("config.ini");
+NeoIniDocument document = new("config.ini");
 
 AppConfig config = new()
 {
@@ -80,8 +80,8 @@ AppConfig config = new()
     EnableMetrics = false
 };
 
-reader.Set(config);
-reader.SaveFile();
+document.Set(config);
+document.SaveFile();
 ```
 
 ---

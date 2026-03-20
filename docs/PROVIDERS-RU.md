@@ -3,7 +3,7 @@
 
 ## Pluggable providers (1.7.3+)
 
-Отделение хранилища конфигурации от файловой системы. Интерфейс `INeoIniProvider` позволяет подключить `NeoIniReader` к базе данных, удалённому сервису, хранилищу в памяти или любому пользовательскому бэкенду.
+Отделение хранилища конфигурации от файловой системы. Интерфейс `INeoIniProvider` позволяет подключить `NeoIniDocument` к базе данных, удалённому сервису, хранилищу в памяти или любому пользовательскому бэкенду.
 
 ---
 
@@ -14,13 +14,13 @@ using NeoIni;
 using NeoIni.Providers;
 
 // Синхронно
-NeoIniReader reader = new(myCustomProvider);
+NeoIniDocument document = new(myCustomProvider);
 
 // Асинхронно
-NeoIniReader reader = await NeoIniReader.CreateAsync(myCustomProvider, cancellationToken: ct);
+NeoIniDocument document = await NeoIniDocument.CreateAsync(myCustomProvider, cancellationToken: ct);
 
 // Human mode с пользовательским provider-ом
-NeoIniReader reader = NeoIniReader.CreateHumanMode(myCustomProvider);
+NeoIniDocument document = NeoIniDocument.CreateHumanMode(myCustomProvider);
 ```
 
 ---
@@ -28,7 +28,7 @@ NeoIniReader reader = NeoIniReader.CreateHumanMode(myCustomProvider);
 ### Implementing INeoIniProvider
 
 ```csharp
-using NeoIni.Internal;
+using NeoIni.Models;
 using NeoIni.Providers;
 
 public class MyDatabaseProvider : INeoIniProvider
@@ -71,6 +71,6 @@ public class MyDatabaseProvider : INeoIniProvider
 
 ### Notes
 
-- Все существующие файловые конструкторы (`new NeoIniReader(path)`, варианты с шифрованием) продолжают работать — внутри они используют встроенный `NeoIniFileProvider`.
+- Все существующие файловые конструкторы (`new NeoIniDocument(path)`, варианты с шифрованием) продолжают работать — внутри они используют встроенный `NeoIniFileProvider`.
 - `UseAutoBackup`, `DeleteFile`, `DeleteBackup` и `GetEncryptionPassword` специфичны для файлового provider-а. При вызове на пользовательском provider-е будет выброшено `UnsupportedProviderOperationException`.
 - Hot-reload работает с любым provider-ом, который возвращает осмысленное значение из `GetStateChecksum()`.

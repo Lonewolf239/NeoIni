@@ -3,7 +3,7 @@
 
 ## API Reference · NeoIni
 
-Полная справка по всем публичным методам, опциям и событиям `NeoIniReader`.
+Полная справка по всем публичным методам, опциям и событиям `NeoIniDocument`.
 
 ---
 
@@ -34,6 +34,8 @@
 | `SaveFile` | Сохранение данных в хранилище | `SaveFileAsync` |
 | `ToString` | Сериализация INI-данных в форматированную строку (как в файле) | – |
 | `Reload` | Перезагрузка данных из хранилища | `ReloadAsync` |
+| `StartHotReload` | Запуск автоматического мониторинга изменений | – |
+| `StopHotReload` | Остановка мониторинга изменений | – |
 | `DeleteFile` | Удаление файла с диска | – |
 | `DeleteFileWithData` | Удаление файла и очистка данных | – |
 | `DeleteBackup` | Удаление backup-файла с диска | – |
@@ -46,7 +48,7 @@
 
 ---
 
-### Options (NeoIniReaderOptions)
+### Options (NeoIniOptions)
 
 | Option | Description | Default |
 |--------|-------------|---------|

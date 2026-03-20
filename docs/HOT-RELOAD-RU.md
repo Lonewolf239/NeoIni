@@ -36,7 +36,7 @@ public interface IHotReloadMonitor : IDisposable
     void Start(int pollingInterval);
     void Pause();
     void Continue();
-    Task ContinueAsync();
+    Task ContinueAsync(CancellationToken cancellationToken);
     void Stop();
 }
 ```

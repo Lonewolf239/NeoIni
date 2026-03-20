@@ -13,10 +13,10 @@
 using NeoIni;
 
 // Синхронно
-NeoIniReader reader = NeoIniReader.CreateHumanMode("config.ini");
+NeoIniDocument document = NeoIniDocument.CreateHumanMode("config.ini");
 
 // Асинхронно
-NeoIniReader reader = await NeoIniReader.CreateHumanModeAsync("config.ini", cancellationToken: ct);
+NeoIniDocument document = await NeoIniDocument.CreateHumanModeAsync("config.ini", cancellationToken: ct);
 ```
 
 ---
@@ -33,7 +33,7 @@ NeoIniReader reader = await NeoIniReader.CreateHumanModeAsync("config.ini", canc
 ### Limitations
 
 - Human mode поддерживает **чтение и запись, но не безопасное слияние** — если файл изменён извне, пока reader содержит несохранённые изменения, внешние правки могут быть перезаписаны при сохранении.
-- Все остальные возможности `NeoIniReader` (типизированные get/set, события, auto-save, секции, поиск) работают как обычно.
+- Все остальные возможности `NeoIniDocument` (типизированные get/set, события, auto-save, секции, поиск) работают как обычно.
 
 ---
 
@@ -42,7 +42,7 @@ NeoIniReader reader = await NeoIniReader.CreateHumanModeAsync("config.ini", canc
 Human-editable mode работает с пользовательскими provider-ами. Передайте экземпляр `INeoIniProvider` вместо пути к файлу:
 
 ```csharp
-NeoIniReader reader = NeoIniReader.CreateHumanMode(myCustomProvider);
+NeoIniDocument document = NeoIniDocument.CreateHumanMode(myCustomProvider);
 ```
 
 ---

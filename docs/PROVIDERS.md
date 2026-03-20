@@ -3,7 +3,7 @@
 
 ## Pluggable providers (1.7.3+)
 
-Decouple configuration storage from the file system. The `INeoIniProvider` interface lets you back `NeoIniReader` with a database, remote service, in-memory store, or any custom backend.
+Decouple configuration storage from the file system. The `INeoIniProvider` interface lets you back `NeoIniDocument` with a database, remote service, in-memory store, or any custom backend.
 
 ---
 
@@ -14,13 +14,13 @@ using NeoIni;
 using NeoIni.Providers;
 
 // Synchronous
-NeoIniReader reader = new(myCustomProvider);
+NeoIniDocument document = new(myCustomProvider);
 
 // Asynchronous
-NeoIniReader reader = await NeoIniReader.CreateAsync(myCustomProvider, cancellationToken: ct);
+NeoIniDocument document = await NeoIniDocument.CreateAsync(myCustomProvider, cancellationToken: ct);
 
 // Human mode with a custom provider
-NeoIniReader reader = NeoIniReader.CreateHumanMode(myCustomProvider);
+NeoIniDocument document = NeoIniDocument.CreateHumanMode(myCustomProvider);
 ```
 
 ---
@@ -28,7 +28,7 @@ NeoIniReader reader = NeoIniReader.CreateHumanMode(myCustomProvider);
 ### Implementing INeoIniProvider
 
 ```csharp
-using NeoIni.Internal;
+using NeoIni.Models;
 using NeoIni.Providers;
 
 public class MyDatabaseProvider : INeoIniProvider
@@ -71,6 +71,6 @@ public class MyDatabaseProvider : INeoIniProvider
 
 ### Notes
 
-- All existing file-based constructors (`new NeoIniReader(path)`, encryption variants) continue to work — they use the built-in `NeoIniFileProvider` internally.
+- All existing file-based constructors (`new NeoIniDocument(path)`, encryption variants) continue to work — they use the built-in `NeoIniFileProvider` internally.
 - `UseAutoBackup`, `DeleteFile`, `DeleteBackup`, and `GetEncryptionPassword` are file-provider-specific. Calling them on a custom provider throws `UnsupportedProviderOperationException`.
 - Hot-reload works with any provider that returns a meaningful value from `GetStateChecksum()`.

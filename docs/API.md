@@ -3,7 +3,7 @@
 
 ## API Reference · NeoIni
 
-Complete reference for all public methods, options, and events exposed by `NeoIniReader`.
+Complete reference for all public methods, options, and events exposed by `NeoIniDocument`.
 
 ---
 
@@ -34,6 +34,8 @@ Complete reference for all public methods, options, and events exposed by `NeoIn
 | `SaveFile` | Save data to storage | `SaveFileAsync` |
 | `ToString` | Serialize INI data to formatted string (as in file) | – |
 | `Reload` | Reload data from storage | `ReloadAsync` |
+| `StartHotReload` | Start automatic hot reload monitoring | – |
+| `StopHotReload` | Stop hot reload monitoring | – |
 | `DeleteFile` | Delete file from disk | – |
 | `DeleteFileWithData` | Delete file and clear data | – |
 | `DeleteBackup` | Delete the backup file from disk | – |
@@ -46,7 +48,7 @@ Complete reference for all public methods, options, and events exposed by `NeoIn
 
 ---
 
-### Options (NeoIniReaderOptions)
+### Options (NeoIniOptions)
 
 | Option | Description | Default |
 |--------|-------------|---------|

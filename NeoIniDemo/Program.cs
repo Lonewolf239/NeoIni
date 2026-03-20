@@ -1,5 +1,6 @@
 ﻿using NeoIni;
 using NeoIni.Annotations;
+using NeoIni.Models;
 
 public class NeoIniKeyTest
 {
@@ -65,22 +66,26 @@ class NeoIniDemo
         Console.Clear();
     }
 
-    private static NeoIniReader CreateReaderDefault()
+    private static NeoIniDocument CreateReaderDefault()
     {
-        if (CustomPassword) return new NeoIniReader(TestFile, Password);
-        return new NeoIniReader(TestFile, Encryption);
+        NeoIniOptions options = new() { UseShielding = true };
+        if (CustomPassword) return new(TestFile, Password, options);
+        return new(TestFile, Encryption, options);
     }
 
-    private static NeoIniReader CreateReaderWithOptions(NeoIniReaderOptions options)
+    private static NeoIniDocument CreateReaderWithOptions(NeoIniOptions options)
     {
-        if (CustomPassword) return new NeoIniReader(TestFile, Password, options);
-        return new NeoIniReader(TestFile, Encryption, options);
+        options.UseShielding = true;
+        if (CustomPassword) return new(TestFile, Password, options);
+        return new(TestFile, Encryption, options);
     }
 
-    private static async Task<NeoIniReader> CreateReaderAsync(NeoIniReaderOptions options = null)
+    private static async Task<NeoIniDocument> CreateReaderAsync(NeoIniOptions options = null)
     {
-        if (CustomPassword) return await NeoIniReader.CreateAsync(TestFile, Password, options);
-        return await NeoIniReader.CreateAsync(TestFile, Encryption, options);
+        options ??= new();
+        options.UseShielding = true;
+        if (CustomPassword) return await NeoIniDocument.CreateAsync(TestFile, Password, options);
+        return await NeoIniDocument.CreateAsync(TestFile, Encryption, options);
     }
 
     private static void BasicCreationDemo()
@@ -88,6 +93,8 @@ class NeoIniDemo
         Console.Clear();
         Console.WriteLine("1. FILE CREATION WITH DEFAULTS");
         using var ini = CreateReaderDefault();
+        if (ini.TryGetValue<string>("User", "FullName", out string s))
+            Console.WriteLine("\n\n\n\n\n\n" + s);
 
         Console.WriteLine($"File created: {TestFile}");
         Console.WriteLine("All features use default settings:");
@@ -142,7 +149,7 @@ class NeoIniDemo
         Console.WriteLine("3. KEYS AND VALUES");
         using var ini = CreateReaderDefault();
 
-        ini.AddKey("User", "Name", "John Doe");
+        ini.AddKey("User", "Name", "John;Doe");
         ini.AddKey("User", "Age", 30);
         ini.AddKey("User", "IsAdmin", true);
         ini.AddKey("User", "Salary", 75000.50);
@@ -206,7 +213,7 @@ class NeoIniDemo
         Console.WriteLine($"Clamped Brightness [0..100]: {clampedBrightness}");
 
         Console.WriteLine("\nDemonstrating AutoAdd= false (Safe preset):");
-        using var safeIni = CreateReaderWithOptions(NeoIniReaderOptions.Safe);
+        using var safeIni = CreateReaderWithOptions(NeoIniOptions.Safe);
         Console.WriteLine($"Safe.AutoAdd: {safeIni.UseAutoAdd}");
         int missingValue = safeIni.GetValue("NonExisting", "Key", 123);
         Console.WriteLine($"GetValue on missing key (AutoAdd=false): {missingValue}");
@@ -245,31 +252,31 @@ class NeoIniDemo
         Console.Clear();
         Console.WriteLine("4. OPTIONS & PRESETS");
 
-        using (var def = CreateReaderWithOptions(NeoIniReaderOptions.Default))
+        using (var def = CreateReaderWithOptions(NeoIniOptions.Default))
         {
             Console.WriteLine("Default options:");
             PrintOptions(def);
         }
 
-        using (var safe = CreateReaderWithOptions(NeoIniReaderOptions.Safe))
+        using (var safe = CreateReaderWithOptions(NeoIniOptions.Safe))
         {
             Console.WriteLine("\nSafe options:");
             PrintOptions(safe);
         }
 
-        using (var perf = CreateReaderWithOptions(NeoIniReaderOptions.Performance))
+        using (var perf = CreateReaderWithOptions(NeoIniOptions.Performance))
         {
             Console.WriteLine("\nPerformance options:");
             PrintOptions(perf);
         }
 
-        using (var buffered = CreateReaderWithOptions(NeoIniReaderOptions.BufferedAutoSave(5)))
+        using (var buffered = CreateReaderWithOptions(NeoIniOptions.BufferedAutoSave(5)))
         {
             Console.WriteLine("\nBufferedAutoSave(5) options:");
             PrintOptions(buffered);
         }
 
-        using (var readOnly = CreateReaderWithOptions(NeoIniReaderOptions.ReadOnly))
+        using (var readOnly = CreateReaderWithOptions(NeoIniOptions.ReadOnly))
         {
             Console.WriteLine("\nReadOnly options:");
             PrintOptions(readOnly);
@@ -279,7 +286,7 @@ class NeoIniDemo
         Console.ReadKey(true);
     }
 
-    private static void PrintOptions(NeoIniReader ini)
+    private static void PrintOptions(NeoIniDocument ini)
     {
         Console.WriteLine($"- AutoAdd: {ini.UseAutoAdd}");
         Console.WriteLine($"- AutoSave: {ini.UseAutoSave}");
@@ -337,7 +344,7 @@ class NeoIniDemo
         ini.SaveFile();
         Console.WriteLine("Manual save completed");
 
-        ini.ReloadFromFile();
+        ini.Reload();
         Console.WriteLine("Data reloaded from file");
         Console.WriteLine($"Database Host: {ini.GetValue("Database", "Host", "")}");
 
@@ -378,7 +385,7 @@ class NeoIniDemo
         ShowFileRawContent(TestFile);
 
         Console.WriteLine("\nAttempting recovery with ini.ReloadFromFile()...");
-        ini.ReloadFromFile();
+        ini.Reload();
 
         Console.WriteLine("\nAFTER RECOVERY - All sections:");
         ShowContent(ini);
@@ -444,7 +451,7 @@ class NeoIniDemo
         Console.WriteLine("9. READONLY & PERFORMANCE MODES");
 
         Console.WriteLine("ReadOnly mode: file is loaded and verified, but never modified.");
-        using (var readOnly = CreateReaderWithOptions(NeoIniReaderOptions.ReadOnly))
+        using (var readOnly = CreateReaderWithOptions(NeoIniOptions.ReadOnly))
         {
             Console.WriteLine("- Trying to GetValue with default for missing key:");
             int v = readOnly.GetValue("ROSection", "ROKey", 10);
@@ -454,7 +461,7 @@ class NeoIniDemo
         }
 
         Console.WriteLine("\nPerformance mode: all safety features disabled, caller manages saves.");
-        using (var perf = CreateReaderWithOptions(NeoIniReaderOptions.Performance))
+        using (var perf = CreateReaderWithOptions(NeoIniOptions.Performance))
         {
             Console.WriteLine("- Writing several values without autosave/checksum/backup:");
             for (int i = 0; i < 5; i++)
@@ -475,6 +482,10 @@ class NeoIniDemo
         Console.WriteLine("9.1. ATTRIBUTE & SOURCE GENERATOR DEMO");
 
         using var ini = CreateReaderDefault();
+
+        var r = ini.GetAllKeys("User");
+        foreach (var i in r)
+            Console.WriteLine(i);
 
         ini.SetValue("User", "Age", 25);
 
@@ -509,7 +520,7 @@ class NeoIniDemo
         Console.WriteLine("File deleted from disk + memory cleared");
     }
 
-    private static void ShowContent(NeoIniReader ini) => Console.WriteLine(ini.ToString());
+    private static void ShowContent(NeoIniDocument ini) => Console.WriteLine(ini.ToString());
 
     private static void CorruptFileManually(string filePath)
     {

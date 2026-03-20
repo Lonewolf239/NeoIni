@@ -52,9 +52,9 @@ Source generator создаёт extension-метод `Get<T>()`, который 
 using NeoIni;
 using MyApp.Config;
 
-NeoIniReader reader = new("config.ini");
+NeoIniDocument document = new("config.ini");
 
-AppConfig config = reader.Get<AppConfig>();
+AppConfig config = document.Get<AppConfig>();
 
 Console.WriteLine($"App: {config.AppName}, DB: {config.DbHost}:{config.DbPort}");
 ```
@@ -69,7 +69,7 @@ Console.WriteLine($"App: {config.AppName}, DB: {config.DbHost}:{config.DbPort}")
 using NeoIni;
 using MyApp.Config;
 
-NeoIniReader reader = new("config.ini");
+NeoIniDocument document = new("config.ini");
 
 AppConfig config = new()
 {
@@ -80,8 +80,8 @@ AppConfig config = new()
     EnableMetrics = false
 };
 
-reader.Set(config);
-reader.SaveFile();
+document.Set(config);
+document.SaveFile();
 ```
 
 ---

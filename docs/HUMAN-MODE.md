@@ -13,10 +13,10 @@ Preserve comments, blank lines, and formatting in hand-edited INI files. In stan
 using NeoIni;
 
 // Synchronous
-NeoIniReader reader = NeoIniReader.CreateHumanMode("config.ini");
+NeoIniDocument document = NeoIniDocument.CreateHumanMode("config.ini");
 
 // Asynchronous
-NeoIniReader reader = await NeoIniReader.CreateHumanModeAsync("config.ini", cancellationToken: ct);
+NeoIniDocument document = await NeoIniDocument.CreateHumanModeAsync("config.ini", cancellationToken: ct);
 ```
 
 ---
@@ -33,7 +33,7 @@ NeoIniReader reader = await NeoIniReader.CreateHumanModeAsync("config.ini", canc
 ### Limitations
 
 - Human mode is **read/write but not merge-safe** — if the file is modified externally while the reader holds unsaved changes, the external edits may be overwritten on save.
-- All other `NeoIniReader` features (typed get/set, events, auto-save, sections, search) work as normal.
+- All other `NeoIniDocument` features (typed get/set, events, auto-save, sections, search) work as normal.
 
 ---
 
@@ -42,7 +42,7 @@ NeoIniReader reader = await NeoIniReader.CreateHumanModeAsync("config.ini", canc
 Human-editable mode works with custom providers. Pass an `INeoIniProvider` instance instead of a file path:
 
 ```csharp
-NeoIniReader reader = NeoIniReader.CreateHumanMode(myCustomProvider);
+NeoIniDocument document = NeoIniDocument.CreateHumanMode(myCustomProvider);
 ```
 
 ---

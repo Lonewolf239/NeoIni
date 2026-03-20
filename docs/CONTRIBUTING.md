@@ -11,7 +11,7 @@ NeoIni welcomes bug reports, feature requests, and pull requests. This guide cov
 
 Open a [GitHub Issue](https://github.com/Lonewolf239/NeoIni/issues) with:
 
-- **NeoIni version** (current: `1.9`) and **.NET version**.
+- **NeoIni version** (current: `2.0-pre1`) and **.NET version**.
 - **Minimal reproduction** — code snippet or repo that triggers the bug.
 - **Expected vs. actual behavior.**
 - **Stack trace** (if applicable).
