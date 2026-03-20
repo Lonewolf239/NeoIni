@@ -51,6 +51,9 @@ dotnet add package NeoIni
 
 ### Creating an instance
 
+<details>
+  <summary>⚙️ Код: пример NeoIni</summary>
+
 ```csharp
 using NeoIni;
 
@@ -67,7 +70,12 @@ NeoIniDocument portable = new("config.ini", "MySecretPass123");
 NeoIniDocument document = await NeoIniDocument.CreateAsync("config.ini", cancellationToken: ct);
 ```
 
+</details>
+
 ### Reading & writing values
+
+<details>
+  <summary>⚙️ Код: пример NeoIni</summary>
 
 ```csharp
 // Запись
@@ -88,10 +96,15 @@ await document.SetValueAsync("Database", "Host", "localhost");
 string host = await document.GetValueAsync("Database", "Host", "127.0.0.1", ct);
 ```
 
+</details>
+
 - Отсутствующие секции/ключи возвращают `defaultValue`; при включённом `UseAutoAdd` ключ создаётся автоматически.
 - Поддерживаются `enum`, `DateTime` и любые `IConvertible` типы через invariant-culture парсинг.
 
 ### Section & key management
+
+<details>
+  <summary>⚙️ Код: пример NeoIni</summary>
 
 ```csharp
 document.AddSection("Cache");
@@ -103,7 +116,12 @@ string[] keys     = document.GetAllKeys("AppCache");
 bool exists       = document.SectionExists("AppCache");
 ```
 
+</details>
+
 ### Search
+
+<details>
+  <summary>⚙️ Код: пример NeoIni</summary>
 
 ```csharp
 var results = document.Search("token");
@@ -111,7 +129,12 @@ foreach (var r in results)
     Console.WriteLine($"[{r.Section}] {r.Key} = {r.Value}");
 ```
 
+</details>
+
 ### File operations
+
+<details>
+  <summary>⚙️ Код: пример NeoIni</summary>
 
 ```csharp
 document.SaveFile();
@@ -120,7 +143,12 @@ document.DeleteFile();
 document.DeleteFileWithData();
 ```
 
+</details>
+
 ### Options & presets
+
+<details>
+  <summary>⚙️ Код: пример NeoIni</summary>
 
 ```csharp
 document.UseAutoSave = true;
@@ -132,9 +160,14 @@ document.SaveOnDispose = true;
 document.AllowEmptyValues = true;
 ```
 
+</details>
+
 Или используйте встроенные пресеты: `NeoIniOptions.Default`, `Safe`, `Performance`, `ReadOnly`, `BufferedAutoSave(n)`.
 
 ### Events
+
+<details>
+  <summary>⚙️ Код: пример NeoIni</summary>
 
 ```csharp
 document.Saved            += (_, _) => Console.WriteLine("Saved");
@@ -145,7 +178,12 @@ document.ChecksumMismatch += (_, _) => Console.WriteLine("Checksum mismatch!");
 document.Error            += (_, e) => Console.WriteLine($"Error: {e.Exception.Message}");
 ```
 
+</details>
+
 ### Encryption & migration
+
+<details>
+  <summary>⚙️ Код: пример NeoIni</summary>
 
 ```csharp
 // Авто-шифрование — ключ генерируется из user/machine/domain + per-file salt
@@ -158,13 +196,20 @@ string password = document.GetEncryptionPassword();
 NeoIniDocument migrated = new("secure.ini", password);
 ```
 
+</details>
+
 ### Disposal
+
+<details>
+  <summary>⚙️ Код: пример NeoIni</summary>
 
 ```csharp
 using NeoIniDocument document = new("config.ini");
 // SaveFile() вызывается автоматически, если SaveOnDispose = true
 // После Dispose — ObjectDisposedException при любом обращении
 ```
+
+</details>
 
 ---
 
