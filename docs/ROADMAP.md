@@ -40,13 +40,6 @@ Long-term development plan for NeoIni. The library evolves from a single-file IN
 |---------|--------|-------------|
 | 2.0 | 🔄 In Progress | Rename `NeoIniReader` → `NeoIniDocument`. Introduce `IEncryptionProvider` interface to allow pluggable encryption algorithms (AES, custom implementations). |
 
-#### Migration strategy
-
-| Step | Detail |
-|------|--------|
-| 2.0-pre1 | Ship `NeoIniDocument` alongside `NeoIniReader` marked `[Obsolete]`. Both classes share the same internal engine. |
-| 2.0 | Remove `NeoIniReader`. Provide a one-line migration guide in release notes (`NeoIniReader` → `NeoIniDocument`, no API changes beyond the rename). |
-
 ---
 
 ### Cross-cutting (ongoing)
