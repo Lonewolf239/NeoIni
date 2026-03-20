@@ -9,7 +9,7 @@ using NeoIni.Providers;
 
 namespace NeoIni;
 
-public partial class NeoIniReader
+public partial class NeoIniDocument
 {
     private readonly INeoIniProvider Provider;
     private readonly string? FilePath;
@@ -25,10 +25,8 @@ public partial class NeoIniReader
     private bool Disposed = false;
     private int DisposeState = 0;
 
+    private IHotReloadMonitor? HotReloadMonitor;
     private int HotReloadState = 0;
-    private CancellationTokenSource? HotReloadCts;
-    private byte[]? PrevHotReloadChecksum;
-    private readonly ManualResetEventSlim PauseHotReload = new(true);
 
     private bool HumanMode = false;
 
@@ -100,7 +98,7 @@ public partial class NeoIniReader
         Comments = neoIniData.Comments;
     }
 
-    private void ApplyOptions(NeoIniReaderOptions? options)
+    private void ApplyOptions(NeoIniOptions? options)
     {
         options ??= new();
         UseAutoSave = options.UseAutoSave;
@@ -117,9 +115,9 @@ public partial class NeoIniReader
     private void ThrowIfDisposed()
     {
 #if NET7_0_OR_GREATER
-        ObjectDisposedException.ThrowIf(Disposed, nameof(NeoIniReader));
+        ObjectDisposedException.ThrowIf(Disposed, nameof(NeoIniDocument));
 #else
-        if (Disposed) throw new ObjectDisposedException(nameof(NeoIniReader));
+        if (Disposed) throw new ObjectDisposedException(nameof(NeoIniDocument));
 #endif
     }
 
@@ -162,10 +160,21 @@ public partial class NeoIniReader
         await SaveFileAsync(ct).ConfigureAwait(false);
     }
 
+    private async void OnHotReloadChangeDetected(object? sender, EventArgs e)
+    {
+        try { await ReloadAsync(default).ConfigureAwait(false); }
+        catch (OperationCanceledException) { }
+        catch (Exception ex) { Provider.RaiseError(this, new ProviderErrorEventArgs(ex)); }
+    }
+
     private void SafeStopHotReload()
     {
         if (Interlocked.CompareExchange(ref HotReloadState, 0, 1) != 1) return;
-        HotReloadCts?.Cancel();
+        if (HotReloadMonitor is null) return;
+        HotReloadMonitor.ChangeDetected -= OnHotReloadChangeDetected;
+        HotReloadMonitor.Stop();
+        HotReloadMonitor.Dispose();
+        HotReloadMonitor = null;
     }
 
     private async Task ExecuteWithReadLockAsync(Action action, CancellationToken ct)

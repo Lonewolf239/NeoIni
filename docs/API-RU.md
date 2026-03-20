@@ -33,7 +33,7 @@
 | `KeyExists` | Проверка существования ключа в секции | – |
 | `SaveFile` | Сохранение данных в хранилище | `SaveFileAsync` |
 | `ToString` | Сериализация INI-данных в форматированную строку (как в файле) | – |
-| `ReloadFromFile` | Перезагрузка данных из хранилища | `ReloadFromFileAsync` |
+| `Reload` | Перезагрузка данных из хранилища | `ReloadAsync` |
 | `DeleteFile` | Удаление файла с диска | – |
 | `DeleteFileWithData` | Удаление файла и очистка данных | – |
 | `DeleteBackup` | Удаление backup-файла с диска | – |
@@ -41,6 +41,8 @@
 | `GetEncryptionPassword` | Получение пароля шифрования (или статуса) | – |
 | `CreateAsync` | Асинхронное создание и инициализация reader (статическая фабрика) | – |
 | `CreateHumanMode` | Создание reader в human-editable режиме | `CreateHumanModeAsync` |
+
+> **Примечание:** В версии 2.0 класс `NeoIniReader` переименован в `NeoIniDocument`, а методы `ReloadFromFile`/`ReloadFromFileAsync` — в `Reload`/`ReloadAsync` для краткости и единообразия. В версиях ниже 2.0 используйте старые названия.
 
 ---
 

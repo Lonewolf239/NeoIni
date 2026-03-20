@@ -21,7 +21,7 @@ dotnet add package NeoIni
 ```
 
 - **Package:** [nuget.org/packages/NeoIni](https://www.nuget.org/packages/NeoIni)
-- **Version:** `1.9` | **.NET 6+**
+- **Version:** `2.0-pre1` | **.NET 6+**
 - **Developer:** [Lonewolf239](https://github.com/Lonewolf239)
 
 ---
@@ -43,7 +43,7 @@ dotnet add package NeoIni
 | 🔍 | **Search & TryGet** | Case-insensitive search across keys/values. `TryGetValue<T>` reads without modifying the file. |
 | 📢 | **Rich event system** | 14 events: save, load, key/section CRUD, autosave, checksum mismatch, errors, search completion. |
 | 🔑 | **Easy migration** | Transfer encrypted configs between machines via `GetEncryptionPassword()`. |
-| 📦 | **Black-box design** | Single entrypoint — `NeoIniReader` owns and manages everything behind a clean public API. |
+| 📦 | **Black-box design** | Single entrypoint — `NeoIniDocument` owns and manages everything behind a clean public API. |
 
 ---
 
@@ -55,37 +55,37 @@ dotnet add package NeoIni
 using NeoIni;
 
 // Plain
-NeoIniReader reader = new("config.ini");
+NeoIniDocument document = new("config.ini");
 
 // Auto-encryption (machine-bound)
-NeoIniReader encrypted = new("config.ini", autoEncryption: true);
+NeoIniDocument encrypted = new("config.ini", autoEncryption: true);
 
 // Custom password (portable between machines)
-NeoIniReader portable = new("config.ini", "MySecretPass123");
+NeoIniDocument portable = new("config.ini", "MySecretPass123");
 
 // Async
-NeoIniReader reader = await NeoIniReader.CreateAsync("config.ini", cancellationToken: ct);
+NeoIniDocument document = await NeoIniDocument.CreateAsync("config.ini", cancellationToken: ct);
 ```
 
 ### Reading & writing values
 
 ```csharp
 // Write
-reader.SetValue("Database", "Host", "localhost");
-reader.SetValue("Database", "Port", 5432);
+document.SetValue("Database", "Host", "localhost");
+document.SetValue("Database", "Port", 5432);
 
 // Read with typed defaults
-string host = reader.GetValue("Database", "Host", "127.0.0.1");
-int    port = reader.GetValue("Database", "Port", 3306);
+string host = document.GetValue("Database", "Host", "127.0.0.1");
+int    port = document.GetValue("Database", "Port", 3306);
 
 // Read without side effects (no AutoAdd, no file modification)
-int level = reader.TryGetValue("Game", "Level", 1);
+int level = document.TryGetValue("Game", "Level", 1);
 ```
 
 ```csharp
 // Async
-await reader.SetValueAsync("Database", "Host", "localhost");
-string host = await reader.GetValueAsync("Database", "Host", "127.0.0.1", ct);
+await document.SetValueAsync("Database", "Host", "localhost");
+string host = await document.GetValueAsync("Database", "Host", "127.0.0.1", ct);
 ```
 
 - Missing sections/keys return `defaultValue`; with `UseAutoAdd` enabled the key is created automatically.
@@ -94,19 +94,19 @@ string host = await reader.GetValueAsync("Database", "Host", "127.0.0.1", ct);
 ### Section & key management
 
 ```csharp
-reader.AddSection("Cache");
-reader.RemoveKey("Cache", "OldKey");
-reader.RenameSection("Cache", "AppCache");
+document.AddSection("Cache");
+document.RemoveKey("Cache", "OldKey");
+document.RenameSection("Cache", "AppCache");
 
-string[] sections = reader.GetAllSections();
-string[] keys     = reader.GetAllKeys("AppCache");
-bool exists       = reader.SectionExists("AppCache");
+string[] sections = document.GetAllSections();
+string[] keys     = document.GetAllKeys("AppCache");
+bool exists       = document.SectionExists("AppCache");
 ```
 
 ### Search
 
 ```csharp
-var results = reader.Search("token");
+var results = document.Search("token");
 foreach (var r in results)
     Console.WriteLine($"[{r.Section}] {r.Key} = {r.Value}");
 ```
@@ -114,54 +114,54 @@ foreach (var r in results)
 ### File operations
 
 ```csharp
-reader.SaveFile();
-reader.ReloadFromFile();
-reader.DeleteFile();
-reader.DeleteFileWithData();
+document.SaveFile();
+document.ReloadFromFile();
+document.DeleteFile();
+document.DeleteFileWithData();
 ```
 
 ### Options & presets
 
 ```csharp
-reader.UseAutoSave = true;
-reader.AutoSaveInterval = 3;    // save every 3 writes
-reader.UseAutoBackup = true;
-reader.UseAutoAdd = true;
-reader.UseChecksum = true;
-reader.SaveOnDispose = true;
-reader.AllowEmptyValues = true;
+document.UseAutoSave = true;
+document.AutoSaveInterval = 3;    // save every 3 writes
+document.UseAutoBackup = true;
+document.UseAutoAdd = true;
+document.UseChecksum = true;
+document.SaveOnDispose = true;
+document.AllowEmptyValues = true;
 ```
 
-Or use built-in presets: `NeoIniReaderOptions.Default`, `Safe`, `Performance`, `ReadOnly`, `BufferedAutoSave(n)`.
+Or use built-in presets: `NeoIniOptions.Default`, `Safe`, `Performance`, `ReadOnly`, `BufferedAutoSave(n)`.
 
 ### Events
 
 ```csharp
-reader.Saved            += (_, _) => Console.WriteLine("Saved");
-reader.Loaded           += (_, _) => Console.WriteLine("Loaded");
-reader.KeyChanged       += (_, e) => Console.WriteLine($"[{e.Section}] {e.Key} → {e.Value}");
-reader.KeyAdded         += (_, e) => Console.WriteLine($"[{e.Section}] +{e.Key}");
-reader.ChecksumMismatch += (_, _) => Console.WriteLine("Checksum mismatch!");
-reader.Error            += (_, e) => Console.WriteLine($"Error: {e.Exception.Message}");
+document.Saved            += (_, _) => Console.WriteLine("Saved");
+document.Loaded           += (_, _) => Console.WriteLine("Loaded");
+document.KeyChanged       += (_, e) => Console.WriteLine($"[{e.Section}] {e.Key} → {e.Value}");
+document.KeyAdded         += (_, e) => Console.WriteLine($"[{e.Section}] +{e.Key}");
+document.ChecksumMismatch += (_, _) => Console.WriteLine("Checksum mismatch!");
+document.Error            += (_, e) => Console.WriteLine($"Error: {e.Exception.Message}");
 ```
 
 ### Encryption & migration
 
 ```csharp
 // Auto-encryption — key is derived from user/machine/domain + per-file salt
-NeoIniReader reader = new("secure.ini", autoEncryption: true);
+NeoIniDocument document = new("secure.ini", autoEncryption: true);
 
 // Retrieve password to migrate to another machine
-string password = reader.GetEncryptionPassword();
+string password = document.GetEncryptionPassword();
 
 // On the new machine
-NeoIniReader migrated = new("secure.ini", password);
+NeoIniDocument migrated = new("secure.ini", password);
 ```
 
 ### Disposal
 
 ```csharp
-using NeoIniReader reader = new("config.ini");
+using NeoIniDocument document = new("config.ini");
 // SaveFile() is called automatically if SaveOnDispose is true
 // After disposal — ObjectDisposedException on any access
 ```
@@ -174,6 +174,7 @@ using NeoIniReader reader = new("config.ini");
 - Hot-reload (1.7.1+) — [usage & caveats](./HOT-RELOAD.md)
 - Human-editable INI mode (1.7.2+) — [experimental mode](./HUMAN-MODE.md)
 - Pluggable provider abstraction (1.7.3+) — [custom providers](./PROVIDERS.md)
+- Pluggable encryption (2.0+) — [custom encryption providers](./ENCRYPTION-PROVIDER.md)
 
 ---
 
@@ -185,4 +186,4 @@ Full method, options, and event reference — [API.md](./API.md)
 
 ## Philosophy
 
-**Black Box Design** — all internal logic is hidden behind the simple public API of `NeoIniReader`. You work only with methods and events, without thinking about implementation details. NeoIni config files are owned and managed by the library; human comments are intentionally not preserved in standard mode (the in-file warning header signals this). For hand-edited configs, use [Human-editable mode](./HUMAN-MODE.md).
+**Black Box Design** — all internal logic is hidden behind the simple public API of `NeoIniDocument`. You work only with methods and events, without thinking about implementation details. NeoIni config files are owned and managed by the library; human comments are intentionally not preserved in standard mode (the in-file warning header signals this). For hand-edited configs, use [Human-editable mode](./HUMAN-MODE.md).

@@ -19,7 +19,7 @@ public sealed class NeoIniKeyAttribute : Attribute
 
     /// <summary>
     /// Optional default value (as string) used when the key is missing.
-    /// If null, NeoIniReader's default handling is used.
+    /// If null, NeoIniDocument's default handling is used.
     /// </summary>
     public string? DefaultValue { get; }
 

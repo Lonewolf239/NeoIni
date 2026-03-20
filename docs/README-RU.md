@@ -43,7 +43,7 @@ dotnet add package NeoIni
 | 🔍 | **Search & TryGet** | Регистронезависимый поиск по ключам/значениям. `TryGetValue<T>` читает без модификации файла. |
 | 📢 | **Rich event system** | 14 событий: сохранение, загрузка, CRUD ключей/секций, autosave, checksum mismatch, ошибки, завершение поиска. |
 | 🔑 | **Easy migration** | Перенос зашифрованных конфигов между машинами через `GetEncryptionPassword()`. |
-| 📦 | **Black-box design** | Единая точка входа — `NeoIniReader` владеет и управляет всем за чистым публичным API. |
+| 📦 | **Black-box design** | Единая точка входа — `NeoIniDocument` владеет и управляет всем за чистым публичным API. |
 
 ---
 
@@ -55,37 +55,37 @@ dotnet add package NeoIni
 using NeoIni;
 
 // Без шифрования
-NeoIniReader reader = new("config.ini");
+NeoIniDocument document = new("config.ini");
 
 // Авто-шифрование (привязка к машине)
-NeoIniReader encrypted = new("config.ini", autoEncryption: true);
+NeoIniDocument encrypted = new("config.ini", autoEncryption: true);
 
 // Пользовательский пароль (переносимый между машинами)
-NeoIniReader portable = new("config.ini", "MySecretPass123");
+NeoIniDocument portable = new("config.ini", "MySecretPass123");
 
 // Асинхронно
-NeoIniReader reader = await NeoIniReader.CreateAsync("config.ini", cancellationToken: ct);
+NeoIniDocument document = await NeoIniDocument.CreateAsync("config.ini", cancellationToken: ct);
 ```
 
 ### Reading & writing values
 
 ```csharp
 // Запись
-reader.SetValue("Database", "Host", "localhost");
-reader.SetValue("Database", "Port", 5432);
+document.SetValue("Database", "Host", "localhost");
+document.SetValue("Database", "Port", 5432);
 
 // Чтение с типизированными значениями по умолчанию
-string host = reader.GetValue("Database", "Host", "127.0.0.1");
-int    port = reader.GetValue("Database", "Port", 3306);
+string host = document.GetValue("Database", "Host", "127.0.0.1");
+int    port = document.GetValue("Database", "Port", 3306);
 
 // Чтение без побочных эффектов (без AutoAdd, без модификации файла)
-int level = reader.TryGetValue("Game", "Level", 1);
+int level = document.TryGetValue("Game", "Level", 1);
 ```
 
 ```csharp
 // Асинхронно
-await reader.SetValueAsync("Database", "Host", "localhost");
-string host = await reader.GetValueAsync("Database", "Host", "127.0.0.1", ct);
+await document.SetValueAsync("Database", "Host", "localhost");
+string host = await document.GetValueAsync("Database", "Host", "127.0.0.1", ct);
 ```
 
 - Отсутствующие секции/ключи возвращают `defaultValue`; при включённом `UseAutoAdd` ключ создаётся автоматически.
@@ -94,19 +94,19 @@ string host = await reader.GetValueAsync("Database", "Host", "127.0.0.1", ct);
 ### Section & key management
 
 ```csharp
-reader.AddSection("Cache");
-reader.RemoveKey("Cache", "OldKey");
-reader.RenameSection("Cache", "AppCache");
+document.AddSection("Cache");
+document.RemoveKey("Cache", "OldKey");
+document.RenameSection("Cache", "AppCache");
 
-string[] sections = reader.GetAllSections();
-string[] keys     = reader.GetAllKeys("AppCache");
-bool exists       = reader.SectionExists("AppCache");
+string[] sections = document.GetAllSections();
+string[] keys     = document.GetAllKeys("AppCache");
+bool exists       = document.SectionExists("AppCache");
 ```
 
 ### Search
 
 ```csharp
-var results = reader.Search("token");
+var results = document.Search("token");
 foreach (var r in results)
     Console.WriteLine($"[{r.Section}] {r.Key} = {r.Value}");
 ```
@@ -114,54 +114,54 @@ foreach (var r in results)
 ### File operations
 
 ```csharp
-reader.SaveFile();
-reader.ReloadFromFile();
-reader.DeleteFile();
-reader.DeleteFileWithData();
+document.SaveFile();
+document.ReloadFromFile();
+document.DeleteFile();
+document.DeleteFileWithData();
 ```
 
 ### Options & presets
 
 ```csharp
-reader.UseAutoSave = true;
-reader.AutoSaveInterval = 3;    // сохранять каждые 3 записи
-reader.UseAutoBackup = true;
-reader.UseAutoAdd = true;
-reader.UseChecksum = true;
-reader.SaveOnDispose = true;
-reader.AllowEmptyValues = true;
+document.UseAutoSave = true;
+document.AutoSaveInterval = 3;    // сохранять каждые 3 записи
+document.UseAutoBackup = true;
+document.UseAutoAdd = true;
+document.UseChecksum = true;
+document.SaveOnDispose = true;
+document.AllowEmptyValues = true;
 ```
 
-Или используйте встроенные пресеты: `NeoIniReaderOptions.Default`, `Safe`, `Performance`, `ReadOnly`, `BufferedAutoSave(n)`.
+Или используйте встроенные пресеты: `NeoIniOptions.Default`, `Safe`, `Performance`, `ReadOnly`, `BufferedAutoSave(n)`.
 
 ### Events
 
 ```csharp
-reader.Saved            += (_, _) => Console.WriteLine("Saved");
-reader.Loaded           += (_, _) => Console.WriteLine("Loaded");
-reader.KeyChanged       += (_, e) => Console.WriteLine($"[{e.Section}] {e.Key} → {e.Value}");
-reader.KeyAdded         += (_, e) => Console.WriteLine($"[{e.Section}] +{e.Key}");
-reader.ChecksumMismatch += (_, _) => Console.WriteLine("Checksum mismatch!");
-reader.Error            += (_, e) => Console.WriteLine($"Error: {e.Exception.Message}");
+document.Saved            += (_, _) => Console.WriteLine("Saved");
+document.Loaded           += (_, _) => Console.WriteLine("Loaded");
+document.KeyChanged       += (_, e) => Console.WriteLine($"[{e.Section}] {e.Key} → {e.Value}");
+document.KeyAdded         += (_, e) => Console.WriteLine($"[{e.Section}] +{e.Key}");
+document.ChecksumMismatch += (_, _) => Console.WriteLine("Checksum mismatch!");
+document.Error            += (_, e) => Console.WriteLine($"Error: {e.Exception.Message}");
 ```
 
 ### Encryption & migration
 
 ```csharp
 // Авто-шифрование — ключ генерируется из user/machine/domain + per-file salt
-NeoIniReader reader = new("secure.ini", autoEncryption: true);
+NeoIniDocument document = new("secure.ini", autoEncryption: true);
 
 // Получить пароль для миграции на другую машину
-string password = reader.GetEncryptionPassword();
+string password = document.GetEncryptionPassword();
 
 // На новой машине
-NeoIniReader migrated = new("secure.ini", password);
+NeoIniDocument migrated = new("secure.ini", password);
 ```
 
 ### Disposal
 
 ```csharp
-using NeoIniReader reader = new("config.ini");
+using NeoIniDocument document = new("config.ini");
 // SaveFile() вызывается автоматически, если SaveOnDispose = true
 // После Dispose — ObjectDisposedException при любом обращении
 ```
@@ -174,6 +174,7 @@ using NeoIniReader reader = new("config.ini");
 - Hot-reload (1.7.1+) — [использование и нюансы](./HOT-RELOAD-RU.md)
 - Human-editable INI mode (1.7.2+) — [экспериментальный режим](./HUMAN-MODE-RU.md)
 - Pluggable provider abstraction (1.7.3+) — [кастомные провайдеры](./PROVIDERS-RU.md)
+- Pluggable encryption (2.0+) — [кастомное шифрование](./ENCRYPTION-PROVIDER-RU.md)
 
 ---
 
@@ -185,4 +186,4 @@ using NeoIniReader reader = new("config.ini");
 
 ## Philosophy
 
-**Black Box Design** — вся внутренняя логика скрыта за простым публичным API класса `NeoIniReader`. Вы работаете только с методами и событиями, не задумываясь о деталях реализации. INI-файлы NeoIni принадлежат библиотеке и управляются ей; комментарии в стандартном режиме намеренно не сохраняются (заголовок-предупреждение в файле сигнализирует об этом). Для ручного редактирования используйте [Human-editable mode](./HUMAN-MODE-RU.md).
+**Black Box Design** — вся внутренняя логика скрыта за простым публичным API класса `NeoIniDocument`. Вы работаете только с методами и событиями, не задумываясь о деталях реализации. INI-файлы NeoIni принадлежат библиотеке и управляются ей; комментарии в стандартном режиме намеренно не сохраняются (заголовок-предупреждение в файле сигнализирует об этом). Для ручного редактирования используйте [Human-editable mode](./HUMAN-MODE-RU.md).

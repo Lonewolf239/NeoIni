@@ -3,14 +3,14 @@ using System;
 namespace NeoIni.Models;
 
 /// <summary>
-/// Represents configuration options that are applied when constructing a <see cref="NeoIniReader"/> instance.
+/// Represents configuration options that are applied when constructing a <see cref="NeoIniDocument"/> instance.
 /// </summary>
 /// <remarks>
-/// These options control how the reader will handle automatic saving, backup creation, missing keys,
-/// checksum validation and saving on dispose. They are read and applied during <see cref="NeoIniReader"/>
+/// These options control how the document will handle automatic saving, backup creation, missing keys,
+/// checksum validation and saving on dispose. They are read and applied during <see cref="NeoIniDocument"/>
 /// initialization and do not affect instances that have already been created.
 /// </remarks>
-public sealed class NeoIniReaderOptions
+public sealed class NeoIniOptions
 {
     /// <summary>
     /// Determines whether changes are automatically written to the disk after every modification.
@@ -31,7 +31,7 @@ public sealed class NeoIniReaderOptions
     public bool UseAutoBackup { get; set; } = true;
 
     /// <summary>
-    /// Determines whether missing keys are automatically added to the file with a default value when requested via <see cref="NeoIniReader.GetValue{T}"/>. 
+    /// Determines whether missing keys are automatically added to the file with a default value when requested via <see cref="NeoIniDocument.GetValue{T}"/>. 
 	/// Default is <c>true</c>.
     /// </summary>
     public bool UseAutoAdd { get; set; } = true;
@@ -67,20 +67,20 @@ public sealed class NeoIniReaderOptions
     /// Default behavior: automatic saving and backups enabled, checksum validation on,
     /// missing keys are added automatically and configuration is saved on dispose.
     /// </summary>
-    public static NeoIniReaderOptions Default => new();
+    public static NeoIniOptions Default => new();
 
     /// <summary>
     /// Safe behavior: keeps the file structure strict by not adding missing keys automatically.
     /// Other options are the same as <see cref="Default"/>.
     /// </summary>
-    public static NeoIniReaderOptions Safe => new() { UseAutoAdd = false };
+    public static NeoIniOptions Safe => new() { UseAutoAdd = false };
 
     /// <summary>
     /// High-performance behavior: disables automatic saving, backups, checksum validation,
     /// automatic key creation and saving on dispose. The caller is responsible for
     /// explicitly saving changes when appropriate.
     /// </summary>
-    public static NeoIniReaderOptions Performance => new()
+    public static NeoIniOptions Performance => new()
     {
         UseAutoSave = false,
         UseAutoBackup = false,
@@ -94,17 +94,17 @@ public sealed class NeoIniReaderOptions
     /// every specified number of operations instead of after every modification.
     /// </summary>
     /// <param name="interval">Number of operations between automatic saves; must be greater than zero.</param>
-    public static NeoIniReaderOptions BufferedAutoSave(int interval)
+    public static NeoIniOptions BufferedAutoSave(int interval)
     {
         if (interval <= 0) throw new ArgumentOutOfRangeException(nameof(interval), "Interval must be greater than zero.");
-        return new NeoIniReaderOptions { AutoSaveInterval = interval };
+        return new NeoIniOptions { AutoSaveInterval = interval };
     }
 
     /// <summary>
     /// Read-only behavior: never writes to disk and does not create missing keys,
     /// but still verifies checksums when loading to detect corruption.
     /// </summary>
-    public static NeoIniReaderOptions ReadOnly => new()
+    public static NeoIniOptions ReadOnly => new()
     {
         UseAutoSave = false,
         UseAutoBackup = false,

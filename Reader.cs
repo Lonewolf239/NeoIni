@@ -16,11 +16,11 @@ namespace NeoIni;
 /// <br/>
 /// <b>Target Framework: .NET 6+</b>
 /// <br/>
-/// <b>Version: 1.9</b>
+/// <b>Version: 2.0-pre1</b>
 /// <br/>
 /// <b>Black Box Philosophy:</b> This class follows a strict "black box" design principle - users interact only through the public API without needing to understand internal implementation details. Input goes in, processed output comes out, internals remain hidden and abstracted.
 /// </summary>
-public partial class NeoIniReader : IDisposable, IAsyncDisposable
+public partial class NeoIniDocument : IDisposable, IAsyncDisposable
 {
     /// <summary>Returns the INI data formatted as it would appear in the file</summary>
     /// <returns>
@@ -42,44 +42,57 @@ public partial class NeoIniReader : IDisposable, IAsyncDisposable
     /// <summary>Asynchronously releases managed resources and saves changes to the file</summary>
     public async ValueTask DisposeAsync() { await DisposeAsync(true).ConfigureAwait(false); GC.SuppressFinalize(this); }
 
-    /// <summary>Starts automatic hot reload monitoring for the underlying INI file.</summary>
-    /// <param name="delayMs">The polling interval in milliseconds. Must be 1000 ms or greater.</param>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown if <paramref name="delayMs"/> is less than 1000.</exception>
-    public void StartHotReload(int delayMs)
+    /// <summary>
+    /// Starts automatic hot reload monitoring for the underlying configuration source.
+    /// When changes are detected, the configuration will be automatically reloaded.
+    /// </summary>
+    /// <param name="pollingInterval">
+    /// The polling interval in milliseconds. Must be 1000 ms or greater.
+    /// This value is passed to the monitor to determine how often to check for changes.
+    /// </param>
+    /// <param name="monitor">
+    /// An optional custom <see cref="IHotReloadMonitor"/> implementation.
+    /// If <c>null</c>, a default file-based monitor will be used that polls the file for changes.
+    /// </param>
+    /// <exception cref="InvalidHotReloadDelayException">
+    /// Thrown if <paramref name="pollingInterval"/> is less than 1000.
+    /// </exception>
+    /// <remarks>
+    /// If hot reload is already active (i.e., a previous call to this method succeeded without being stopped),
+    /// subsequent calls are ignored and no exception is thrown.
+    /// The monitor will run until <see cref="StopHotReload"/> is called or the monitor itself stops due to cancellation.
+    /// </remarks>
+    public void StartHotReload(int pollingInterval, IHotReloadMonitor? monitor = null)
     {
         ThrowIfDisposed();
-        if (delayMs < 1000) throw new InvalidHotReloadDelayException(nameof(delayMs));
         if (Interlocked.CompareExchange(ref HotReloadState, 1, 0) != 0) return;
-        using (Lock.WriteLock())
+        monitor ??= new HotReloadMonitor(Provider);
+        try
         {
-            HotReloadCts = new();
-            PauseHotReload.Set();
+            monitor.ChangeDetected += OnHotReloadChangeDetected;
+            monitor.Start(pollingInterval);
+            HotReloadMonitor = monitor;
         }
-        PrevHotReloadChecksum = Provider.GetStateChecksum();
-        _ = Task.Run(async () =>
+        catch
         {
-            try
-            {
-                while (!HotReloadCts!.IsCancellationRequested)
-                {
-                    PauseHotReload.Wait(HotReloadCts!.Token);
-                    var checksum = Provider.GetStateChecksum();
-                    if (!PrevHotReloadChecksum!.SequenceEqual(checksum))
-                    {
-                        await ReloadFromFileAsync(HotReloadCts!.Token).ConfigureAwait(false);
-                        using (await Lock.WriteLockAsync(HotReloadCts!.Token).ConfigureAwait(false))
-                            PrevHotReloadChecksum = checksum;
-                    }
-                    await Task.Delay(delayMs, HotReloadCts!.Token).ConfigureAwait(false);
-                }
-            }
-            catch (OperationCanceledException) { }
-            finally { Interlocked.Exchange(ref HotReloadState, 0); }
-        }, HotReloadCts!.Token);
+            monitor.ChangeDetected -= OnHotReloadChangeDetected;
+            monitor.Dispose();
+            Interlocked.Exchange(ref HotReloadState, 0);
+            throw;
+        }
     }
 
     /// <summary>Stops the hot reload monitoring if it is currently active.</summary>
-    public void StopHotReload() { ThrowIfDisposed(); SafeStopHotReload(); }
+    public void StopHotReload()
+    {
+        ThrowIfDisposed();
+        if (Interlocked.CompareExchange(ref HotReloadState, 0, 1) != 1) return;
+        if (HotReloadMonitor is null) return;
+        HotReloadMonitor.ChangeDetected -= OnHotReloadChangeDetected;
+        HotReloadMonitor.Stop();
+        HotReloadMonitor.Dispose();
+        HotReloadMonitor = null;
+    }
 
     /// <summary>Saves the current data to an INI file with checksums and encryption applied, if enabled</summary>
     public void SaveFile()
@@ -498,7 +511,7 @@ public partial class NeoIniReader : IDisposable, IAsyncDisposable
     }
 
     /// <summary>Reloads data from the INI file, updating the internal data structure</summary>
-    public void ReloadFromFile()
+    public void Reload()
     {
         ThrowIfDisposed();
         using (Lock.WriteLock())
@@ -512,7 +525,7 @@ public partial class NeoIniReader : IDisposable, IAsyncDisposable
 
     /// <summary>Asynchronously reloads data from the INI file, updating the internal data structure.</summary>
     /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
-    public async Task ReloadFromFileAsync(CancellationToken cancellationToken = default)
+    public async Task ReloadAsync(CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
         cancellationToken.ThrowIfCancellationRequested();
@@ -567,7 +580,7 @@ public partial class NeoIniReader : IDisposable, IAsyncDisposable
 
     /// <summary>
     /// Returns the current encryption password if encryption is enabled, or a status message if disabled.
-    /// Use the returned password in the NeoIniReader(path, password) constructor on a new machine
+    /// Use the returned password in the NeoIniDocument(path, password) constructor on a new machine
     /// to migrate the encrypted file without data loss.
     /// </summary>
     /// <returns>The generated encryption password or status message.</returns>

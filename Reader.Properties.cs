@@ -4,7 +4,7 @@ using NeoIni.Providers;
 
 namespace NeoIni;
 
-public partial class NeoIniReader
+public partial class NeoIniDocument
 {
     /// <summary>
     /// Determines whether changes are automatically written to the disk after every modification.

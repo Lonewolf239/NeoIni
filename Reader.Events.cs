@@ -3,7 +3,7 @@ using NeoIni.Models;
 
 namespace NeoIni;
 
-public partial class NeoIniReader
+public partial class NeoIniDocument
 {
     /// <summary>Called before saving a file to disk</summary>
     public event EventHandler? Saved;

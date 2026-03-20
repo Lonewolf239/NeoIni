@@ -63,11 +63,11 @@ namespace NeoIni.Generators
             sb.AppendLine();
             sb.AppendLine("namespace NeoIni");
             sb.AppendLine("{");
-            sb.AppendLine("    public static class NeoIniReaderExtensions");
+            sb.AppendLine("    public static class NeoIniDocumentExtensions");
             sb.AppendLine("    {");
-            sb.AppendLine("        public static T Get<T>(this NeoIniReader reader) where T : new()");
+            sb.AppendLine("        public static T Get<T>(this NeoIniDocument document) where T : new()");
             sb.AppendLine("        {");
-            sb.AppendLine("            if (reader is null) throw new ArgumentNullException(nameof(reader));");
+            sb.AppendLine("            if (document is null) throw new ArgumentNullException(nameof(document));");
             sb.AppendLine("            Type t = typeof(T);");
             sb.AppendLine();
             foreach (var kvp in grouped)
@@ -81,7 +81,7 @@ namespace NeoIni.Generators
                     var sectionLit = EscapeStringLiteral(p.Section);
                     var keyLit = EscapeStringLiteral(p.Key);
                     string defaultValue = p.DefaultValueLiteral ?? GetDefaultLiteralForType(p.PropertyTypeName);
-                    sb.AppendLine($"                cfg.{p.PropertyName} = reader.GetValue<{p.PropertyTypeName}>({sectionLit}, {keyLit}, {defaultValue});");
+                    sb.AppendLine($"                cfg.{p.PropertyName} = document.GetValue<{p.PropertyTypeName}>({sectionLit}, {keyLit}, {defaultValue});");
                 }
                 sb.AppendLine("                return (T)(object)cfg;");
                 sb.AppendLine("            }");
@@ -89,9 +89,9 @@ namespace NeoIni.Generators
             sb.AppendLine("            return new T();");
             sb.AppendLine("        }");
             sb.AppendLine();
-            sb.AppendLine("        public static void Set<T>(this NeoIniReader reader, T config)");
+            sb.AppendLine("        public static void Set<T>(this NeoIniDocument document, T config)");
             sb.AppendLine("        {");
-            sb.AppendLine("            if (reader is null) throw new ArgumentNullException(nameof(reader));");
+            sb.AppendLine("            if (document is null) throw new ArgumentNullException(nameof(document));");
             sb.AppendLine("            if (config is null) throw new ArgumentNullException(nameof(config));");
             sb.AppendLine("            Type t = typeof(T);");
             sb.AppendLine();
@@ -105,7 +105,7 @@ namespace NeoIni.Generators
                 {
                     var sectionLit = EscapeStringLiteral(p.Section);
                     var keyLit = EscapeStringLiteral(p.Key);
-                    sb.AppendLine($"                reader.SetValue({sectionLit}, {keyLit}, cfg.{p.PropertyName});");
+                    sb.AppendLine($"                document.SetValue({sectionLit}, {keyLit}, cfg.{p.PropertyName});");
                 }
                 sb.AppendLine("                return;");
                 sb.AppendLine("            }");
@@ -114,7 +114,7 @@ namespace NeoIni.Generators
             sb.AppendLine("        }");
             sb.AppendLine("    }");
             sb.AppendLine("}");
-            context.AddSource("NeoIniReaderExtensions.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
+            context.AddSource("NeoIniDocumentExtensions.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
         }
 
         private static string EscapeStringLiteral(string? value)

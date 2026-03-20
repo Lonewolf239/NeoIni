@@ -5,17 +5,17 @@ using NeoIni.Core;
 
 namespace NeoIni;
 
-public partial class NeoIniReader
+public partial class NeoIniDocument
 {
     internal string GetSaveContent()
     {
-        if (HotReloadState == 1) { using (Lock.WriteLock()) PauseHotReload.Reset(); }
+        if (HotReloadState == 1 && HotReloadMonitor is not null) HotReloadMonitor.Pause();
         using (Lock.ReadLock()) return NeoIniParser.GetContent(Data, Comments, UseShielding);
     }
 
     internal async Task<string> GetSaveContentAsync(CancellationToken ct = default)
     {
-        if (HotReloadState == 1) await ExecuteWithWriteLockAsync(PauseHotReload.Reset, ct).ConfigureAwait(false);
+        if (HotReloadState == 1 && HotReloadMonitor is not null) HotReloadMonitor.Pause();
         ct.ThrowIfCancellationRequested();
         using (await Lock.ReadLockAsync(ct).ConfigureAwait(false))
             return NeoIniParser.GetContent(Data, Comments, UseShielding);
@@ -23,25 +23,14 @@ public partial class NeoIniReader
 
     internal void FinalizeSave()
     {
-        if (HotReloadState == 1)
-        {
-            using (Lock.WriteLock())
-            {
-                PrevHotReloadChecksum = Provider.GetStateChecksum();
-                PauseHotReload.Set();
-            }
-        }
+        if (HotReloadState == 1 && HotReloadMonitor is not null) HotReloadMonitor.Continue();
         Saved?.Invoke(this, EventArgs.Empty);
     }
 
     internal async Task FinalizeSaveAsync(CancellationToken ct = default)
     {
-        if (HotReloadState == 1)
-            await ExecuteWithWriteLockAsync(() =>
-            {
-                PrevHotReloadChecksum = Provider.GetStateChecksum();
-                PauseHotReload.Set();
-            }, ct).ConfigureAwait(false);
+        if (HotReloadState == 1 && HotReloadMonitor is not null)
+            await HotReloadMonitor.ContinueAsync(ct).ConfigureAwait(false);
         Saved?.Invoke(this, EventArgs.Empty);
     }
 

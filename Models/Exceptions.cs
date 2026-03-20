@@ -11,7 +11,7 @@ public class MissingEncryptionKeyException : Exception
     /// Initializes a new instance of the <see cref="MissingEncryptionKeyException"/> class.
     /// </summary>
     public MissingEncryptionKeyException()
-        : base("The configuration file is encrypted with a custom password. Please provide a password string to the NeoIniReader constructor.") { }
+        : base("The configuration file is encrypted with a custom password. Please provide a password string to the NeoIniDocument constructor.") { }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MissingEncryptionKeyException"/> class.
