@@ -543,6 +543,7 @@
 #### List of changes
 
 - Stability improvements
+- Author: Fatalan
 
 </details>
 
