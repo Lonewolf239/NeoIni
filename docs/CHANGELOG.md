@@ -8,8 +8,8 @@
 
 #### List of changes
 
-- NeoIniDocument class constructors have been reworked.
-- EncryptionType enum has been added.
+- NeoIniDocument class constructors have been reworked
+- EncryptionType enum has been added
 
 </details>
 
@@ -74,9 +74,9 @@
 
 #### List of changes
 
-- Added missing `ConfigureAwait(false)` calls.
-- Added a `CancellationToken` parameter to the `FinalizeSave` method.
-- Improved invalid input handling in `Set` methods.
+- Added missing `ConfigureAwait(false)` calls
+- Added a `CancellationToken` parameter to the `FinalizeSave` method
+- Improved invalid input handling in `Set` methods
 
 </details>
 
@@ -85,10 +85,10 @@
 
 #### List of changes
 
-- Fixed the display of escaping in the `Search` method.
-- Eliminated unnecessary memory allocations.
-- Added optional support for quoted values via the `UseShielding` parameter (e.g., `key = "value ; not a comment"`).
-- Refactored code to remove duplication.
+- Fixed the display of escaping in the `Search` method
+- Eliminated unnecessary memory allocations
+- Added optional support for quoted values via the `UseShielding` parameter (e.g., `key = "value ; not a comment"`)
+- Refactored code to remove duplication
 
 </details>
 
@@ -132,7 +132,7 @@
 
 #### List of changes
 
-- Added hot-reload functionality via file watcher.
+- Added hot-reload functionality via file watcher
 
 </details>
 
@@ -141,7 +141,7 @@
 
 #### List of changes
 
-- Removed leftover and unused code from NeoIniMappingGenerator to simplify the source generator implementation.
+- Removed leftover and unused code from NeoIniMappingGenerator to simplify the source generator implementation
 
 </details>
 
@@ -150,10 +150,10 @@
 
 #### List of changes
 
-- Added NeoIni.Annotations mini-package with NeoIniKeyAttribute for mapping model properties to specific INI sections and keys, including an optional DefaultValue.
-- Added NeoIni.Generators mini-package with NeoIniMappingGenerator (IIncrementalGenerator) that scans properties annotated with NeoIniKeyAttribute and generates NeoIniReaderExtensions containing strongly-typed Get / Set object mapping APIs.
-- Generated NeoIniReaderExtensions.Get creates and populates configuration instances from INI files using GetValue for each mapped property, applying per-property defaults or type defaults when values are missing.
-- Generated NeoIniReaderExtensions.Set writes configuration instances back to INI files via SetValue, throwing NotSupportedException for types not covered by the source generator's mapping.
+- Added NeoIni.Annotations mini-package with NeoIniKeyAttribute for mapping model properties to specific INI sections and keys, including an optional DefaultValue
+- Added NeoIni.Generators mini-package with NeoIniMappingGenerator (IIncrementalGenerator) that scans properties annotated with NeoIniKeyAttribute and generates NeoIniReaderExtensions containing strongly-typed Get / Set object mapping APIs
+- Generated NeoIniReaderExtensions.Get creates and populates configuration instances from INI files using GetValue for each mapped property, applying per-property defaults or type defaults when values are missing
+- Generated NeoIniReaderExtensions.Set writes configuration instances back to INI files via SetValue, throwing NotSupportedException for types not covered by the source generator's mapping
 
 </details>
 
@@ -222,7 +222,7 @@
 </details>
 
 <details>
-<summary><strong>1.5.x and below</strong> — early active development. The library was being shaped: APIs changed frequently, bugs were common, and many releases were incremental fixes rather than planned features. Stable usage starts from <strong>1.6.1</strong>.</summary>
+<summary><strong>1.5.x and below</strong> — early active development. The library was being shaped: APIs changed frequently, bugs were common, and many releases were incremental fixes rather than planned features. Stable usage starts from <strong>1.6.1</strong></summary>
 
 <details>
 <summary><strong>1.5.8.2</strong> — March 5, 2026</summary>
@@ -248,11 +248,11 @@
 #### List of changes
 
 - Reworked NeoIniFileProvider:
-  - Added a file information header.
-  - Implemented automatic decryption for encrypted files when reading, if the instance is created with encryption disabled and the file is encrypted in automode.
-  - Improved file reading logic: file data is now always read correctly, regardless of how the file is opened (previously, opening a file with a checksum but without specifying the checksum could cause an error).
-- Added NeoIniReader.ToString() method.
-- Removed redundant and unused code.
+  - Added a file information header
+  - Implemented automatic decryption for encrypted files when reading, if the instance is created with encryption disabled and the file is encrypted in automode
+  - Improved file reading logic: file data is now always read correctly, regardless of how the file is opened (previously, opening a file with a checksum but without specifying the checksum could cause an error)
+- Added NeoIniReader.ToString() method
+- Removed redundant and unused code
 
 </details>
 
@@ -412,8 +412,8 @@
 
 #### List of changes
 
-- Actions have been added for all events.
-- The `GetEncryptionPasswordAsync` method has been added.
+- Actions have been added for all events
+- The `GetEncryptionPasswordAsync` method has been added
 
 </details>
 
@@ -518,15 +518,15 @@
 
 #### List of changes
 
-- Completely reworked the class.
-- Added thread safety and stability; improved the "black box" philosophy.
+- Completely reworked the class
+- Added thread safety and stability; improved the "black box" philosophy
 
 </details>
 
 </details>
 
 <details>
-<summary><strong>Pre-1.5</strong> — ancient history. This is essentially a different product that shares only the repository and the original idea. The architecture, API surface, file format, and quality standards are incomparable to anything above. Listed here for completeness only.</summary>
+<summary><strong>Pre-1.5</strong> — ancient history. This is essentially a different product that shares only the repository and the original idea. The architecture, API surface, file format, and quality standards are incomparable to anything above. Listed here for completeness only</summary>
 
 <details>
 <summary><strong>1.4</strong> — February 17, 2025</summary>
