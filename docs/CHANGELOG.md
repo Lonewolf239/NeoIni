@@ -4,6 +4,24 @@
 ## Changelog · NeoIni
 
 <details>
+<summary><strong>3.1</strong> — March 21, 2026</summary>
+
+#### List of changes
+
+- **Breaking change**: `IEncryptionProvider` interface extended with encryption/decryption methods:
+  - `void Encrypt(MemoryStream, byte[] key, byte[] salt, byte[] plaintextBytes)`
+  - `Task EncryptAsync(MemoryStream, byte[] key, byte[] salt, byte[] plaintextBytes, CancellationToken ct)`
+  - `byte[] Decrypt(byte[] key, byte[] iv, byte[] encryptedBytes)`
+  - `Task<byte[]> DecryptAsync(byte[] key, byte[] iv, byte[] encryptedBytes, CancellationToken ct)`
+- Encryption logic moved from `NeoIniFileProvider` to `NeoIniEncryptionProvider` (built‑in AES implementation)
+- `NeoIniFileProvider` now delegates actual encryption/decryption to the `IEncryptionProvider` instance
+- Updated XML documentation for `IEncryptionProvider` to specify the required data format: `[IV (16 bytes)][Salt (16 bytes)][EncryptedData]`
+- Added migration section for version 3.1 in `Migration-Guide.md`
+- Updated `ENCRYPTION-PROVIDER.md` with full implementation example
+
+</details>
+
+<details>
 <summary><strong>3.0</strong> — March 21, 2026</summary>
 
 #### List of changes
