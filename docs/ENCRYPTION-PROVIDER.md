@@ -47,6 +47,7 @@ public class MyAesGcmEncryptionProvider : IEncryptionProvider
         // This is used by the GetEncryptionPassword() method of NeoIniDocument.
     }
 
+    // Version 3.1+
     public void Encrypt(MemoryStream memoryStream, byte[] key, byte[] salt, byte[] plaintextBytes)
     {
         // Write the initialization vector (16 bytes) and salt (16 bytes) to the stream,
