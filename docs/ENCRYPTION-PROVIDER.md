@@ -147,4 +147,4 @@ NeoIni ships with a default AES‑256‑CBC implementation (`NeoIniEncryptionPro
 - The returned `EncryptionParameters` must contain a valid key (non‑null) when encryption is enabled. If you return `null` key, the document will throw `MissingEncryptionKeyException`.
 - The provider should be stateless and thread‑safe, as it may be called concurrently from different documents.
 
-> **Note:** In versions prior to 2.0, encryption was hard‑coded to AES‑256‑CBC. Upgrade to 2.0 to take advantage of the new pluggable encryption architecture.
+> **Note:** In versions prior to 2.0, encryption was hard‑coded to AES‑256‑CBC. Upgrade to 3.1 to take advantage of the new pluggable encryption architecture.
