@@ -16,7 +16,7 @@ namespace NeoIni;
 /// <br/>
 /// <b>Target Framework: .NET 6+</b>
 /// <br/>
-/// <b>Version: 2.0</b>
+/// <b>Version: 3.0</b>
 /// <br/>
 /// <b>Black Box Philosophy:</b> This class follows a strict "black box" design principle - users interact only through the public API without needing to understand internal implementation details. Input goes in, processed output comes out, internals remain hidden and abstracted.
 /// </summary>
@@ -589,8 +589,8 @@ public partial class NeoIniDocument : IDisposable, IAsyncDisposable
         ThrowIfDisposed();
         if (Provider is not NeoIniFileProvider)
             throw new UnsupportedProviderOperationException("Retrieving the auto-generated encryption password is only supported when using the default file provider.");
-        if (!AutoEncryption) return "AutoEncryption is disabled";
-        if (CustomEncryptionPassword) return "CustomEncryptionPassword is used. For security reasons, the password is not saved.";
+        if (EncryptionType == EncryptionType.None) return "AutoEncryption is disabled";
+        if (EncryptionType == EncryptionType.Custom) return "CustomEncryptionPassword is used. For security reasons, the password is not saved.";
         return EncryptionProvider.GetEncryptionPassword(NeoIniFileProvider.GetSalt(FilePath));
     }
 }

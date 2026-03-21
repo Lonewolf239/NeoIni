@@ -14,25 +14,24 @@ public class NeoIniKeyTest
 class NeoIniDemo
 {
     private const string TestFile = "demo_config.ini";
-    private static bool Encryption = false;
-    private static bool CustomPassword = false;
+    private static EncryptionType EncryptionType = EncryptionType.None;
     private static string Password;
 
     private static async Task Main()
     {
         Console.CursorVisible = false;
         Console.Clear();
-        Console.WriteLine("NeoIni Demonstration\n");
+        Console.WriteLine("NeoIni v3.0 Demonstration\n");
 
         Console.Write("Press Y to enable auto-encryption mode (machine-bound): ");
-        Encryption = Console.ReadKey().Key == ConsoleKey.Y;
+        if (Console.ReadKey().Key == ConsoleKey.Y) EncryptionType = EncryptionType.Auto;
         Console.WriteLine();
 
         Console.Write("Press Y to use custom password instead of auto-encryption: ");
-        CustomPassword = Console.ReadKey().Key == ConsoleKey.Y;
+        if (Console.ReadKey().Key == ConsoleKey.Y) EncryptionType = EncryptionType.Custom;
         Console.WriteLine();
 
-        if (CustomPassword)
+        if (EncryptionType == EncryptionType.Custom)
         {
             Console.Write("Enter custom encryption password (will NOT be stored in file): ");
             Password = Console.ReadLine();
@@ -69,23 +68,23 @@ class NeoIniDemo
     private static NeoIniDocument CreateReaderDefault()
     {
         NeoIniOptions options = new() { UseShielding = true };
-        if (CustomPassword) return new(TestFile, Password, options);
-        return new(TestFile, Encryption, options);
+        if (EncryptionType == EncryptionType.Custom) return new(TestFile, Password, options);
+        return new(TestFile, EncryptionType, options);
     }
 
     private static NeoIniDocument CreateReaderWithOptions(NeoIniOptions options)
     {
         options.UseShielding = true;
-        if (CustomPassword) return new(TestFile, Password, options);
-        return new(TestFile, Encryption, options);
+        if (EncryptionType == EncryptionType.Custom) return new(TestFile, Password, options);
+        return new(TestFile, EncryptionType, options);
     }
 
     private static async Task<NeoIniDocument> CreateReaderAsync(NeoIniOptions options = null)
     {
         options ??= new();
         options.UseShielding = true;
-        if (CustomPassword) return await NeoIniDocument.CreateAsync(TestFile, Password, options);
-        return await NeoIniDocument.CreateAsync(TestFile, Encryption, options);
+        if (EncryptionType == EncryptionType.Custom) return await NeoIniDocument.CreateAsync(TestFile, Password, options);
+        return await NeoIniDocument.CreateAsync(TestFile, EncryptionType, options);
     }
 
     private static void BasicCreationDemo()

@@ -21,7 +21,7 @@ dotnet add package NeoIni
 ```
 
 - **Пакет:** [nuget.org/packages/NeoIni](https://www.nuget.org/packages/NeoIni)
-- **Версия:** `2.0` | **.NET 6+**
+- **Версия:** `3.0` | **.NET 6+**
 - **Разработчик:** [Lonewolf239](https://github.com/Lonewolf239)
 
 ---
@@ -61,7 +61,7 @@ using NeoIni;
 NeoIniDocument document = new("config.ini");
 
 // Авто-шифрование (привязка к машине)
-NeoIniDocument encrypted = new("config.ini", autoEncryption: true);
+NeoIniDocument encrypted = new("config.ini", EncryptionType.Auto);
 
 // Пользовательский пароль (переносимый между машинами)
 NeoIniDocument portable = new("config.ini", "MySecretPass123");
@@ -187,7 +187,7 @@ document.Error            += (_, e) => Console.WriteLine($"Error: {e.Exception.M
 
 ```csharp
 // Авто-шифрование — ключ генерируется из user/machine/domain + per-file salt
-NeoIniDocument document = new("secure.ini", autoEncryption: true);
+NeoIniDocument document = new("secure.ini", EncryptionType.Auto);
 
 // Получить пароль для миграции на другую машину
 string password = document.GetEncryptionPassword();

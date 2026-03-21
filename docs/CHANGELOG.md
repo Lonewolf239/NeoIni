@@ -3,6 +3,13 @@
 
 ## Changelog · NeoIni
 
+### 3.0 — March 21, 2026
+
+#### List of changes
+
+- NeoIniDocument class constructors have been reworked.
+- EncryptionType enum has been added.
+
 ### 2.0 — March 21, 2026
 
 #### List of changes
@@ -15,12 +22,12 @@
 
 #### List of changes
 
-- **Major rename**: `NeoIniReader` renamed to `NeoIniDocument` to better reflect its purpose as a configuration document.
-- **New encryption abstraction**: Introduced `IEncryptionProvider` interface, allowing custom encryption algorithms (AES remains the default implementation).
-- **Pluggable hot reload**: Added `IHotReloadMonitor` interface with a default file‑based monitor; enables custom change‑detection strategies.
-- **Options class renamed**: `NeoIniReaderOptions` → `NeoIniOptions` for consistency.
-- **API consistency**: Renamed `ReloadFromFile`/`ReloadFromFileAsync` to `Reload`/`ReloadAsync`.
-- **Code structure**: Split `NeoIniFileProvider` into multiple partial files for better maintainability.
+- **Major rename**: `NeoIniReader` renamed to `NeoIniDocument` to better reflect its purpose as a configuration document
+- **New encryption abstraction**: Introduced `IEncryptionProvider` interface, allowing custom encryption algorithms (AES remains the default implementation)
+- **Pluggable hot reload**: Added `IHotReloadMonitor` interface with a default file‑based monitor; enables custom change‑detection strategies
+- **Options class renamed**: `NeoIniReaderOptions` → `NeoIniOptions` for consistency
+- **API consistency**: Renamed `ReloadFromFile`/`ReloadFromFileAsync` to `Reload`/`ReloadAsync`
+- **Code structure**: Split `NeoIniFileProvider` into multiple partial files for better maintainability
 
 ### 1.9 — March 19, 2026
 

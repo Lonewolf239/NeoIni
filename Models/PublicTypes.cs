@@ -80,3 +80,25 @@ public class Comment
         Content = content;
     }
 }
+
+/// <summary>Specifies the encryption mode for a NeoIni document.</summary>
+/// <remarks>
+/// The encryption type determines how encryption keys and parameters are managed
+/// when writing encrypted INI files.
+/// </remarks>
+public enum EncryptionType
+{
+    /// <summary>No encryption is applied. The INI file is stored in plain text.</summary>
+    None,
+
+    /// <summary>Encryption is applied with automatically generated parameters.</summary>
+    Auto,
+
+    /// <summary>
+    /// Custom encryption using a user-provided password.
+    /// Use this mode when you need to specify a custom encryption password
+    /// for enhanced security or cross-platform compatibility.
+    /// </summary>
+    /// <remarks>This mode requires using the constructor that accepts an <c>encryptionPassword</c> parameter.</remarks>
+    Custom
+}

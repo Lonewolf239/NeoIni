@@ -6,11 +6,11 @@ namespace NeoIni;
 
 public partial class NeoIniDocument
 {
-    private NeoIniDocument(NeoIniOptions? options, IEncryptionProvider encryptionProvider, bool autoEncryption, string path)
+    private NeoIniDocument(NeoIniOptions? options, IEncryptionProvider? encryptionProvider, string? path, EncryptionType encryptionType)
     {
         FilePath = path;
-        AutoEncryption = autoEncryption;
-        EncryptionProvider = encryptionProvider;
+        EncryptionType = encryptionType;
+        EncryptionProvider = encryptionProvider ?? new NeoIniEncryptionProvider();
         Provider = null!;
         ApplyOptions(options);
     }
@@ -24,13 +24,12 @@ public partial class NeoIniDocument
     /// <param name="options">Optional document configuration; if null, default settings are used.</param>
     /// <param name="autoLoad">
     /// If <c>true</c>, the configuration data is loaded synchronously from the provider during construction.
-    /// If <c>false</c>, you must call <see cref="Load"/> or <see cref="LoadAsync"/> explicitly.
+    /// If <c>false</c>, you must call <see cref="Reload"/> or <see cref="ReloadAsync"/> explicitly.
     /// </param>
-    public NeoIniDocument(INeoIniProvider provider, NeoIniOptions? options = null, bool autoLoad = true)
+    public NeoIniDocument(INeoIniProvider? provider, NeoIniOptions? options = null, bool autoLoad = true) :
+        this(options, null, null, EncryptionType.None)
     {
         Provider = provider ?? throw new ArgumentNullException(nameof(provider));
-        EncryptionProvider = new NeoIniEncryptionProvider();
-        ApplyOptions(options);
         if (autoLoad) Load();
     }
 
@@ -43,14 +42,12 @@ public partial class NeoIniDocument
     /// <param name="options">Optional document configuration; if null, default settings are used.</param>
     /// <param name="autoLoad">
     /// If <c>true</c>, the configuration data is loaded synchronously from the provider during construction.
-    /// If <c>false</c>, you must call <see cref="Load"/> or <see cref="LoadAsync"/> explicitly.
+    /// If <c>false</c>, you must call <see cref="Reload"/> or <see cref="ReloadAsync"/> explicitly.
     /// </param>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="provider"/> or <paramref name="encryptionProvider"/> is null.</exception>
-    public NeoIniDocument(INeoIniProvider provider, IEncryptionProvider encryptionProvider, NeoIniOptions? options = null, bool autoLoad = true)
+    public NeoIniDocument(INeoIniProvider? provider, IEncryptionProvider? encryptionProvider, NeoIniOptions? options = null, bool autoLoad = true) :
+        this(options, encryptionProvider ?? throw new ArgumentNullException(nameof(encryptionProvider)), null, EncryptionType.None)
     {
         Provider = provider ?? throw new ArgumentNullException(nameof(provider));
-        EncryptionProvider = encryptionProvider ?? throw new ArgumentNullException(nameof(encryptionProvider));
-        ApplyOptions(options);
         if (autoLoad) Load();
     }
 
@@ -59,47 +56,26 @@ public partial class NeoIniDocument
     /// with optional configuration options.
     /// </summary>
     /// <param name="path">Path to the INI file.</param>
+	/// <param name="encryptionType">The encryption type to use for the file.</param>
     /// <param name="options">
     /// Optional document configuration; if <c>null</c>, <see cref="NeoIniOptions.Default"/> is used.
     /// </param>
     /// <param name="autoLoad">
     /// If <c>true</c>, the configuration data is loaded synchronously from the file during construction.
-    /// If <c>false</c>, you must call <see cref="Load"/> or <see cref="LoadAsync"/> explicitly.
+    /// If <c>false</c>, you must call <see cref="Reload"/> or <see cref="ReloadAsync"/> explicitly.
     /// </param>
-    public NeoIniDocument(string path, NeoIniOptions? options = null, bool autoLoad = true) :
-        this(options, new NeoIniEncryptionProvider(), false, path)
+    public NeoIniDocument(string? path, EncryptionType encryptionType = EncryptionType.None, NeoIniOptions? options = null, bool autoLoad = true) :
+        this(options, null, path, encryptionType)
     {
-        Provider = new NeoIniFileProvider(path, EncryptionProvider);
-        if (autoLoad) Load();
-    }
-
-    /// <summary>
-    /// Creates a new <see cref="NeoIniDocument"/> for the specified file path,
-    /// with optional automatic encryption and configuration options.
-    /// </summary>
-    /// <param name="path">Path to the INI file.</param>
-    /// <param name="autoEncryption">
-    /// If <c>true</c>, the file is accessed through an encryption provider
-    /// using an automatically generated encryption key.
-    /// <para><b>Warning:</b> Enabling encryption ties the file to the specific machine/user 
-    /// environment. The file will be unreadable on other computers due to machine-specific key generation!</para>
-    /// </param>
-    /// <param name="options">
-    /// Optional document configuration; if <c>null</c>, <see cref="NeoIniOptions.Default"/> is used.
-    /// </param>
-    /// <param name="autoLoad">
-    /// If <c>true</c>, the configuration data is loaded synchronously from the file during construction.
-    /// If <c>false</c>, you must call <see cref="Load"/> or <see cref="LoadAsync"/> explicitly.
-    /// </param>
-    public NeoIniDocument(string path, bool autoEncryption, NeoIniOptions? options = null, bool autoLoad = true) :
-        this(options, new NeoIniEncryptionProvider(), autoEncryption, path)
-    {
-        if (autoEncryption)
+        if (encryptionType == EncryptionType.None) Provider = new NeoIniFileProvider(path, EncryptionProvider);
+        else if (encryptionType == EncryptionType.Auto)
         {
             var encryptionParameters = EncryptionProvider.GetEncryptionParameters(salt: NeoIniFileProvider.GetSalt(path));
             Provider = new NeoIniFileProvider(path, encryptionParameters, true, EncryptionProvider);
         }
-        else Provider = new NeoIniFileProvider(path, EncryptionProvider);
+        else throw new NotSupportedException(
+            $"EncryptionType '{encryptionType}' is not supported in this constructor. " +
+            $"Use the constructor with an encryption password parameter for {EncryptionType.Custom} encryption.");
         if (autoLoad) Load();
     }
 
@@ -111,12 +87,11 @@ public partial class NeoIniDocument
     /// </param>
     /// <param name="autoLoad">
     /// If <c>true</c>, the configuration data is loaded synchronously from the file during construction.
-    /// If <c>false</c>, you must call <see cref="Load"/> or <see cref="LoadAsync"/> explicitly.
+    /// If <c>false</c>, you must call <see cref="Reload"/> or <see cref="ReloadAsync"/> explicitly.
     /// </param>
-    public NeoIniDocument(string path, string encryptionPassword, NeoIniOptions? options = null, bool autoLoad = true) :
-        this(options, new NeoIniEncryptionProvider(), false, path)
+    public NeoIniDocument(string? path, string? encryptionPassword, NeoIniOptions? options = null, bool autoLoad = true) :
+        this(options, null, path, EncryptionType.Custom)
     {
-        CustomEncryptionPassword = true;
         var encryptionParameters = EncryptionProvider.GetEncryptionParameters(encryptionPassword, NeoIniFileProvider.GetSalt(path));
         Provider = new NeoIniFileProvider(path, encryptionParameters, false, EncryptionProvider);
         if (autoLoad) Load();
@@ -133,11 +108,11 @@ public partial class NeoIniDocument
     /// </param>
     /// <param name="autoLoad">
     /// If <c>true</c>, the configuration data is loaded synchronously from the file during construction.
-    /// If <c>false</c>, you must call <see cref="Load"/> or <see cref="LoadAsync"/> explicitly.
+    /// If <c>false</c>, you must call <see cref="Reload"/> or <see cref="ReloadAsync"/> explicitly.
     /// </param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="encryptionProvider"/> is <c>null</c>.</exception>
-    public NeoIniDocument(string path, IEncryptionProvider encryptionProvider, NeoIniOptions? options = null, bool autoLoad = true) :
-        this(options, encryptionProvider ?? throw new ArgumentNullException(nameof(encryptionProvider)), true, path)
+    public NeoIniDocument(string? path, IEncryptionProvider? encryptionProvider, NeoIniOptions? options = null, bool autoLoad = true) :
+        this(options, encryptionProvider, path, EncryptionType.Auto)
     {
         var encryptionParameters = EncryptionProvider.GetEncryptionParameters(salt: NeoIniFileProvider.GetSalt(path));
         Provider = new NeoIniFileProvider(path, encryptionParameters, true, EncryptionProvider);
@@ -156,13 +131,12 @@ public partial class NeoIniDocument
     /// </param>
     /// <param name="autoLoad">
     /// If <c>true</c>, the configuration data is loaded synchronously from the file during construction.
-    /// If <c>false</c>, you must call <see cref="Load"/> or <see cref="LoadAsync"/> explicitly.
+    /// If <c>false</c>, you must call <see cref="Reload"/> or <see cref="ReloadAsync"/> explicitly.
     /// </param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="encryptionProvider"/> is <c>null</c>.</exception>
-    public NeoIniDocument(string path, string encryptionPassword, IEncryptionProvider encryptionProvider, NeoIniOptions? options = null, bool autoLoad = true) :
-        this(options, encryptionProvider ?? throw new ArgumentNullException(nameof(encryptionProvider)), false, path)
+    public NeoIniDocument(string? path, string? encryptionPassword, IEncryptionProvider? encryptionProvider, NeoIniOptions? options = null, bool autoLoad = true) :
+        this(options, encryptionProvider, path, EncryptionType.Custom)
     {
-        CustomEncryptionPassword = true;
         var encryptionParameters = EncryptionProvider.GetEncryptionParameters(encryptionPassword, NeoIniFileProvider.GetSalt(path));
         Provider = new NeoIniFileProvider(path, encryptionParameters, false, EncryptionProvider);
         if (autoLoad) Load();

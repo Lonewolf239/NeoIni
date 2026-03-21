@@ -9,7 +9,7 @@ dotnet add package NeoIni
 ```
 
 - **Package:** [nuget.org/packages/NeoIni](https://www.nuget.org/packages/NeoIni)
-- **Version:** `2.0` | **.NET 6+**
+- **Version:** `3.0` | **.NET 6+**
 - **Developer:** [Lonewolf239](https://github.com/Lonewolf239)
 
 ---
@@ -46,7 +46,7 @@ using NeoIni;
 NeoIniDocument document = new("config.ini");
 
 // Auto-encryption (machine-bound)
-NeoIniDocument encrypted = new("config.ini", autoEncryption: true);
+NeoIniDocument encrypted = new("config.ini", EncryptionType.Auto);
 
 // Custom password (portable between machines)
 NeoIniDocument portable = new("config.ini", "MySecretPass123");
@@ -137,7 +137,7 @@ document.Error            += (_, e) => Console.WriteLine($"Error: {e.Exception.M
 
 ```csharp
 // Auto-encryption — key is derived from user/machine/domain + per-file salt
-NeoIniDocument document = new("secure.ini", autoEncryption: true);
+NeoIniDocument document = new("secure.ini", EncryptionType.Auto);
 
 // Retrieve password to migrate to another machine
 string password = document.GetEncryptionPassword();

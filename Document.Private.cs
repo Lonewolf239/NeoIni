@@ -15,8 +15,7 @@ public partial class NeoIniDocument
     private readonly string? FilePath;
 
     private readonly IEncryptionProvider EncryptionProvider;
-    private readonly bool AutoEncryption = false;
-    private bool CustomEncryptionPassword = false;
+    private EncryptionType EncryptionType = EncryptionType.None;
 
     private Dictionary<string, Dictionary<string, string>>? Data;
     private List<Comment>? Comments;
