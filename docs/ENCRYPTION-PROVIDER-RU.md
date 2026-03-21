@@ -47,6 +47,7 @@ public class MyAesGcmEncryptionProvider : IEncryptionProvider
         // Этот метод вызывается методом GetEncryptionPassword() документа.
     }
 
+    // Версия 3.1+
     public void Encrypt(MemoryStream memoryStream, byte[] key, byte[] salt, byte[] plaintextBytes)
     {
         // Запишите вектор инициализации (16 байт) и соль (16 байт) в поток,
