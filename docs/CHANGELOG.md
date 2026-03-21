@@ -3,14 +3,18 @@
 
 ## Changelog · NeoIni
 
-### 3.0 — March 21, 2026
+<details>
+<summary><strong>3.0</strong> — March 21, 2026</summary>
 
 #### List of changes
 
 - NeoIniDocument class constructors have been reworked.
 - EncryptionType enum has been added.
 
-### 2.0 — March 21, 2026
+</details>
+
+<details>
+<summary><strong>2.0</strong> — March 21, 2026</summary>
 
 #### List of changes
 
@@ -18,7 +22,10 @@
 - Improved error handling in `NeoIniDocument.StartHotReload` method
 - Removed duplicate code in `NeoIniFileProvider`
 
-### 2.0-pre1 — March 20, 2026
+</details>
+
+<details>
+<summary><strong>2.0-pre1</strong> — March 20, 2026</summary>
 
 #### List of changes
 
@@ -29,14 +36,20 @@
 - **API consistency**: Renamed `ReloadFromFile`/`ReloadFromFileAsync` to `Reload`/`ReloadAsync`
 - **Code structure**: Split `NeoIniFileProvider` into multiple partial files for better maintainability
 
-### 1.9 — March 19, 2026
+</details>
+
+<details>
+<summary><strong>1.9</strong> — March 19, 2026</summary>
 
 #### List of changes
 
 - Minor code refactoring
 - Minor bug fixes
 
-### 1.9-pre2 — March 18, 2026
+</details>
+
+<details>
+<summary><strong>1.9-pre2</strong> — March 18, 2026</summary>
 
 #### List of changes
 
@@ -45,13 +58,19 @@
 - Performed minor code refactoring to enhance readability and maintainability
 - Enabled `nullable reference types` and resolved all related warnings and errors throughout the codebase
 
-### 1.9-pre1 — March 17, 2026
+</details>
+
+<details>
+<summary><strong>1.9-pre1</strong> — March 17, 2026</summary>
 
 #### List of changes
 
 - `System.Threading.ReaderWriterLock` replaced with `NeoIni.Models.AsyncReaderWriterLock`
 
-### 1.8 — March 16, 2026
+</details>
+
+<details>
+<summary><strong>1.8</strong> — March 16, 2026</summary>
 
 #### List of changes
 
@@ -59,7 +78,10 @@
 - Added a `CancellationToken` parameter to the `FinalizeSave` method.
 - Improved invalid input handling in `Set` methods.
 
-### 1.8-pre1 — March 15, 2026
+</details>
+
+<details>
+<summary><strong>1.8-pre1</strong> — March 15, 2026</summary>
 
 #### List of changes
 
@@ -68,7 +90,10 @@
 - Added optional support for quoted values via the `UseShielding` parameter (e.g., `key = "value ; not a comment"`).
 - Refactored code to remove duplication.
 
-### 1.7.3 — March 15, 2026
+</details>
+
+<details>
+<summary><strong>1.7.3</strong> — March 15, 2026</summary>
 
 #### List of changes
 
@@ -79,13 +104,19 @@
 - Guarded UseAutoBackup in ApplyOptions to prevent crashes on non-file providers
 - Made NeoIniData public to allow custom provider implementations
 
-### 1.7.2 — March 13, 2026
+</details>
+
+<details>
+<summary><strong>1.7.2</strong> — March 13, 2026</summary>
 
 #### List of changes
 
 - Fixed a vulnerability when passing values to `Set` methods
 
-### 1.7.2-pre1 — March 13, 2026
+</details>
+
+<details>
+<summary><strong>1.7.2-pre1</strong> — March 13, 2026</summary>
 
 #### List of changes
 
@@ -94,19 +125,28 @@
 - Disabled checksum validation automatically when HumanMode is enabled to allow manual edits
 - Prevented using HumanMode together with encryption to avoid data corruption and UX pitfalls
 
-### 1.7.1 — March 13, 2026
+</details>
+
+<details>
+<summary><strong>1.7.1</strong> — March 13, 2026</summary>
 
 #### List of changes
 
 - Added hot-reload functionality via file watcher.
 
-### 1.7 — March 12, 2026
+</details>
+
+<details>
+<summary><strong>1.7</strong> — March 12, 2026</summary>
 
 #### List of changes
 
 - Removed leftover and unused code from NeoIniMappingGenerator to simplify the source generator implementation.
 
-### 1.7-pre1 — March 12, 2026
+</details>
+
+<details>
+<summary><strong>1.7-pre1</strong> — March 12, 2026</summary>
 
 #### List of changes
 
@@ -115,7 +155,10 @@
 - Generated NeoIniReaderExtensions.Get creates and populates configuration instances from INI files using GetValue for each mapped property, applying per-property defaults or type defaults when values are missing.
 - Generated NeoIniReaderExtensions.Set writes configuration instances back to INI files via SetValue, throwing NotSupportedException for types not covered by the source generator's mapping.
 
-### 1.6.1 — March 12, 2026
+</details>
+
+<details>
+<summary><strong>1.6.1</strong> — March 12, 2026</summary>
 
 #### List of changes
 
@@ -125,14 +168,20 @@
 - Added null safety (`?? string.Empty`) in `SaveFile` and `SaveFileAsync` to prevent `ArgumentNullException`
 - Improved `CryptoStream` memory management by setting `leaveOpen: true` to prevent premature stream disposal
 
-### 1.6.1-pre2 — March 12, 2026
+</details>
+
+<details>
+<summary><strong>1.6.1-pre2</strong> — March 12, 2026</summary>
 
 #### List of changes
 
 - Fixed minimum file length calculation in `NeoIniFileProvider` by including `SaltSize`
 - Implemented auto-password retrieval fallback when opening an auto-encrypted file with a custom password
 
-### 1.6.1-pre1 — March 12, 2026
+</details>
+
+<details>
+<summary><strong>1.6.1-pre1</strong> — March 12, 2026</summary>
 
 #### List of changes
 
@@ -144,13 +193,19 @@
   - `SetValueClamped<T>` (`SetValueClampedAsync<T>`)
 - Renamed API methods for consistency: `AddKeyInSection` -> `AddKey` (including async variants) and `SetKey` -> `SetValue` (including async variants)
 
-### 1.6.0.1 — March 6, 2026
+</details>
+
+<details>
+<summary><strong>1.6.0.1</strong> — March 6, 2026</summary>
 
 #### List of changes
 
 - Fixed assignment of the hasSalt flag
 
-### 1.6 — March 6, 2026
+</details>
+
+<details>
+<summary><strong>1.6</strong> — March 6, 2026</summary>
 
 #### List of changes
 
@@ -164,23 +219,31 @@
 - Fixed and unified async variants for core public API methods (GetValueAsync, SetKeyAsync, section/key operations)
 - Improved thread-safety and cancellation handling across async methods (lock usage + CancellationToken checks)
 
----
+</details>
 
-> **1.5.x and below** — early active development. The library was being shaped: APIs changed frequently, bugs were common, and many releases were incremental fixes rather than planned features. Stable usage starts from 1.6.1.
+<details>
+<summary><strong>1.5.x and below</strong> — early active development. The library was being shaped: APIs changed frequently, bugs were common, and many releases were incremental fixes rather than planned features. Stable usage starts from <strong>1.6.1</strong>.</summary>
 
-### 1.5.8.2 — March 5, 2026
+<details>
+<summary><strong>1.5.8.2</strong> — March 5, 2026</summary>
 
 #### List of changes
 
 - Added NeoIniReaderOptions to configure NeoIniReader behavior, including predefined presets
 
-### 1.5.8.1 — March 5, 2026
+</details>
+
+<details>
+<summary><strong>1.5.8.1</strong> — March 5, 2026</summary>
 
 #### List of changes
 
 - Improve newline escaping logic
 
-### 1.5.8 — March 5, 2026
+</details>
+
+<details>
+<summary><strong>1.5.8</strong> — March 5, 2026</summary>
 
 #### List of changes
 
@@ -191,7 +254,10 @@
 - Added NeoIniReader.ToString() method.
 - Removed redundant and unused code.
 
-### 1.5.7.9 — March 5, 2026
+</details>
+
+<details>
+<summary><strong>1.5.7.9</strong> — March 5, 2026</summary>
 
 #### List of changes
 
@@ -199,59 +265,86 @@
 - Fixed asynchronous saving
 - Fixed escaping of line breaks in values
 
-### 1.5.7.8 — February 10, 2026
+</details>
+
+<details>
+<summary><strong>1.5.7.8</strong> — February 10, 2026</summary>
 
 #### List of changes
 
 - Added support for multiline
 
-### 1.5.7.7 — February 5, 2026
+</details>
+
+<details>
+<summary><strong>1.5.7.7</strong> — February 5, 2026</summary>
 
 #### List of changes
 
 - Fixed file reading
 
-### 1.5.7.6 — February 5, 2026
+</details>
+
+<details>
+<summary><strong>1.5.7.6</strong> — February 5, 2026</summary>
 
 #### List of changes
 
 - Dispose method has been finally fixed
 
-### 1.5.7.5 — February 5, 2026
+</details>
+
+<details>
+<summary><strong>1.5.7.5</strong> — February 5, 2026</summary>
 
 #### List of changes
 
 - Dispose method has been fixed
 
-### 1.5.7.4 — February 5, 2026
+</details>
+
+<details>
+<summary><strong>1.5.7.4</strong> — February 5, 2026</summary>
 
 #### List of changes
 
 - Improved file reading/writing logic
 - Moved code from NeoIniReader to NeoIniReaderCore
 
-### 1.5.7.3 — February 4, 2026
+</details>
+
+<details>
+<summary><strong>1.5.7.3</strong> — February 4, 2026</summary>
 
 #### List of changes
 
 - The same logic has been moved to separate methods
 - A read error when disabling `UseChecksum` has been fixed
 
-### 1.5.7.2 — February 4, 2026
+</details>
+
+<details>
+<summary><strong>1.5.7.2</strong> — February 4, 2026</summary>
 
 #### List of changes
 
 - Added `NeoIniReader.GetValueClamp<T>`
 - Changed the warning message in the file
 
-### 1.5.7.1 — February 4, 2026
+</details>
+
+<details>
+<summary><strong>1.5.7.1</strong> — February 4, 2026</summary>
 
 #### List of changes
 
 - Thread safety has been reworked
 - A critical thread safety bug has been fixed
 
-### 1.5.7 — February 4, 2026
+</details>
+
+<details>
+<summary><strong>1.5.7</strong> — February 4, 2026</summary>
 
 #### List of changes
 
@@ -263,21 +356,30 @@
 - Updated lock management: moved lock handling into individual methods instead of passing to parser
 - Added ThrowIfDisposed() validation to prevent operations on disposed objects
 
-### 1.5.6.4 — February 3, 2026
+</details>
+
+<details>
+<summary><strong>1.5.6.4</strong> — February 3, 2026</summary>
 
 #### List of changes
 
 - Added 2 new Actions
 - Changed license
 
-### 1.5.6.3 — February 1, 2026
+</details>
+
+<details>
+<summary><strong>1.5.6.3</strong> — February 1, 2026</summary>
 
 #### List of changes
 
 - Added a lock for NeoIniReader.Dispose
 - Added a warning header to the INI file.
 
-### 1.5.6.2 — February 1, 2026
+</details>
+
+<details>
+<summary><strong>1.5.6.2</strong> — February 1, 2026</summary>
 
 #### List of changes
 
@@ -294,20 +396,29 @@
   - DeleteFileWithDataAsync
   - GetEncryptionPasswordAsync
 
-### 1.5.6.1 — February 1, 2026
+</details>
+
+<details>
+<summary><strong>1.5.6.1</strong> — February 1, 2026</summary>
 
 #### List of changes
 
 - Minor fixes
 
-### 1.5.6 — February 1, 2026
+</details>
+
+<details>
+<summary><strong>1.5.6</strong> — February 1, 2026</summary>
 
 #### List of changes
 
 - Actions have been added for all events.
 - The `GetEncryptionPasswordAsync` method has been added.
 
-### 1.5.5 — February 1, 2026
+</details>
+
+<details>
+<summary><strong>1.5.5</strong> — February 1, 2026</summary>
 
 #### List of changes
 
@@ -327,99 +438,149 @@
 - .NET 6.0 support
 - Added icon
 
-### 1.5.4.4 — February 1, 2026
+</details>
+
+<details>
+<summary><strong>1.5.4.4</strong> — February 1, 2026</summary>
 
 #### List of changes
 
 - Fix: Added FileProvider = new(...) to NeoIniReader(string path, string encryptionPassword)
 
-### 1.5.4.3 — February 1, 2026
+</details>
+
+<details>
+<summary><strong>1.5.4.3</strong> — February 1, 2026</summary>
 
 #### List of changes
 
 - Added fallback to the backup file in case of a read error
 
-### 1.5.4.2 — February 1, 2026
+</details>
+
+<details>
+<summary><strong>1.5.4.2</strong> — February 1, 2026</summary>
 
 #### List of changes
 
 - Added IDisposable and persistence on Dispose
 
-### 1.5.4.1 — February 1, 2026
+</details>
+
+<details>
+<summary><strong>1.5.4.1</strong> — February 1, 2026</summary>
 
 #### List of changes
 
 - Renaming NeoIni to NeoIniReader
 
-### 1.5.4 — February 1, 2026
+</details>
+
+<details>
+<summary><strong>1.5.4</strong> — February 1, 2026</summary>
 
 #### List of changes
 
 - Subclassing the NeoIni class
 
-### 1.5.3 — January 31, 2026
+</details>
+
+<details>
+<summary><strong>1.5.3</strong> — January 31, 2026</summary>
 
 #### List of changes
 
 - Added new API methods
 - Removed junk code and added XML documentation
 
-### 1.5.2 — January 31, 2026
+</details>
+
+<details>
+<summary><strong>1.5.2</strong> — January 31, 2026</summary>
 
 #### List of changes
 
 - Added asynchronous methods and EncryptionKey caching
 
-### 1.5.1 — January 30, 2026
+</details>
+
+<details>
+<summary><strong>1.5.1</strong> — January 30, 2026</summary>
 
 #### List of changes
 
 - Garbage code removed
 
-### 1.5 — January 30, 2026
+</details>
+
+<details>
+<summary><strong>1.5</strong> — January 30, 2026</summary>
 
 #### List of changes
 
 - Completely reworked the class.
 - Added thread safety and stability; improved the "black box" philosophy.
 
----
+</details>
 
-> **Pre-1.5** — ancient history. This is essentially a different product that shares only the repository and the original idea. The architecture, API surface, file format, and quality standards are incomparable to anything above. Listed here for completeness only.
+</details>
 
-### 1.4 — February 17, 2025
+<details>
+<summary><strong>Pre-1.5</strong> — ancient history. This is essentially a different product that shares only the repository and the original idea. The architecture, API surface, file format, and quality standards are incomparable to anything above. Listed here for completeness only.</summary>
+
+<details>
+<summary><strong>1.4</strong> — February 17, 2025</summary>
 
 #### List of changes
 
 - Rework
 
-### 1.3.1 — May 12, 2024
+</details>
+
+<details>
+<summary><strong>1.3.1</strong> — May 12, 2024</summary>
 
 #### List of changes
 
 - Stability improvements
 
-### 1.3 — April 22, 2024
+</details>
+
+<details>
+<summary><strong>1.3</strong> — April 22, 2024</summary>
 
 #### List of changes
 
 - Stability improvements
 
-### 1.2 — April 20, 2024
+</details>
+
+<details>
+<summary><strong>1.2</strong> — April 20, 2024</summary>
 
 #### List of changes
 
 - Added the ability to read data with a default value, it will be returned in case of error
 
-### 1.1 — April 20, 2024
+</details>
+
+<details>
+<summary><strong>1.1</strong> — April 20, 2024</summary>
 
 #### List of changes
 
 - Added the ability to check the existence of a section
 - Added the ability to check the existence of a key in a specific section
 
-### 1.0 — April 19, 2024
+</details>
+
+<details>
+<summary><strong>1.0</strong> — April 19, 2024</summary>
 
 #### List of changes
 
 - INIReader has been released
+
+</details>
+
+</details>
