@@ -15,9 +15,6 @@
   - `Task<byte[]> DecryptAsync(byte[] key, byte[] iv, byte[] encryptedBytes, CancellationToken ct)`
 - Логика шифрования перенесена из `NeoIniFileProvider` в `NeoIniEncryptionProvider` (встроенная реализация AES)
 - `NeoIniFileProvider` теперь делегирует фактическое шифрование экземпляру `IEncryptionProvider`
-- Обновлена XML-документация для `IEncryptionProvider` с указанием требуемого формата данных: `[IV (16 байт)][Salt (16 байт)][EncryptedData]`
-- Добавлен раздел миграции для версии 3.1 в `Руководство-по-миграции.md`
-- Обновлён `ENCRYPTION-PROVIDER-RU.md` с полным примером реализации
 
 </details>
 
