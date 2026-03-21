@@ -135,18 +135,10 @@ internal partial class NeoIniFileProvider
                 index += IvSize + SaltSize;
                 int encryptedLength = fileBytes.Length - index - (headerParameters.HasChecksum ? ChecksumSize : 0);
                 if (encryptedLength <= 0) return null;
-                byte[] encryptedContent = new byte[encryptedLength];
-                Array.Copy(fileBytes, index, encryptedContent, 0, encryptedLength);
-                using var aes = Aes.Create();
-                aes.Mode = CipherMode.CBC;
-                aes.Padding = PaddingMode.PKCS7;
-                aes.Key = encryptionParameters.Key;
-                aes.IV = iv;
-                using MemoryStream ms = new(encryptedContent);
-                using var decryptor = aes.CreateDecryptor();
-                using CryptoStream cs = new(ms, decryptor, CryptoStreamMode.Read);
-                using StreamReader sr = new(cs, Encoding.UTF8);
-                content = sr.ReadToEnd();
+                byte[] encryptedBytes = new byte[encryptedLength];
+                Array.Copy(fileBytes, index, encryptedBytes, 0, encryptedLength);
+                byte[] decryptedBytes = EncryptionProvider.Decrypt(encryptionParameters.Key, iv, encryptedBytes);
+                content = Encoding.UTF8.GetString(decryptedBytes);
                 return SplitLines(content);
             }
         }
@@ -178,12 +170,13 @@ internal partial class NeoIniFileProvider
             if (headerParameters is null) return null;
             int index = headerParameters.HeaderLength;
             if (headerParameters.HasChecksum) index += WarningBytes.Length;
+            string content;
             if (!headerParameters.IsEncrypted)
             {
                 int dataLength = fileBytes.Length - index - (headerParameters.HasChecksum ? ChecksumSize : 0);
                 if (dataLength <= 0) return null;
                 ct.ThrowIfCancellationRequested();
-                string content = Encoding.UTF8.GetString(fileBytes, index, dataLength);
+                content = Encoding.UTF8.GetString(fileBytes, index, dataLength);
                 return SplitLines(content);
             }
             else
@@ -197,23 +190,11 @@ internal partial class NeoIniFileProvider
                 int encryptedLength = fileBytes.Length - index - (headerParameters.HasChecksum ? ChecksumSize : 0);
                 if (encryptedLength <= 0) return null;
                 ct.ThrowIfCancellationRequested();
-                byte[] encryptedContent = new byte[encryptedLength];
-                Array.Copy(fileBytes, index, encryptedContent, 0, encryptedLength);
-                using var aes = Aes.Create();
-                aes.Mode = CipherMode.CBC;
-                aes.Padding = PaddingMode.PKCS7;
-                aes.Key = encryptionParameters.Key;
-                aes.IV = iv;
-                using MemoryStream ms = new(encryptedContent);
-                using var decryptor = aes.CreateDecryptor();
-                using CryptoStream cs = new(ms, decryptor, CryptoStreamMode.Read);
-                using StreamReader sr = new(cs, Encoding.UTF8);
+                byte[] encryptedBytes = new byte[encryptedLength];
+                Array.Copy(fileBytes, index, encryptedBytes, 0, encryptedLength);
+                byte[] decryptedBytes = await EncryptionProvider.DecryptAsync(encryptionParameters.Key, iv, encryptedBytes, ct).ConfigureAwait(false);
                 ct.ThrowIfCancellationRequested();
-#if NET7_0_OR_GREATER
-                string content = await sr.ReadToEndAsync(ct).ConfigureAwait(false);
-#else
-                string content = await sr.ReadToEndAsync().ConfigureAwait(false);
-#endif
+                content = Encoding.UTF8.GetString(decryptedBytes);
                 ct.ThrowIfCancellationRequested();
                 return SplitLines(content);
             }

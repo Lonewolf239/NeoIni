@@ -27,6 +27,9 @@ The provider is used to derive encryption keys and salts every time the file is 
 ### Implementing IEncryptionProvider
 
 ```csharp
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using NeoIni.Models;
 using NeoIni.Providers;
 
@@ -43,11 +46,85 @@ public class MyAesGcmEncryptionProvider : IEncryptionProvider
         // Return the password that would be used to derive the key for the given salt.
         // This is used by the GetEncryptionPassword() method of NeoIniDocument.
     }
+
+    public void Encrypt(MemoryStream memoryStream, byte[] key, byte[] salt, byte[] plaintextBytes)
+    {
+        // Write the initialization vector (16 bytes) and salt (16 bytes) to the stream,
+        // then encrypt and write the payload.
+        // The order MUST be: IV (16) + Salt (16) + EncryptedData.
+        // This order is required for compatibility with the built-in file provider.
+        using var aes = Aes.Create();
+        aes.Mode = CipherMode.GCM; // example
+        aes.Key = key;
+        aes.GenerateIV();
+        memoryStream.Write(aes.IV, 0, aes.IV.Length);
+        memoryStream.Write(salt, 0, salt.Length);
+        using var encryptor = aes.CreateEncryptor();
+        using (var cs = new CryptoStream(memoryStream, encryptor, CryptoStreamMode.Write, leaveOpen: true))
+        {
+            cs.Write(plaintextBytes, 0, plaintextBytes.Length);
+            cs.FlushFinalBlock();
+        }
+    }
+
+    public async Task EncryptAsync(MemoryStream memoryStream, byte[] key, byte[] salt, byte[] plaintextBytes, CancellationToken ct = default)
+    {
+        // Async version – same ordering
+        using var aes = Aes.Create();
+        aes.Mode = CipherMode.GCM;
+        aes.Key = key;
+        aes.GenerateIV();
+        ct.ThrowIfCancellationRequested();
+        await memoryStream.WriteAsync(aes.IV.AsMemory(0, aes.IV.Length), ct).ConfigureAwait(false);
+        await memoryStream.WriteAsync(salt, ct).ConfigureAwait(false);
+        using var encryptor = aes.CreateEncryptor();
+        await using (var cs = new CryptoStream(memoryStream, encryptor, CryptoStreamMode.Write, leaveOpen: true))
+        {
+            await cs.WriteAsync(plaintextBytes, 0, plaintextBytes.Length, ct).ConfigureAwait(false);
+            await cs.FlushFinalBlockAsync(ct).ConfigureAwait(false);
+        }
+    }
+
+    public byte[] Decrypt(byte[] key, byte[] iv, byte[] encryptedBytes)
+    {
+        // Decrypt using the key and IV (salt is already used in key derivation, not needed here)
+        using var aes = Aes.Create();
+        aes.Mode = CipherMode.GCM;
+        aes.Key = key;
+        aes.IV = iv;
+        using var ms = new MemoryStream(encryptedBytes);
+        using var decryptor = aes.CreateDecryptor();
+        using var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read);
+        using var result = new MemoryStream();
+        cs.CopyTo(result);
+        return result.ToArray();
+    }
+
+    public async Task<byte[]> DecryptAsync(byte[] key, byte[] iv, byte[] encryptedBytes, CancellationToken ct = default)
+    {
+        // Async version
+        using var aes = Aes.Create();
+        aes.Mode = CipherMode.GCM;
+        aes.Key = key;
+        aes.IV = iv;
+        ct.ThrowIfCancellationRequested();
+        using var ms = new MemoryStream(encryptedBytes);
+        using var decryptor = aes.CreateDecryptor();
+        using var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read);
+        using var result = new MemoryStream();
+        await cs.CopyToAsync(result, ct).ConfigureAwait(false);
+        return result.ToArray();
+    }
 }
 ```
 
 - `GetEncryptionParameters` is called when creating a new encrypted file or reading an existing one (with auto‑mode). It receives an optional password and salt. If both are null, the provider should generate a random salt and a default password (e.g., based on the machine).
 - `GetEncryptionPassword` is called by `GetEncryptionPassword()` to retrieve the password that corresponds to a given salt (e.g., for migration).
+- `Encrypt`/`EncryptAsync` must write the IV and salt to the stream **exactly** as described. The file provider reads them back in the same order.
+- `Decrypt`/`DecryptAsync` receive the extracted IV and the encrypted payload (without IV or salt). They should return the decrypted plaintext bytes.
+
+> **Important:** The order of writing is **IV (16 bytes) + Salt (16 bytes) + EncryptedData**. This format is expected by `NeoIniFileProvider`. If you change it, your files will not be readable by the built-in provider (or vice‑versa). If you only use your own provider, you may use any format, but you must be consistent.
+
 
 ---
 

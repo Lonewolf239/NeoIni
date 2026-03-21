@@ -52,7 +52,7 @@ Long-term development plan for NeoIni. The library evolves from a single-file IN
 
 | Version | Status | Description |
 |---------|--------|-------------|
-| 3.1 | 🟡 Planned | **Improvement of IEncryptionProvider**: Transferring encryption logic from `NeoIniFileProvider`. |
+| 3.1 | ✅ Released | **Improvement of IEncryptionProvider**: Transferring encryption logic from `NeoIniFileProvider`. |
 | 3.2 | 🟡 Planned | **Streaming provider support**: allow large configurations to be read/written incrementally without loading the entire dataset into memory. |
 | 3.3 | 🔵 Under consideration | **Extended source generator**: support for nested objects, collections, and validation attributes (e.g., `[Range]`, `[Required]`) in the generated mapping code. |
 | 3.4 | 🔵 Under consideration | **Memory-mapped I/O**: optionally use memory-mapped files for very large INI files to improve performance and reduce memory footprint. |

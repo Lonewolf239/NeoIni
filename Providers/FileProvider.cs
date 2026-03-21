@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -112,22 +111,10 @@ internal partial class NeoIniFileProvider : INeoIniProvider
             {
                 if (EncryptionKey is null) throw new MissingEncryptionKeyException("The encryption key cannot be null.");
                 if (Salt is null) throw new MissingSaltException();
-                using var aes = Aes.Create();
-                aes.Mode = CipherMode.CBC;
-                aes.Padding = PaddingMode.PKCS7;
-                aes.Key = EncryptionKey;
-                aes.GenerateIV();
                 using MemoryStream ms = new();
                 ms.Write(header, 0, header.Length);
                 if (useChecksum) ms.Write(WarningBytes, 0, WarningBytes.Length);
-                ms.Write(aes.IV, 0, aes.IV.Length);
-                ms.Write(Salt, 0, Salt.Length);
-                using var encryptor = aes.CreateEncryptor();
-                using (CryptoStream cs = new(ms, encryptor, CryptoStreamMode.Write, leaveOpen: true))
-                {
-                    cs.Write(plaintextBytes, 0, plaintextBytes.Length);
-                    cs.FlushFinalBlock();
-                }
+                EncryptionProvider.Encrypt(ms, EncryptionKey, Salt, plaintextBytes);
                 dataWithChecksum = AddChecksum(ms.ToArray(), useChecksum);
                 NeoIniIO.WriteBytes(TempFilePath, dataWithChecksum);
             }
@@ -161,22 +148,10 @@ internal partial class NeoIniFileProvider : INeoIniProvider
             {
                 if (EncryptionKey is null) throw new MissingEncryptionKeyException("The encryption key cannot be null.");
                 if (Salt is null) throw new MissingSaltException();
-                using var aes = Aes.Create();
-                aes.Mode = CipherMode.CBC;
-                aes.Padding = PaddingMode.PKCS7;
-                aes.Key = EncryptionKey;
-                aes.GenerateIV();
                 await using MemoryStream ms = new();
                 await ms.WriteAsync(header, ct).ConfigureAwait(false);
                 if (useChecksum) await ms.WriteAsync(WarningBytes, ct).ConfigureAwait(false);
-                await ms.WriteAsync(aes.IV.AsMemory(0, aes.IV.Length), ct).ConfigureAwait(false);
-                await ms.WriteAsync(Salt, ct).ConfigureAwait(false);
-                using var encryptor = aes.CreateEncryptor();
-                await using (CryptoStream cs = new(ms, encryptor, CryptoStreamMode.Write, leaveOpen: true))
-                {
-                    await cs.WriteAsync(plaintextBytes, ct).ConfigureAwait(false);
-                    await cs.FlushFinalBlockAsync(ct).ConfigureAwait(false);
-                }
+                await EncryptionProvider.EncryptAsync(ms, EncryptionKey, Salt, plaintextBytes, ct).ConfigureAwait(false);
                 ct.ThrowIfCancellationRequested();
                 dataWithChecksum = AddChecksum(ms.ToArray(), useChecksum);
                 await NeoIniIO.WriteBytesAsync(TempFilePath, dataWithChecksum, ct).ConfigureAwait(false);
