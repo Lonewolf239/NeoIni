@@ -3,6 +3,24 @@
 
 ## Changelog · NeoIni
 
+<details open>
+<summary><strong>3.1</strong> — 21 марта 2026</summary>
+
+#### List of changes
+
+- **Критическое изменение**: интерфейс `IEncryptionProvider` дополнен методами шифрования/дешифрования:
+  - `void Encrypt(MemoryStream, byte[] key, byte[] salt, byte[] plaintextBytes)`
+  - `Task EncryptAsync(MemoryStream, byte[] key, byte[] salt, byte[] plaintextBytes, CancellationToken ct)`
+  - `byte[] Decrypt(byte[] key, byte[] iv, byte[] encryptedBytes)`
+  - `Task<byte[]> DecryptAsync(byte[] key, byte[] iv, byte[] encryptedBytes, CancellationToken ct)`
+- Логика шифрования перенесена из `NeoIniFileProvider` в `NeoIniEncryptionProvider` (встроенная реализация AES)
+- `NeoIniFileProvider` теперь делегирует фактическое шифрование экземпляру `IEncryptionProvider`
+- Обновлена XML-документация для `IEncryptionProvider` с указанием требуемого формата данных: `[IV (16 байт)][Salt (16 байт)][EncryptedData]`
+- Добавлен раздел миграции для версии 3.1 в `Руководство-по-миграции.md`
+- Обновлён `ENCRYPTION-PROVIDER-RU.md` с полным примером реализации
+
+</details>
+
 <details>
 <summary><strong>3.0</strong> — 21 марта 2026</summary>
 
