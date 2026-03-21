@@ -38,4 +38,4 @@ Long-term development plan for NeoIni. The library evolves from a single-file IN
 
 | Version | Status | Description |
 |---------|--------|-------------|
-| 2.0 | 🔄 In Progress | Rename `NeoIniReader` → `NeoIniDocument`. Introduce `IEncryptionProvider` interface to allow pluggable encryption algorithms (AES, custom implementations). |
+| 2.0 | ✅ Released | Rename `NeoIniReader` → `NeoIniDocument`. Introduce `IEncryptionProvider` interface to allow pluggable encryption algorithms (AES, custom implementations). |

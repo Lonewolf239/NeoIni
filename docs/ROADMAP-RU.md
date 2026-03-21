@@ -38,4 +38,4 @@
 
 | Version | Status | Description |
 |--------|--------|----------|
-| 2.0 | 🔄 In Progress | Переименование `NeoIniReader` → `NeoIniDocument`. Введение интерфейса `IEncryptionProvider` для подключаемых алгоритмов шифрования (AES, пользовательские реализации). |
+| 2.0 | ✅ Released | Переименование `NeoIniReader` → `NeoIniDocument`. Введение интерфейса `IEncryptionProvider` для подключаемых алгоритмов шифрования (AES, пользовательские реализации). |
