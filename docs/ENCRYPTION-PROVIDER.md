@@ -124,6 +124,8 @@ public class MyAesGcmEncryptionProvider : IEncryptionProvider
 - `Encrypt`/`EncryptAsync` must write the IV and salt to the stream **exactly** as described. The file provider reads them back in the same order.
 - `Decrypt`/`DecryptAsync` receive the extracted IV and the encrypted payload (without IV or salt). They should return the decrypted plaintext bytes.
 
+> **Note:** The `Encrypt`/`EncryptAsync` and `Decrypt`/`DecryptAsync` methods are available starting with version **3.1**. If you are using an older version, upgrade to 3.1 to use the full encryption provider interface.
+
 > **Important:** The order of writing is **IV (16 bytes) + Salt (16 bytes) + EncryptedData**. This format is expected by `NeoIniFileProvider`. If you change it, your files will not be readable by the built-in provider (or vice‑versa). If you only use your own provider, you may use any format, but you must be consistent.
 
 
