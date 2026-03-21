@@ -103,7 +103,7 @@ foreach (var r in results)
 
 ```csharp
 document.SaveFile();
-document.ReloadFromFile();
+document.Reload();
 document.DeleteFile();
 document.DeleteFileWithData();
 ```
