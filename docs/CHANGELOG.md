@@ -3,7 +3,7 @@
 
 ## Changelog · NeoIni
 
-<details>
+<details open>
 <summary><strong>3.1</strong> — March 21, 2026</summary>
 
 #### List of changes
