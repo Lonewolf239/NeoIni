@@ -3,6 +3,14 @@
 
 ## Changelog · NeoIni
 
+### 2.0 — 21 марта 2026
+
+#### Список изменений
+
+- Улучшен метод `NeoIniFileProvider.RaiseError`
+- Улучшена обработка ошибок в методе `NeoIniDocument.StartHotReload`
+- Удален дублирующийся код в `NeoIniFileProvider`
+
 ### 2.0-pre1 — 20 марта 2026
 
 #### Список изменений

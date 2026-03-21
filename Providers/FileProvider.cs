@@ -134,8 +134,8 @@ internal partial class NeoIniFileProvider : INeoIniProvider
             if (File.Exists(FilePath)) File.Replace(TempFilePath, FilePath, UseBackup ? BackupFilePath : null);
             else File.Move(TempFilePath, FilePath);
         }
-        catch (UnauthorizedAccessException ex) { if (Error is not null) RaiseError(this, new(ex)); else throw; }
-        catch (IOException ex) { if (Error is not null) RaiseError(this, new(ex)); else throw; }
+        catch (UnauthorizedAccessException ex) { RaiseError(this, new(ex)); }
+        catch (IOException ex) { RaiseError(this, new(ex)); }
     }
 
     public async Task SaveAsync(string content, bool useChecksum, CancellationToken ct)
@@ -185,8 +185,8 @@ internal partial class NeoIniFileProvider : INeoIniProvider
             if (File.Exists(FilePath)) File.Replace(TempFilePath, FilePath, UseBackup ? BackupFilePath : null);
             else File.Move(TempFilePath, FilePath);
         }
-        catch (UnauthorizedAccessException ex) { if (Error is not null) RaiseError(this, new(ex)); else throw; }
-        catch (IOException ex) { if (Error is not null) RaiseError(this, new(ex)); else throw; }
+        catch (UnauthorizedAccessException ex) { RaiseError(this, new(ex)); }
+        catch (IOException ex) { RaiseError(this, new(ex)); }
     }
 
     internal static byte[]? GetSalt(string? path)
@@ -211,5 +211,9 @@ internal partial class NeoIniFileProvider : INeoIniProvider
         return ms.ToArray();
     }
 
-    public void RaiseError(object? sender, ProviderErrorEventArgs e) => Error?.Invoke(sender, e);
+    public void RaiseError(object? sender, ProviderErrorEventArgs e)
+    {
+        if (Error is not null) Error.Invoke(sender, e);
+        else throw e.Exception;
+    }
 }

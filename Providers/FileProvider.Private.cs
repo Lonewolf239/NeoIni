@@ -86,6 +86,17 @@ internal partial class NeoIniFileProvider
         return true;
     }
 
+    private string[]? ReadError(Exception ex, bool isBackup)
+    {
+        if (!isBackup)
+        {
+            var data = CheckBackup();
+            if (data is not null) return data;
+            RaiseError(this, new(ex));
+        }
+        return null;
+    }
+
     private string[]? ReadFile() => ReadFile(FilePath, false);
 
     private string[]? ReadFile(string path, bool isBackup)
@@ -139,32 +150,10 @@ internal partial class NeoIniFileProvider
                 return SplitLines(content);
             }
         }
-        catch (CryptographicException ex)
-        {
-            if (isBackup) return null;
-            var data = CheckBackup();
-            if (data is not null) return data;
-            throw new InvalidEncryptionKeyException(ex);
-        }
-        catch (MissingEncryptionKeyException)
-        {
-            if (isBackup) return null;
-            var data = CheckBackup();
-            if (data is not null) return data;
-            throw;
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            if (isBackup) return null;
-            RaiseError(this, new(ex));
-            return CheckBackup();
-        }
-        catch (IOException ex)
-        {
-            if (isBackup) return null;
-            RaiseError(this, new(ex));
-            return CheckBackup();
-        }
+        catch (CryptographicException ex) { return ReadError(new InvalidEncryptionKeyException(ex), isBackup); }
+        catch (MissingEncryptionKeyException ex) { return ReadError(ex, isBackup); }
+        catch (UnauthorizedAccessException ex) { return ReadError(ex, isBackup); }
+        catch (IOException ex) { return ReadError(ex, isBackup); }
     }
 
     private async Task<string[]?> ReadFileAsync(CancellationToken ct) => await ReadFileAsync(FilePath, false, ct).ConfigureAwait(false);
@@ -229,32 +218,10 @@ internal partial class NeoIniFileProvider
                 return SplitLines(content);
             }
         }
-        catch (CryptographicException ex)
-        {
-            if (isBackup) return null;
-            var data = await CheckBackupAsync(ct).ConfigureAwait(false);
-            if (data is not null) return data;
-            throw new InvalidEncryptionKeyException(ex);
-        }
-        catch (MissingEncryptionKeyException)
-        {
-            if (isBackup) return null;
-            var data = await CheckBackupAsync(ct).ConfigureAwait(false);
-            if (data is not null) return data;
-            throw;
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            if (isBackup) return null;
-            RaiseError(this, new(ex));
-            return await CheckBackupAsync(ct).ConfigureAwait(false);
-        }
-        catch (IOException ex)
-        {
-            if (isBackup) return null;
-            RaiseError(this, new(ex));
-            return await CheckBackupAsync(ct).ConfigureAwait(false);
-        }
+        catch (CryptographicException ex) { return ReadError(new InvalidEncryptionKeyException(ex), isBackup); }
+        catch (MissingEncryptionKeyException ex) { return ReadError(ex, isBackup); }
+        catch (UnauthorizedAccessException ex) { return ReadError(ex, isBackup); }
+        catch (IOException ex) { return ReadError(ex, isBackup); }
     }
 
     private static bool TryReadSalt(byte[] fileBytes, int headerLength, bool hasChecksum, out byte[]? salt)
@@ -288,6 +255,4 @@ internal partial class NeoIniFileProvider
         if (!isValid) ChecksumMismatch?.Invoke(this, new(calculatedChecksum, expectedChecksum.ToArray()));
         return isValid;
     }
-
-
 }

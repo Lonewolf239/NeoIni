@@ -16,7 +16,7 @@ namespace NeoIni;
 /// <br/>
 /// <b>Target Framework: .NET 6+</b>
 /// <br/>
-/// <b>Version: 2.0-pre1</b>
+/// <b>Version: 2.0</b>
 /// <br/>
 /// <b>Black Box Philosophy:</b> This class follows a strict "black box" design principle - users interact only through the public API without needing to understand internal implementation details. Input goes in, processed output comes out, internals remain hidden and abstracted.
 /// </summary>
@@ -73,12 +73,12 @@ public partial class NeoIniDocument : IDisposable, IAsyncDisposable
             monitor.Start(pollingInterval);
             HotReloadMonitor = monitor;
         }
-        catch
+        catch (Exception ex)
         {
             monitor.ChangeDetected -= OnHotReloadChangeDetected;
             monitor.Dispose();
             Interlocked.Exchange(ref HotReloadState, 0);
-            throw;
+            Provider.RaiseError(this, new(ex));
         }
     }
 

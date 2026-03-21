@@ -1,3 +1,5 @@
+📖 **[Documentation & Wiki](https://github.com/Lonewolf239/NeoIni/wiki)** — detailed guides, API reference, and examples
+
 # NeoIni
 
 Secure, thread-safe INI configuration library for .NET with built-in integrity checking, AES-256 encryption, and a pluggable provider architecture.
@@ -7,7 +9,7 @@ dotnet add package NeoIni
 ```
 
 - **Package:** [nuget.org/packages/NeoIni](https://www.nuget.org/packages/NeoIni)
-- **Version:** `2.0-pre1` | **.NET 6+**
+- **Version:** `2.0` | **.NET 6+**
 - **Developer:** [Lonewolf239](https://github.com/Lonewolf239)
 
 ---
