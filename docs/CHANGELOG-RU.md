@@ -543,6 +543,7 @@
 #### List of changes
 
 - Улучшения стабильности
+- Автор: Fatalan
 
 </details>
 
