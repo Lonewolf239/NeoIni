@@ -7,7 +7,11 @@ using NeoIni.Models;
 
 namespace NeoIni.Providers
 {
-    internal sealed class NeoIniEncryptionProvider : IEncryptionProvider
+    /// <summary>
+    /// Provides encryption and decryption functionality using AES-CBC with PKCS7 padding.
+    /// Keys are derived from a password using PBKDF2 with SHA-256, or from the current user's environment if no password is supplied.
+    /// </summary>
+    public sealed class NeoIniEncryptionProvider : IEncryptionProvider
     {
         private const int Pbkdf2Iterations = 320000;
         private const int KeySizeBytes = 32;
@@ -50,6 +54,14 @@ namespace NeoIni.Providers
 #endif
         }
 
+        /// <summary>
+        /// Obtains encryption parameters (key and salt) for use with AES encryption.
+        /// If a password is supplied, it is used to derive the key; otherwise a password is derived from the current user environment.
+        /// If salt is not supplied, a random salt is generated.
+        /// </summary>
+        /// <param name="password">Optional password. If <c>null</c>, a password is generated from the user environment.</param>
+        /// <param name="salt">Optional salt. If <c>null</c>, a random salt is generated.</param>
+        /// <returns>An <see cref="EncryptionParameters"/> instance containing the derived key and the salt used.</returns>
         public EncryptionParameters GetEncryptionParameters(string? password = null, byte[]? salt = null)
         {
             salt ??= GenerateRandomSalt();
@@ -57,8 +69,20 @@ namespace NeoIni.Providers
             return new EncryptionParameters(DeriveKeyFromString(password, salt, KeySizeBytes), salt);
         }
 
+        /// <summary>Retrieves a deterministic password derived from the current user environment and the provided salt.</summary>
+        /// <param name="salt">The salt used in password derivation.</param>
+        /// <returns>A hex string password.</returns>
         public string GetEncryptionPassword(byte[]? salt) => GeneratePasswordFromUserId(salt);
 
+        /// <summary>
+        /// Encrypts plaintext bytes using AES-CBC with PKCS7 padding.
+        /// The encryption output includes the AES initialization vector (IV) followed by the salt, then the ciphertext.
+        /// </summary>
+        /// <param name="memoryStream">The stream to which the encrypted data (IV + salt + ciphertext) will be written.</param>
+        /// <param name="key">The encryption key (must be 32 bytes for AES-256).</param>
+        /// <param name="salt">The salt used to derive the key (stored alongside the ciphertext for later decryption).</param>
+        /// <param name="plaintextBytes">The plaintext data to encrypt.</param>
+        /// <exception cref="ArgumentNullException">Thrown if any required parameter is <c>null</c>.</exception>
         public void Encrypt(MemoryStream memoryStream, byte[] key, byte[] salt, byte[] plaintextBytes)
         {
             using var aes = Aes.Create();
@@ -78,8 +102,19 @@ namespace NeoIni.Providers
             cs.FlushFinalBlock();
         }
 
-        public async Task EncryptAsync(MemoryStream memoryStream, byte[] key, byte[] salt,
-            byte[] plaintextBytes, CancellationToken ct = default)
+        /// <summary>
+        /// Asynchronously encrypts plaintext bytes using AES-CBC with PKCS7 padding.
+        /// The encryption output includes the AES initialization vector (IV) followed by the salt, then the ciphertext.
+        /// </summary>
+        /// <param name="memoryStream">The stream to which the encrypted data (IV + salt + ciphertext) will be written.</param>
+        /// <param name="key">The encryption key (must be 32 bytes for AES-256).</param>
+        /// <param name="salt">The salt used to derive the key (stored alongside the ciphertext for later decryption).</param>
+        /// <param name="plaintextBytes">The plaintext data to encrypt.</param>
+        /// <param name="ct">Cancellation token to cancel the asynchronous operation.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if any required parameter is <c>null</c>.</exception>
+        /// <exception cref="OperationCanceledException">Thrown if the cancellation token is canceled.</exception>
+        public async Task EncryptAsync(MemoryStream memoryStream, byte[] key, byte[] salt, byte[] plaintextBytes, CancellationToken ct = default)
         {
             using var aes = Aes.Create();
             aes.Mode = CipherMode.CBC;
@@ -104,6 +139,12 @@ namespace NeoIni.Providers
 #endif
         }
 
+        /// <summary>Decrypts ciphertext using the provided key and initialization vector.</summary>
+        /// <param name="key">The decryption key (must be 32 bytes for AES-256).</param>
+        /// <param name="iv">The initialization vector (IV) used during encryption.</param>
+        /// <param name="encryptedBytes">The ciphertext bytes to decrypt.</param>
+        /// <returns>The decrypted plaintext bytes.</returns>
+        /// <exception cref="CryptographicException">Thrown if decryption fails due to invalid key, padding, or corrupted data.</exception>
         public byte[] Decrypt(byte[] key, byte[] iv, byte[] encryptedBytes)
         {
             using var aes = Aes.Create();
@@ -119,6 +160,14 @@ namespace NeoIni.Providers
             return decryptedData.ToArray();
         }
 
+        /// <summary>Asynchronously decrypts ciphertext using the provided key and initialization vector.</summary>
+        /// <param name="key">The decryption key (must be 32 bytes for AES-256).</param>
+        /// <param name="iv">The initialization vector (IV) used during encryption.</param>
+        /// <param name="encryptedBytes">The ciphertext bytes to decrypt.</param>
+        /// <param name="ct">Cancellation token to cancel the asynchronous operation.</param>
+        /// <returns>A task representing the asynchronous operation, with the decrypted plaintext bytes as the result.</returns>
+        /// <exception cref="CryptographicException">Thrown if decryption fails due to invalid key, padding, or corrupted data.</exception>
+        /// <exception cref="OperationCanceledException">Thrown if the cancellation token is canceled.</exception>
         public async Task<byte[]> DecryptAsync(byte[] key, byte[] iv, byte[] encryptedBytes, CancellationToken ct = default)
         {
             using var aes = Aes.Create();
