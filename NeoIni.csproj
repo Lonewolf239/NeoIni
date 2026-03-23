@@ -5,8 +5,8 @@
 		<PackageId>NeoIni</PackageId>
 		<Version>3.2</Version>
 		<Authors>Lonewolf239</Authors>
-		<Description>Modern INI reader/writer for .NET 6+. AES encryption, thread-safe.</Description>
-		<PackageTags>ini;config;encryption;ini-parser;configuration;secure-config;aes-ini;.NET6;.NET7;.NET8;.NET9;.NET10</PackageTags>
+		<Description>Modern, thread-safe INI configuration library for .NET 6+ with AES-256 encryption, checksum validation, hot reload, and source generators. Supports .NET Standard 2.0 for legacy environments.</Description>
+		<PackageTags>ini;config;encryption;ini-parser;configuration;secure-config;aes-ini;.NET6;.NET7;.NET8;.NET9;.NET10;hot-reload;source-generator</PackageTags>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
 		<RepositoryType>git</RepositoryType>
