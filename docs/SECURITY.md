@@ -15,7 +15,7 @@ NeoIni follows a tiered support model:
 |--------------|---------|-------|
 | **CSR** | Current Stable Release | Full security patches and bug fixes |
 | **LSR** | Long-term Stable Release | No patches — available for download only |
-| **DSR** | Deprecated Stable Release | No patches — upgrade recommended |
+| **DSR** | Deprecated Stable Release | No patches — upgrade strongly recommended |
 
 | Version | Status | Support |
 |---------|--------|---------|
@@ -23,15 +23,7 @@ NeoIni follows a tiered support model:
 | 3.2 | LSR | Available for download |
 | 3.1 | LSR | Available for download |
 | 3.0 | LSR | Available for download |
-| 2.0 | LSR | Available for download |
-| 1.9 | LSR | Available for download |
-| 1.8 | LSR | Available for download |
-| 1.7.3 | LSR | Available for download |
-| 1.7.2 | LSR | Available for download |
-| 1.7.1 | LSR | Available for download. Using the weaker Set methods is not recommended if you accept untrusted input. |
-| 1.7 | LSR | Available for download. Using the weaker Set methods is not recommended if you accept untrusted input. |
-| 1.6.1 | LSR | Available for download. Using the weaker Set methods is not recommended if you accept untrusted input. |
-| < 1.6.1 | **DSR** | Incomplete, buggy, or deprecated versions. |
+| 2.x, 1.x and earlier | **DSR** | Incomplete, buggy, or deprecated versions. If you are using versions older than 2.0, please upgrade to 3.2.1. |
 
 ---
 
