@@ -4,6 +4,23 @@
 ## Changelog · NeoIni
 
 <details open>
+<summary><strong>3.2</strong> — 23 марта 2026</summary>
+
+#### Список изменений
+
+- **Добавлена поддержка .NET Standard 2.0** – библиотека теперь может использоваться на .NET Framework 4.6.2+, .NET Core 2.x и других платформах, совместимых с netstandard2.0.
+- Условная компиляция для современных API (например, `Span<T>`, `ValueTask`, `IAsyncDisposable`, `RandomAccess`) с реализациями-заглушками для netstandard2.0.
+- Полное соответствие функциональности для всех целевых фреймворков:
+  - Шифрование AES-256 со встроенным `NeoIniEncryptionProvider`
+  - Мониторинг горячей перезагрузки (Hot Reload)
+  - Потокобезопасная блокировка `AsyncReaderWriterLock`, адаптированная как для `ValueTask`, так и для `Task`
+  - Режим «Human mode» (экспериментальный) и экранирование (shielding)
+  - Автоматическая проверка контрольных сумм и создание резервных копий
+- Незначительные внутренние оптимизации при парсинге и сериализации.
+
+</details>
+
+<details>
 <summary><strong>3.1</strong> — 21 марта 2026</summary>
 
 #### List of changes

@@ -8,187 +8,220 @@ using NeoIni.Models;
 using Comments = System.Collections.Generic.List<NeoIni.Models.Comment>;
 using Data = System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<string, string>>;
 
-namespace NeoIni.Providers;
-
-internal partial class NeoIniFileProvider : INeoIniProvider
+namespace NeoIni.Providers
 {
-    public event EventHandler<ProviderErrorEventArgs>? Error;
-    public event EventHandler<ChecksumMismatchEventArgs>? ChecksumMismatch;
-
-    internal void DeleteBackup() { if (File.Exists(BackupFilePath)) File.Delete(BackupFilePath); }
-
-    internal void DeleteFile()
+    internal partial class NeoIniFileProvider : INeoIniProvider
     {
-        if (File.Exists(FilePath)) File.Delete(FilePath);
-        if (File.Exists(TempFilePath)) File.Delete(TempFilePath);
-    }
+        public event EventHandler<ProviderErrorEventArgs>? Error;
+        public event EventHandler<ChecksumMismatchEventArgs>? ChecksumMismatch;
 
-    public NeoIniData GetData(bool humanization = false)
-    {
-        Data data = new();
-        Comments comments = new();
-        string? directory = Path.GetDirectoryName(FilePath);
-        if (!string.IsNullOrWhiteSpace(directory)) Directory.CreateDirectory(directory);
-        if (!File.Exists(FilePath))
-        {
-            using var stream = File.Create(FilePath);
-            return new(data, comments);
-        }
-        string? currentSection = null;
-        var lines = ReadFile();
-        if (lines is null) return new(data, comments);
-        for (int i = 0; i < lines.Length; i++)
-        {
-            var trimmed = lines[i].Trim(' ', '\t', '\u00A0', '\u200B');
-            if (string.IsNullOrEmpty(trimmed)) continue;
-            if (NeoIniParser.IsCommentLine(trimmed))
-            {
-                NeoIniParser.HandleCommentLine(lines, i, trimmed, humanization, comments);
-                continue;
-            }
-            if (NeoIniParser.IsSectionLine(trimmed))
-            {
-                currentSection = NeoIniParser.HandleSectionLine(trimmed, humanization, data, comments);
-                continue;
-            }
-            if (currentSection is not null && NeoIniParser.TryMatchKey(trimmed.AsSpan(), out string? key, out string? value))
-                NeoIniParser.HandleKeyValueLine(trimmed, currentSection, key, value, humanization, data, comments);
-        }
-        return new(data, comments);
-    }
+        internal void DeleteBackup() { if (File.Exists(BackupFilePath)) File.Delete(BackupFilePath); }
 
-    public async Task<NeoIniData> GetDataAsync(bool humanization = false, CancellationToken ct = default)
-    {
-        Data data = new();
-        Comments comments = new();
-        string? directory = Path.GetDirectoryName(FilePath);
-        if (!string.IsNullOrWhiteSpace(directory)) Directory.CreateDirectory(directory);
-        if (!File.Exists(FilePath))
+        internal void DeleteFile()
         {
-            using var stream = File.Create(FilePath);
-            return new(data, comments);
+            if (File.Exists(FilePath)) File.Delete(FilePath);
+            if (File.Exists(TempFilePath)) File.Delete(TempFilePath);
         }
-        var lines = await ReadFileAsync(ct).ConfigureAwait(false);
-        if (lines is null) return new(data, comments);
-        string? currentSection = null;
-        for (int i = 0; i < lines.Length; i++)
-        {
-            var trimmed = lines[i].Trim();
-            if (string.IsNullOrEmpty(trimmed)) continue;
-            if (NeoIniParser.IsCommentLine(trimmed))
-            {
-                NeoIniParser.HandleCommentLine(lines, i, trimmed, humanization, comments);
-                continue;
-            }
-            if (NeoIniParser.IsSectionLine(trimmed))
-            {
-                currentSection = NeoIniParser.HandleSectionLine(trimmed, humanization, data, comments);
-                continue;
-            }
-            if (currentSection is not null && NeoIniParser.TryMatchKey(trimmed.AsSpan(), out string? key, out string? value))
-                NeoIniParser.HandleKeyValueLine(trimmed, currentSection, key, value, humanization, data, comments);
-        }
-        return new(data, comments);
-    }
 
-    public void Save(string content, bool useChecksum)
-    {
-        byte[] plaintextBytes = Encoding.UTF8.GetBytes(content ?? string.Empty);
-        byte[] dataWithChecksum;
-        try
+        public NeoIniData GetData(bool humanization = false)
         {
-            byte[] header = BuildHeader(useChecksum);
-            if (!Encryption)
+            var data = new Data();
+            var comments = new Comments();
+            string? directory = Path.GetDirectoryName(FilePath);
+            if (!string.IsNullOrWhiteSpace(directory)) Directory.CreateDirectory(directory);
+            if (!File.Exists(FilePath))
             {
-                using MemoryStream ms = new(plaintextBytes.Length + (useChecksum ? WarningBytes.Length : 0));
-                ms.Write(header, 0, header.Length);
-                if (useChecksum) ms.Write(WarningBytes, 0, WarningBytes.Length);
-                ms.Write(plaintextBytes, 0, plaintextBytes.Length);
-                dataWithChecksum = AddChecksum(ms.ToArray(), useChecksum);
-                NeoIniIO.WriteBytes(TempFilePath, dataWithChecksum);
+                using var stream = File.Create(FilePath);
+                return new NeoIniData(data, comments);
             }
-            else
+            string? currentSection = null;
+            var lines = ReadFile();
+            if (lines is null) return new NeoIniData(data, comments);
+            for (int i = 0; i < lines.Length; i++)
             {
-                if (EncryptionKey is null) throw new MissingEncryptionKeyException("The encryption key cannot be null.");
-                if (Salt is null) throw new MissingSaltException();
-                using MemoryStream ms = new();
-                ms.Write(header, 0, header.Length);
-                if (useChecksum) ms.Write(WarningBytes, 0, WarningBytes.Length);
-                EncryptionProvider.Encrypt(ms, EncryptionKey, Salt, plaintextBytes);
-                dataWithChecksum = AddChecksum(ms.ToArray(), useChecksum);
-                NeoIniIO.WriteBytes(TempFilePath, dataWithChecksum);
+                var trimmed = lines[i].Trim(' ', '\t', '\u00A0', '\u200B');
+                if (string.IsNullOrEmpty(trimmed)) continue;
+                if (NeoIniParser.IsCommentLine(trimmed))
+                {
+                    NeoIniParser.HandleCommentLine(lines, i, trimmed, humanization, comments);
+                    continue;
+                }
+                if (NeoIniParser.IsSectionLine(trimmed))
+                {
+                    currentSection = NeoIniParser.HandleSectionLine(trimmed, humanization, data, comments);
+                    continue;
+                }
+#if NETSTANDARD2_0
+                if (!(currentSection is null) && NeoIniParser.TryMatchKey(trimmed, out string? key, out string? value))
+#else
+                if (currentSection is not null && NeoIniParser.TryMatchKey(trimmed.AsSpan(), out string? key, out string? value))
+#endif
+                    NeoIniParser.HandleKeyValueLine(trimmed, currentSection, key, value, humanization, data, comments);
             }
-            if (File.Exists(FilePath)) File.Replace(TempFilePath, FilePath, UseBackup ? BackupFilePath : null);
-            else File.Move(TempFilePath, FilePath);
+            return new NeoIniData(data, comments);
         }
-        catch (UnauthorizedAccessException ex) { RaiseError(this, new(ex)); }
-        catch (IOException ex) { RaiseError(this, new(ex)); }
-    }
 
-    public async Task SaveAsync(string content, bool useChecksum, CancellationToken ct)
-    {
-        ct.ThrowIfCancellationRequested();
-        byte[] plaintextBytes = Encoding.UTF8.GetBytes(content ?? string.Empty);
-        byte[] dataWithChecksum;
-        try
+        public async Task<NeoIniData> GetDataAsync(bool humanization = false, CancellationToken ct = default)
         {
-            byte[] header = BuildHeader(useChecksum);
+            var data = new Data();
+            var comments = new Comments();
+            string? directory = Path.GetDirectoryName(FilePath);
+            if (!string.IsNullOrWhiteSpace(directory)) Directory.CreateDirectory(directory);
+            if (!File.Exists(FilePath))
+            {
+                using var stream = File.Create(FilePath);
+                return new NeoIniData(data, comments);
+            }
+            var lines = await ReadFileAsync(ct).ConfigureAwait(false);
+            if (lines is null) return new NeoIniData(data, comments);
+            string? currentSection = null;
+            for (int i = 0; i < lines.Length; i++)
+            {
+                var trimmed = lines[i].Trim();
+                if (string.IsNullOrEmpty(trimmed)) continue;
+                if (NeoIniParser.IsCommentLine(trimmed))
+                {
+                    NeoIniParser.HandleCommentLine(lines, i, trimmed, humanization, comments);
+                    continue;
+                }
+                if (NeoIniParser.IsSectionLine(trimmed))
+                {
+                    currentSection = NeoIniParser.HandleSectionLine(trimmed, humanization, data, comments);
+                    continue;
+                }
+#if NETSTANDARD2_0
+                if (!(currentSection is null) && NeoIniParser.TryMatchKey(trimmed, out string? key, out string? value))
+#else
+                if (currentSection is not null && NeoIniParser.TryMatchKey(trimmed.AsSpan(), out string? key, out string? value))
+#endif
+                    NeoIniParser.HandleKeyValueLine(trimmed, currentSection, key, value, humanization, data, comments);
+            }
+            return new NeoIniData(data, comments);
+        }
+
+        public void Save(string content, bool useChecksum)
+        {
+            byte[] plaintextBytes = Encoding.UTF8.GetBytes(content ?? string.Empty);
+            byte[] dataWithChecksum;
+            try
+            {
+                byte[] header = BuildHeader(useChecksum);
+                if (!Encryption)
+                {
+                    using var ms = new MemoryStream(plaintextBytes.Length + (useChecksum ? WarningBytes.Length : 0));
+                    ms.Write(header, 0, header.Length);
+                    if (useChecksum) ms.Write(WarningBytes, 0, WarningBytes.Length);
+                    ms.Write(plaintextBytes, 0, plaintextBytes.Length);
+                    dataWithChecksum = AddChecksum(ms.ToArray(), useChecksum);
+                    NeoIniIO.WriteBytes(TempFilePath, dataWithChecksum);
+                }
+                else
+                {
+                    if (EncryptionKey is null) throw new MissingEncryptionKeyException("The encryption key cannot be null.");
+                    if (Salt is null) throw new MissingSaltException();
+                    using var ms = new MemoryStream();
+                    ms.Write(header, 0, header.Length);
+                    if (useChecksum) ms.Write(WarningBytes, 0, WarningBytes.Length);
+                    EncryptionProvider.Encrypt(ms, EncryptionKey, Salt, plaintextBytes);
+                    dataWithChecksum = AddChecksum(ms.ToArray(), useChecksum);
+                    NeoIniIO.WriteBytes(TempFilePath, dataWithChecksum);
+                }
+                if (File.Exists(FilePath)) File.Replace(TempFilePath, FilePath, UseBackup ? BackupFilePath : null);
+                else File.Move(TempFilePath, FilePath);
+            }
+            catch (UnauthorizedAccessException ex) { RaiseError(this, new ProviderErrorEventArgs(ex)); }
+            catch (IOException ex) { RaiseError(this, new ProviderErrorEventArgs(ex)); }
+        }
+
+        public async Task SaveAsync(string content, bool useChecksum, CancellationToken ct)
+        {
             ct.ThrowIfCancellationRequested();
-            if (!Encryption)
+            byte[] plaintextBytes = Encoding.UTF8.GetBytes(content ?? string.Empty);
+            byte[] dataWithChecksum;
+            try
             {
-                using MemoryStream ms = new(plaintextBytes.Length + (useChecksum ? WarningBytes.Length : 0));
-                ms.Write(header, 0, header.Length);
-                if (useChecksum) await ms.WriteAsync(WarningBytes, ct).ConfigureAwait(false);
-                await ms.WriteAsync(plaintextBytes, ct).ConfigureAwait(false);
+                byte[] header = BuildHeader(useChecksum);
                 ct.ThrowIfCancellationRequested();
-                dataWithChecksum = AddChecksum(ms.ToArray(), useChecksum);
-                await NeoIniIO.WriteBytesAsync(TempFilePath, dataWithChecksum, ct).ConfigureAwait(false);
-            }
-            else
-            {
-                if (EncryptionKey is null) throw new MissingEncryptionKeyException("The encryption key cannot be null.");
-                if (Salt is null) throw new MissingSaltException();
-                await using MemoryStream ms = new();
-                await ms.WriteAsync(header, ct).ConfigureAwait(false);
-                if (useChecksum) await ms.WriteAsync(WarningBytes, ct).ConfigureAwait(false);
-                await EncryptionProvider.EncryptAsync(ms, EncryptionKey, Salt, plaintextBytes, ct).ConfigureAwait(false);
+                if (!Encryption)
+                {
+                    using var ms = new MemoryStream(plaintextBytes.Length + (useChecksum ? WarningBytes.Length : 0));
+                    ms.Write(header, 0, header.Length);
+#if NETSTANDARD2_0
+                    if (useChecksum) ms.Write(WarningBytes, 0, WarningBytes.Length);
+                    ms.Write(plaintextBytes, 0, plaintextBytes.Length);
+#else
+					if (useChecksum) await ms.WriteAsync(WarningBytes, ct).ConfigureAwait(false);
+					await ms.WriteAsync(plaintextBytes, ct).ConfigureAwait(false);
+#endif
+                    ct.ThrowIfCancellationRequested();
+                    dataWithChecksum = AddChecksum(ms.ToArray(), useChecksum);
+                    await NeoIniIO.WriteBytesAsync(TempFilePath, dataWithChecksum, ct).ConfigureAwait(false);
+                }
+                else
+                {
+                    if (EncryptionKey is null) throw new MissingEncryptionKeyException("The encryption key cannot be null.");
+                    if (Salt is null) throw new MissingSaltException();
+#if NETSTANDARD2_0
+                    using (var ms = new MemoryStream())
+                    {
+                        ms.Write(header, 0, header.Length);
+                        if (useChecksum) ms.Write(WarningBytes, 0, WarningBytes.Length);
+#else
+						await using MemoryStream ms = new();
+						await ms.WriteAsync(header, ct).ConfigureAwait(false);
+						if (useChecksum) await ms.WriteAsync(WarningBytes, ct).ConfigureAwait(false);
+#endif
+                        await EncryptionProvider.EncryptAsync(ms, EncryptionKey, Salt, plaintextBytes, ct).ConfigureAwait(false);
+                        ct.ThrowIfCancellationRequested();
+                        dataWithChecksum = AddChecksum(ms.ToArray(), useChecksum);
+                        await NeoIniIO.WriteBytesAsync(TempFilePath, dataWithChecksum, ct).ConfigureAwait(false);
+#if NETSTANDARD2_0
+                    }
+#endif
+                }
                 ct.ThrowIfCancellationRequested();
-                dataWithChecksum = AddChecksum(ms.ToArray(), useChecksum);
-                await NeoIniIO.WriteBytesAsync(TempFilePath, dataWithChecksum, ct).ConfigureAwait(false);
+                if (File.Exists(FilePath)) File.Replace(TempFilePath, FilePath, UseBackup ? BackupFilePath : null);
+                else File.Move(TempFilePath, FilePath);
             }
-            ct.ThrowIfCancellationRequested();
-            if (File.Exists(FilePath)) File.Replace(TempFilePath, FilePath, UseBackup ? BackupFilePath : null);
-            else File.Move(TempFilePath, FilePath);
+            catch (UnauthorizedAccessException ex) { RaiseError(this, new ProviderErrorEventArgs(ex)); }
+            catch (IOException ex) { RaiseError(this, new ProviderErrorEventArgs(ex)); }
         }
-        catch (UnauthorizedAccessException ex) { RaiseError(this, new(ex)); }
-        catch (IOException ex) { RaiseError(this, new(ex)); }
-    }
 
-    internal static byte[]? GetSalt(string? path)
-    {
-        if (!File.Exists(path)) return null;
-        byte[] fileBytes = NeoIniIO.ReadAllBytes(path);
-        if (!TryParseHeader(fileBytes, out var headerParameters)) return null;
-        if (headerParameters is null) return null;
-        if (!headerParameters.IsEncrypted) return null;
-        if (!TryReadSalt(fileBytes, headerParameters.HeaderLength, headerParameters.HasChecksum, out byte[]? salt)) return null;
-        return salt;
-    }
+        internal static byte[]? GetSalt(string? path)
+        {
+            if (path is null) return null;
+            if (!File.Exists(path)) return null;
+            byte[] fileBytes = NeoIniIO.ReadAllBytes(path);
+            if (!TryParseHeader(fileBytes, out var headerParameters)) return null;
+            if (headerParameters is null) return null;
+            if (!headerParameters.IsEncrypted) return null;
+            if (!TryReadSalt(fileBytes, headerParameters.HeaderLength, headerParameters.HasChecksum, out byte[]? salt)) return null;
+            return salt;
+        }
 
-    public byte[] GetStateChecksum()
-    {
-        if (!File.Exists(FilePath)) return Array.Empty<byte>();
-        var lastWrite = File.GetLastWriteTimeUtc(FilePath);
-        var length = new FileInfo(FilePath).Length;
-        using var ms = new MemoryStream();
-        ms.Write(BitConverter.GetBytes(lastWrite.Ticks));
-        ms.Write(BitConverter.GetBytes(length));
-        return ms.ToArray();
-    }
+        public byte[] GetStateChecksum()
+        {
+            if (!File.Exists(FilePath)) return Array.Empty<byte>();
+            var lastWrite = File.GetLastWriteTimeUtc(FilePath);
+            var length = new FileInfo(FilePath).Length;
+            using var ms = new MemoryStream();
+#if NETSTANDARD2_0
+#else
+            ms.Write(BitConverter.GetBytes(lastWrite.Ticks));
+            ms.Write(BitConverter.GetBytes(length));
+#endif
+            return ms.ToArray();
+        }
 
-    public void RaiseError(object? sender, ProviderErrorEventArgs e)
-    {
-        if (Error is not null) Error.Invoke(sender, e);
-        else throw e.Exception;
+        public void RaiseError(object? sender, ProviderErrorEventArgs e)
+        {
+#if NETSTANDARD2_0
+            if (!(Error is null)) Error.Invoke(sender, e);
+#else
+
+            if (Error is not null) Error.Invoke(sender, e);
+#endif
+            else throw e.Exception;
+        }
     }
 }

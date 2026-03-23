@@ -4,101 +4,102 @@ using System.Threading;
 using System.Threading.Tasks;
 using NeoIni.Models;
 
-namespace NeoIni.Providers;
-
-internal sealed class HotReloadMonitor : IHotReloadMonitor
+namespace NeoIni.Providers
 {
-    private readonly INeoIniProvider Provider;
-
-    private readonly AsyncReaderWriterLock Lock = new();
-    private CancellationTokenSource? CancellationTokenSource;
-    private byte[]? PrevChecksum;
-    private readonly ManualResetEventSlim PauseEvent = new(true);
-    private int PollingInterval;
-    private bool Disposed;
-
-    public event EventHandler? ChangeDetected;
-
-    internal HotReloadMonitor(INeoIniProvider provider) => Provider = provider;
-
-    public void Start(int pollingInterval)
+    internal sealed class HotReloadMonitor : IHotReloadMonitor
     {
-        if (pollingInterval < 1000) throw new InvalidHotReloadDelayException(nameof(pollingInterval));
-        using (Lock.WriteLock())
-        {
-            if (CancellationTokenSource != null) throw new InvalidOperationException("Monitor is already running.");
-            CancellationTokenSource = new();
-            PrevChecksum = Provider.GetStateChecksum();
-            PollingInterval = pollingInterval;
-            PauseEvent.Set();
-        }
-        Task.Run(RunAsync, CancellationToken.None);
-    }
+        private readonly INeoIniProvider Provider;
 
-    private async Task RunAsync()
-    {
-        var token = CancellationTokenSource!.Token;
-        try
+        private readonly AsyncReaderWriterLock Lock = new AsyncReaderWriterLock();
+        private CancellationTokenSource? CancellationTokenSource;
+        private byte[]? PrevChecksum;
+        private readonly ManualResetEventSlim PauseEvent = new ManualResetEventSlim(true);
+        private int PollingInterval;
+        private bool Disposed;
+
+        public event EventHandler? ChangeDetected;
+
+        internal HotReloadMonitor(INeoIniProvider provider) => Provider = provider;
+
+        public void Start(int pollingInterval)
         {
-            while (!token.IsCancellationRequested)
+            if (pollingInterval < 1000) throw new InvalidHotReloadDelayException(nameof(pollingInterval));
+            using (Lock.WriteLock())
             {
-                PauseEvent.Wait(token);
-                var currentChecksum = Provider.GetStateChecksum();
-                byte[]? prev;
-                using (await Lock.WriteLockAsync(token).ConfigureAwait(false))
-                    prev = PrevChecksum;
-                if (prev is null || !prev.SequenceEqual(currentChecksum))
+                if (CancellationTokenSource != null) throw new InvalidOperationException("Monitor is already running.");
+                CancellationTokenSource = new CancellationTokenSource();
+                PrevChecksum = Provider.GetStateChecksum();
+                PollingInterval = pollingInterval;
+                PauseEvent.Set();
+            }
+            Task.Run(RunAsync, CancellationToken.None);
+        }
+
+        private async Task RunAsync()
+        {
+            var token = CancellationTokenSource!.Token;
+            try
+            {
+                while (!token.IsCancellationRequested)
                 {
-                    ChangeDetected?.Invoke(this, EventArgs.Empty);
+                    PauseEvent.Wait(token);
+                    var currentChecksum = Provider.GetStateChecksum();
+                    byte[]? prev;
                     using (await Lock.WriteLockAsync(token).ConfigureAwait(false))
-                        PrevChecksum = currentChecksum;
+                        prev = PrevChecksum;
+                    if (prev is null || !prev.SequenceEqual(currentChecksum))
+                    {
+                        ChangeDetected?.Invoke(this, EventArgs.Empty);
+                        using (await Lock.WriteLockAsync(token).ConfigureAwait(false))
+                            PrevChecksum = currentChecksum;
+                    }
+                    await Task.Delay(PollingInterval, token).ConfigureAwait(false);
                 }
-                await Task.Delay(PollingInterval, token).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) { }
+            catch (Exception ex)
+            {
+                Provider.RaiseError(this, new ProviderErrorEventArgs(ex));
+                Stop();
             }
         }
-        catch (OperationCanceledException) { }
-        catch (Exception ex)
+
+        public void Pause() => PauseEvent.Reset();
+
+        public void Continue()
         {
-            Provider.RaiseError(this, new(ex));
+            using (Lock.WriteLock())
+            {
+                PrevChecksum = Provider.GetStateChecksum();
+                PauseEvent.Set();
+            }
+        }
+        public async Task ContinueAsync(CancellationToken cancellationToken)
+        {
+            using (await Lock.WriteLockAsync(cancellationToken).ConfigureAwait(false))
+            {
+                PrevChecksum = Provider.GetStateChecksum();
+                PauseEvent.Set();
+            }
+        }
+
+        public void Stop()
+        {
+            using (Lock.WriteLock())
+            {
+                CancellationTokenSource?.Cancel();
+                CancellationTokenSource?.Dispose();
+                CancellationTokenSource = null;
+            }
+        }
+
+        public void Dispose()
+        {
+            if (Disposed) return;
             Stop();
+            Lock.Dispose();
+            PauseEvent.Dispose();
+            Disposed = true;
         }
-    }
-
-    public void Pause() => PauseEvent.Reset();
-
-    public void Continue()
-    {
-        using (Lock.WriteLock())
-        {
-            PrevChecksum = Provider.GetStateChecksum();
-            PauseEvent.Set();
-        }
-    }
-    public async Task ContinueAsync(CancellationToken cancellationToken)
-    {
-        using (await Lock.WriteLockAsync(cancellationToken).ConfigureAwait(false))
-        {
-            PrevChecksum = Provider.GetStateChecksum();
-            PauseEvent.Set();
-        }
-    }
-
-    public void Stop()
-    {
-        using (Lock.WriteLock())
-        {
-            CancellationTokenSource?.Cancel();
-            CancellationTokenSource?.Dispose();
-            CancellationTokenSource = null;
-        }
-    }
-
-    public void Dispose()
-    {
-        if (Disposed) return;
-        Stop();
-        Lock.Dispose();
-        PauseEvent.Dispose();
-        Disposed = true;
     }
 }
