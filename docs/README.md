@@ -5,7 +5,7 @@
 [![Roadmap](https://img.shields.io/badge/ROADMAP-2D2D2D?style=for-the-badge&logo=map&logoColor=FFFFFF)](./ROADMAP.md)
 [![Changelog](https://img.shields.io/badge/CHANGELOG-2D2D2D?style=for-the-badge&logo=history&logoColor=FFFFFF)](./CHANGELOG.md)
 
-[![GPLv3](https://img.shields.io/badge/License-GPLv3-2D2D2D?style=for-the-badge&logo=gnu&logoColor=FFFFFF)](https://www.gnu.org/licenses/gpl-3.0)
+[![GPLv3](https://img.shields.io/badge/License-GPLv3-2D2D2D?style=for-the-badge&logo=gnu&logoColor=FFFFFF)](https://github.com/Lonewolf239/NeoIni/blob/main/LICENSE)
 [![Thread-Safe](https://img.shields.io/badge/Thread-Safe-2D2D2D?style=for-the-badge&logo=verified&logoColor=FFFFFF)](#thread-safe)
 [![Downloads](https://img.shields.io/nuget/dt/NeoIni?style=for-the-badge&logo=download&logoColor=FFFFFF)](https://www.nuget.org/packages/NeoIni)
 
