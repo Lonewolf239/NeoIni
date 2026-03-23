@@ -16,7 +16,7 @@ namespace NeoIni
     /// <br/>
     /// <b>Target Frameworks: .NET 6+ and .NET Standard 2.0</b>
     /// <br/>
-    /// <b>Version: 3.2</b>
+    /// <b>Version: 3.2.1</b>
     /// <br/>
     /// <b>Black Box Philosophy:</b> This class follows a strict "black box" design principle - users interact only through the public API without needing to understand internal implementation details. Input goes in, processed output comes out, internals remain hidden and abstracted.
     /// </summary>
@@ -266,7 +266,7 @@ namespace NeoIni
 #if NETSTANDARD2_0
         public T GetValue<T>(string section, string key, T defaultValue = default!)
 #else
-		public T? GetValue<T>(string section, string key, T? defaultValue = default)
+        public T? GetValue<T>(string section, string key, T? defaultValue = default)
 #endif
         {
             ThrowIfDisposed();
@@ -289,7 +289,7 @@ namespace NeoIni
 #if NETSTANDARD2_0
         public async Task<T> GetValueAsync<T>(string section, string key, T defaultValue = default!, CancellationToken cancellationToken = default)
 #else
-		public async Task<T?> GetValueAsync<T>(string section, string key, T? defaultValue = default, CancellationToken cancellationToken = default)
+        public async Task<T?> GetValueAsync<T>(string section, string key, T? defaultValue = default, CancellationToken cancellationToken = default)
 #endif
         {
             ThrowIfDisposed();
@@ -323,7 +323,7 @@ namespace NeoIni
             return NeoIniParser.Clamp(value, minValue, maxValue);
         }
 #else
-		public T GetValueClamped<T>(string section, string key, T minValue, T maxValue, T? defaultValue = default) where T : IComparable<T>
+        public T GetValueClamped<T>(string section, string key, T minValue, T maxValue, T? defaultValue = default) where T : IComparable<T>
         {
             T? value = GetValue<T>(section, key, defaultValue);
             return NeoIniParser.Clamp(value, minValue, maxValue);
@@ -356,7 +356,7 @@ namespace NeoIni
             return NeoIniParser.Clamp(value, minValue, maxValue);
         }
 #else
-		public async Task<T> GetValueClampedAsync<T>(string section, string key, T minValue, T maxValue, T? defaultValue = default,
+        public async Task<T> GetValueClampedAsync<T>(string section, string key, T minValue, T maxValue, T? defaultValue = default,
                 CancellationToken cancellationToken = default) where T : IComparable<T>
         {
             T? value = await GetValueAsync(section, key, defaultValue, cancellationToken).ConfigureAwait(false);

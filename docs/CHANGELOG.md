@@ -4,6 +4,25 @@
 ## Changelog · NeoIni
 
 <details open>
+<summary><strong>3.2.1</strong> — March 23, 2026</summary>
+
+#### List of changes
+
+- **Fixed source generator literal formatting** for numeric types and enums in `NeoIniKeyAttribute` default values.  
+  Previously, `float`, `decimal`, `uint`, `long`, `ulong` and `enum` values were generated without the required suffix or cast, causing compilation errors.  
+  Now the generator correctly emits:
+  - `f` for `float`
+  - `m` for `decimal`
+  - `u` for `uint`
+  - `L` for `long`
+  - `UL` for `ulong`
+  - explicit cast for enums, e.g., `(MyEnum)2`
+- **Made `NeoIniEncryptionProvider` public**.  
+  The built‑in AES‑256‑CBC encryption provider is now accessible to users who need to reference it directly (e.g., for custom provider composition or testing). Previously it was `internal`.
+
+</details>
+
+<details>
 <summary><strong>3.2</strong> — March 23, 2026</summary>
 
 #### List of changes

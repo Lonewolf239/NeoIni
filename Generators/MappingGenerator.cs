@@ -132,8 +132,8 @@ namespace NeoIni.Generators
             if (context.Node is not PropertyDeclarationSyntax propertySyntax) return null;
             var model = context.SemanticModel;
             if (model.GetDeclaredSymbol(propertySyntax) is not IPropertySymbol propertySymbol) return null;
-            var attr = propertySymbol.GetAttributes()
-                .FirstOrDefault(a => a.AttributeClass is not null && a.AttributeClass.ToDisplayString() == "NeoIni.Annotations.NeoIniKeyAttribute");
+            var attr = propertySymbol.GetAttributes().FirstOrDefault(a => a.AttributeClass is not null &&
+                    a.AttributeClass.ToDisplayString() == "NeoIni.Annotations.NeoIniKeyAttribute");
             if (attr is null) return null;
             string section = "";
             string key = "";
@@ -149,9 +149,21 @@ namespace NeoIni.Generators
                 if (dvConstant.Value is not null)
                 {
                     object dv = dvConstant.Value;
+                    ITypeSymbol? type = dvConstant.Type;
                     if (dv is string s) defaultValueLiteral = EscapeStringLiteral(s);
                     else if (dv is bool b) defaultValueLiteral = b ? "true" : "false";
                     else if (dv is char c) defaultValueLiteral = "'" + c.ToString().Replace("'", "\\'") + "'";
+                    else if (type?.TypeKind == TypeKind.Enum)
+                    {
+                        string enumTypeName = type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+                        defaultValueLiteral = $"({enumTypeName}){Convert.ToInt64(dv)}";
+                    }
+                    else if (type?.SpecialType == SpecialType.System_Single) defaultValueLiteral = ((float)dv).ToString(CultureInfo.InvariantCulture) + "f";
+                    else if (type?.SpecialType == SpecialType.System_Double) defaultValueLiteral = ((double)dv).ToString(CultureInfo.InvariantCulture);
+                    else if (type?.SpecialType == SpecialType.System_Decimal) defaultValueLiteral = ((decimal)dv).ToString(CultureInfo.InvariantCulture) + "m";
+                    else if (type?.SpecialType == SpecialType.System_UInt32) defaultValueLiteral = ((uint)dv).ToString(CultureInfo.InvariantCulture) + "u";
+                    else if (type?.SpecialType == SpecialType.System_Int64) defaultValueLiteral = ((long)dv).ToString(CultureInfo.InvariantCulture) + "L";
+                    else if (type?.SpecialType == SpecialType.System_UInt64) defaultValueLiteral = ((ulong)dv).ToString(CultureInfo.InvariantCulture) + "UL";
                     else if (dv is IFormattable f) defaultValueLiteral = f.ToString(null, CultureInfo.InvariantCulture);
                     else defaultValueLiteral = dv.ToString();
                 }
@@ -159,7 +171,7 @@ namespace NeoIni.Generators
             var containingType = propertySymbol.ContainingType;
             string typeName = containingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
             string propTypeName = propertySymbol.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-            return new(typeName, propertySymbol.Name, propTypeName, section, key, defaultValueLiteral);
+            return new PropertyMeta(typeName, propertySymbol.Name, propTypeName, section, key, defaultValueLiteral);
         }
     }
 }

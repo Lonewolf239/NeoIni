@@ -22,7 +22,7 @@ dotnet add package NeoIni
 ```
 
 - **Пакет:** [nuget.org/packages/NeoIni](https://www.nuget.org/packages/NeoIni)
-- **Версия:** 3.2 | **.NET 6+** | **.NET Standard 2.0**
+- **Версия:** 3.2.1 | **.NET 6+** | **.NET Standard 2.0**
 - **Разработчик:** [Lonewolf239](https://github.com/Lonewolf239)
 
 ---
