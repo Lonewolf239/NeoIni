@@ -19,6 +19,9 @@ jobs:
 
       - name: Run tests and generate report
         run: |
+          set -e
+          set -x
+
           dotnet test NeoIni.Tests/NeoIni.Tests.csproj \
             --configuration Release \
             --logger "trx" \
@@ -66,25 +69,43 @@ jobs:
             export TIMESTAMP="$(date '+%Y-%m-%d %H:%M:%S')"
 
             if [ ! -f .github/templates/report-template.html ]; then
-              echo "Error: Template .github/templates/report-template.html not found"
+              echo "Error: Template .github/templates/report-template.html not found" >&2
               exit 1
             fi
             if [ ! -f .github/templates/test-report-readme.md ]; then
-              echo "Error: Template .github/templates/test-report-readme.md not found"
+              echo "Error: Template .github/templates/test-report-readme.md not found" >&2
               exit 1
             fi
 
+            echo "Generating HTML report..."
             envsubst < .github/templates/report-template.html > test-reports/index.html
+            if [ $? -ne 0 ]; then
+              echo "Error: envsubst failed for HTML template" >&2
+              exit 1
+            fi
 
+            echo "Inserting test list..."
             tmp_file=$(mktemp)
             echo "$test_list_html" > "$tmp_file"
             sed -i "/<!-- TEST_LIST -->/r $tmp_file" test-reports/index.html
+            if [ $? -ne 0 ]; then
+              echo "Error: sed failed to insert test list" >&2
+              rm -f "$tmp_file"
+              exit 1
+            fi
             sed -i "/<!-- TEST_LIST -->/d" test-reports/index.html
             rm "$tmp_file"
 
+            echo "Generating README.md..."
             envsubst < .github/templates/test-report-readme.md > test-reports/README.md
+            if [ $? -ne 0 ]; then
+              echo "Error: envsubst failed for README template" >&2
+              exit 1
+            fi
+
+            echo "Reports generated successfully"
           else
-            echo "No TRX file found"
+            echo "No TRX file found" >&2
             exit 1
           fi
 
