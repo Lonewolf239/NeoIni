@@ -5,26 +5,273 @@ on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0'
-      
-      - name: Run tests
+
+      - name: Run tests and generate report
         run: |
           dotnet test NeoIni.Tests/NeoIni.Tests.csproj \
             --configuration Release \
             --logger "trx" \
             --results-directory ./TestResults
+
+          mkdir -p test-reports
+
+          trx_file=$(find ./TestResults -name "*.trx" | head -1)
+
+          if [ -f "$trx_file" ]; then
+            total=$(grep -o 'total="[0-9]*"' "$trx_file" | head -1 | grep -o '[0-9]*')
+            passed=$(grep -o 'passed="[0-9]*"' "$trx_file" | head -1 | grep -o '[0-9]*')
+            failed=$(grep -o 'failed="[0-9]*"' "$trx_file" | head -1 | grep -o '[0-9]*')
+            skipped=$(grep -o 'skipped="[0-9]*"' "$trx_file" | head -1 | grep -o '[0-9]*')
+            duration=$(grep -o 'duration="[0-9\.]*"' "$trx_file" | head -1 | grep -o '[0-9\.]*')
+
+            cat > test-reports/index.html << 'EOF'
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeoIni Test Reports</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .header h1 {
+            color: white;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        .header p {
+            color: rgba(255,255,255,0.9);
+            font-size: 1.1em;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        .stat-card:hover { transform: translateY(-5px); }
+        .stat-number {
+            font-size: 3em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .passed { color: #10b981; }
+        .failed { color: #ef4444; }
+        .total { color: #3b82f6; }
+        .skipped { color: #f59e0b; }
+        .test-list {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .test-list h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .test-item {
+            padding: 10px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .test-item:hover { background: #f9fafb; }
+        .test-status {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .status-pass { background: #10b981; color: white; }
+        .status-fail { background: #ef4444; color: white; }
+        .test-name {
+            flex: 1;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+        .test-duration {
+            color: #9ca3af;
+            font-size: 0.8em;
+        }
+        .search-box {
+            margin-bottom: 20px;
+            padding: 12px;
+            width: 100%;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 1em;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            color: rgba(255,255,255,0.7);
+        }
+        .badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        .badge-success { background: #10b981; color: white; }
+        .badge-failure { background: #ef4444; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 NeoIni Test Reports</h1>
+            <p>Automated Test Reports</p>
+        </div>
+        
+EOF
+            
+            percent=$((passed * 100 / total))
+            status_class="success"
+            status_text="✅ All tests passed"
+            if [ "$failed" -gt 0 ]; then
+                status_class="failure"
+                status_text="❌ Failed tests exist"
+            fi
+            
+            cat >> test-reports/index.html << EOF
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number total">$total</div>
+                <div class="stat-label">Total Tests</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number passed">$passed</div>
+                <div class="stat-label">✅ Passed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number failed">$failed</div>
+                <div class="stat-label">❌ Failed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number skipped">$skipped</div>
+                <div class="stat-label">⏭️ Skipped</div>
+            </div>
+        </div>
+        
+        <div class="test-list">
+            <h2>📋 Detailed Test List</h2>
+            <input type="text" class="search-box" id="search" placeholder="🔍 Search tests..." onkeyup="filterTests()">
+            <div id="test-list-container">
+EOF
+            
+            grep -o 'testName="[^"]*"' "$trx_file" | sed 's/testName="//;s/"//' | while read -r test_name; do
+                duration_line=$(grep -A 5 "testName=\"$test_name\"" "$trx_file" | grep -o 'duration="[0-9\.]*"' | head -1)
+                test_duration=$(echo "$duration_line" | grep -o '[0-9\.]*')
+                if [ -z "$test_duration" ]; then
+                    test_duration="< 1"
+                fi
+                
+                cat >> test-reports/index.html << EOF
+                <div class="test-item" data-name="${test_name,,}">
+                    <div class="test-status status-pass">✓</div>
+                    <div class="test-name">$test_name</div>
+                    <div class="test-duration">${test_duration}ms</div>
+                </div>
+EOF
+            done
+            
+            cat >> test-reports/index.html << 'EOF'
+            </div>
+        </div>
+        <div class="footer">
+            <p>🔄 Last updated: $(date '+%Y-%m-%d %H:%M:%S')</p>
+            <p>🔧 Automatically generated by GitHub Actions</p>
+        </div>
+    </div>
+    <script>
+        function filterTests() {
+            const searchTerm = document.getElementById('search').value.toLowerCase();
+            const tests = document.querySelectorAll('.test-item');
+            tests.forEach(test => {
+                const name = test.getAttribute('data-name');
+                if (name.includes(searchTerm)) {
+                    test.style.display = 'flex';
+                } else {
+                    test.style.display = 'none';
+                }
+            });
+        }
+    </script>
+</body>
+</html>
+EOF
+            
+            cat > test-reports/README.md << EOF
+# 📊 NeoIni Test Reports
+
+## Latest Report: $(date '+%Y-%m-%d %H:%M:%S')
+
+### Statistics
+- ✅ Total Tests: $total
+- ✅ Passed: $passed
+- ❌ Failed: $failed
+- ⏭️ Skipped: $skipped
+- 📈 Pass Rate: $percent%
+- ⏱️ Duration: ${duration}s
+
+### 🎯 Status: **$status_text**
+
+[📈 View Detailed HTML Report](index.html)
+
+---
+
+*Automatically generated by GitHub Actions*
+EOF
+          fi
       
-      - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v2
-        if: always()
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         with:
-          files: |
-            ./TestResults/**/*.trx
-          comment_mode: always
-          check_run: false
-          job_summary: true
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./test-reports
+          publish_branch: gh-pages
+          keep_files: false
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+          commit_message: '📊 Update test reports - ${{ github.run_id }}'
