@@ -32,13 +32,18 @@ jobs:
           trx_file=$(find ./TestResults -name "*.trx" | head -1)
 
           if [ -f "$trx_file" ]; then
-            total=$(grep -o 'total="[0-9]*"' "$trx_file" | head -1 | grep -o '[0-9]*')
-            passed=$(grep -o 'passed="[0-9]*"' "$trx_file" | head -1 | grep -o '[0-9]*')
-            failed=$(grep -o 'failed="[0-9]*"' "$trx_file" | head -1 | grep -o '[0-9]*')
-            skipped=$(grep -o 'skipped="[0-9]*"' "$trx_file" | head -1 | grep -o '[0-9]*')
-            duration=$(grep -o 'duration="[0-9\.]*"' "$trx_file" | head -1 | grep -o '[0-9\.]*')
+            total=$(grep -o 'total="[0-9]*"' "$trx_file" | head -1 | grep -o '[0-9]*' || echo "0")
+            passed=$(grep -o 'passed="[0-9]*"' "$trx_file" | head -1 | grep -o '[0-9]*' || echo "0")
+            failed=$(grep -o 'failed="[0-9]*"' "$trx_file" | head -1 | grep -o '[0-9]*' || echo "0")
+            skipped=$(grep -o 'skipped="[0-9]*"' "$trx_file" | head -1 | grep -o '[0-9]*' || echo "0")
+            duration=$(grep -o 'duration="[0-9\.]*"' "$trx_file" | head -1 | grep -o '[0-9\.]*' || echo "0")
 
-            percent=$((passed * 100 / total))
+            if [ "$total" -eq 0 ]; then
+              percent=0
+            else
+              percent=$((passed * 100 / total))
+            fi
+
             if [ "$failed" -gt 0 ]; then
               status_text="❌ Failed tests exist"
             else
@@ -47,8 +52,8 @@ jobs:
 
             test_list_html=""
             while IFS= read -r test_name; do
-              duration_line=$(grep -A 5 "testName=\"$test_name\"" "$trx_file" | grep -o 'duration="[0-9\.]*"' | head -1)
-              test_duration=$(echo "$duration_line" | grep -o '[0-9\.]*')
+              duration_line=$(grep -A 5 "testName=\"$test_name\"" "$trx_file" | grep -o 'duration="[0-9\.]*"' | head -1 || true)
+              test_duration=$(echo "$duration_line" | grep -o '[0-9\.]*' || echo "")
               if [ -z "$test_duration" ]; then
                 test_duration="< 1"
               fi
