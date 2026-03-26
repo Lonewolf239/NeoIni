@@ -51,18 +51,36 @@ jobs:
             fi
 
             test_list_html=""
-            while IFS= read -r test_name; do
-              duration_line=$(grep -A 5 "testName=\"$test_name\"" "$trx_file" | grep -o 'duration="[0-9\.]*"' | head -1 || true)
-              test_duration=$(echo "$duration_line" | grep -o '[0-9\.]*' || echo "")
-              if [ -z "$test_duration" ]; then
-                test_duration="< 1"
+            while IFS= read -r test_line; do
+              test_name=$(echo "$test_line" | grep -o 'testName="[^"]*"' | sed 's/testName="//;s/"//')
+              outcome=$(echo "$test_line" | grep -o 'outcome="[^"]*"' | sed 's/outcome="//;s/"//')
+              duration_sec=$(echo "$test_line" | grep -o 'duration="[0-9\.]*"' | sed 's/duration="//;s/"//')
+              if [ -z "$duration_sec" ]; then
+                duration_ms="< 1"
+              else
+                duration_ms=$(echo "$duration_sec * 1000" | bc | sed 's/\..*//')
+                if [ "$duration_ms" = "0" ]; then
+                  duration_ms="< 1"
+                fi
               fi
-              test_list_html+="                <div class=\"test-item\" data-name=\"${test_name,,}\">\n"
-              test_list_html+="                    <div class=\"test-status status-pass\">✓</div>\n"
-              test_list_html+="                    <div class=\"test-name\">$test_name</div>\n"
-              test_list_html+="                    <div class=\"test-duration\">${test_duration}ms</div>\n"
-              test_list_html+="                </div>\n"
-            done < <(grep -o 'testName="[^"]*"' "$trx_file" | sed 's/testName="//;s/"//')
+
+              if [ "$outcome" = "Passed" ]; then
+                status_class="status-pass"
+                status_symbol="✓"
+              elif [ "$outcome" = "Failed" ]; then
+                status_class="status-fail"
+                status_symbol="✗"
+              else
+                status_class="status-skipped"
+                status_symbol="⏭️"
+              fi
+
+              test_list_html+=$(printf '                <div class="test-item" data-name="%s">\n' "$(echo "$test_name" | tr '[:upper:]' '[:lower:]')")
+              test_list_html+=$(printf '                    <div class="test-status %s">%s</div>\n' "$status_class" "$status_symbol")
+              test_list_html+=$(printf '                    <div class="test-name">%s</div>\n' "$test_name")
+              test_list_html+=$(printf '                    <div class="test-duration">%sms</div>\n' "$duration_ms")
+              test_list_html+='                </div>\n'
+            done < <(grep -E 'testName="[^"]*" outcome="[^"]*" duration="[0-9\.]*"' "$trx_file" | sed 's/.*<UnitTestResult //;s/\/>.*//')
 
             export TOTAL=$total
             export PASSED=$passed
@@ -83,22 +101,18 @@ jobs:
             fi
 
             echo "Generating HTML report..."
-            envsubst < .github/templates/report-template.html > test-reports/index.html
-            if [ $? -ne 0 ]; then
-              echo "Error: envsubst failed for HTML template" >&2
-              exit 1
-            fi
+            sed -e "s/{{TOTAL}}/$total/g" \
+                -e "s/{{PASSED}}/$passed/g" \
+                -e "s/{{FAILED}}/$failed/g" \
+                -e "s/{{SKIPPED}}/$skipped/g" \
+                -e "s/{{TIMESTAMP}}/$(date '+%Y-%m-%d %H:%M:%S')/g" \
+                .github/templates/report-template.html > test-reports/index.html.tmp
 
-            echo "Inserting test list..."
             tmp_file=$(mktemp)
-            echo "$test_list_html" > "$tmp_file"
-            sed -i "/<!-- TEST_LIST -->/r $tmp_file" test-reports/index.html
-            if [ $? -ne 0 ]; then
-              echo "Error: sed failed to insert test list" >&2
-              rm -f "$tmp_file"
-              exit 1
-            fi
-            sed -i "/<!-- TEST_LIST -->/d" test-reports/index.html
+            printf '%s\n' "$test_list_html" > "$tmp_file"
+            sed -i '/<!-- TEST_LIST -->/r '"$tmp_file" test-reports/index.html.tmp
+            sed -i '/<!-- TEST_LIST -->/d' test-reports/index.html.tmp
+            mv test-reports/index.html.tmp test-reports/index.html
             rm "$tmp_file"
 
             echo "Generating README.md..."

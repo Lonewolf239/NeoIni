@@ -12,7 +12,7 @@
 
 ### 🎯 Status: **${STATUS_TEXT}**
 
-[📈 View Detailed HTML Report](index.html)
+[📈 View Detailed HTML Report](https://lonewolf239.github.io/NeoIni/)
 
 ---
 
