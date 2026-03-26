@@ -51,36 +51,46 @@ jobs:
             fi
 
             test_list_html=""
-            while IFS= read -r test_line; do
-              test_name=$(echo "$test_line" | grep -o 'testName="[^"]*"' | sed 's/testName="//;s/"//')
-              outcome=$(echo "$test_line" | grep -o 'outcome="[^"]*"' | sed 's/outcome="//;s/"//')
-              duration_sec=$(echo "$test_line" | grep -o 'duration="[0-9\.]*"' | sed 's/duration="//;s/"//')
-              if [ -z "$duration_sec" ]; then
-                duration_ms="< 1"
-              else
-                duration_ms=$(echo "$duration_sec * 1000" | bc | sed 's/\..*//')
-                if [ "$duration_ms" = "0" ]; then
-                  duration_ms="< 1"
+            test_count=0
+            while IFS= read -r line; do
+                test_name=$(echo "$line" | sed -n 's/.*testName="\([^"]*\)".*/\1/p')
+                outcome=$(echo "$line" | sed -n 's/.*outcome="\([^"]*\)".*/\1/p')
+                duration_sec=$(echo "$line" | sed -n 's/.*duration="\([0-9.]*\)".*/\1/p')
+                
+                if [ -z "$test_name" ]; then
+                    continue
                 fi
-              fi
+                
+                test_count=$((test_count + 1))
+                
+                if [ -z "$duration_sec" ]; then
+                    duration_ms="< 1"
+                else
+                    duration_ms=$(echo "$duration_sec * 1000" | bc | sed 's/\..*//')
+                    if [ "$duration_ms" = "0" ]; then
+                        duration_ms="< 1"
+                    fi
+                fi
+                
+                if [ "$outcome" = "Passed" ]; then
+                    status_class="status-pass"
+                    status_symbol="✓"
+                elif [ "$outcome" = "Failed" ]; then
+                    status_class="status-fail"
+                    status_symbol="✗"
+                else
+                    status_class="status-skipped"
+                    status_symbol="⏭️"
+                fi
+                
+                test_list_html+=$(printf '                <div class="test-item" data-name="%s">\n' "$(echo "$test_name" | tr '[:upper:]' '[:lower:]')")
+                test_list_html+=$(printf '                    <div class="test-status %s">%s</div>\n' "$status_class" "$status_symbol")
+                test_list_html+=$(printf '                    <div class="test-name">%s</div>\n' "$test_name")
+                test_list_html+=$(printf '                    <div class="test-duration">%sms</div>\n' "$duration_ms")
+                test_list_html+='                </div>\n'
+            done < <(grep '<UnitTestResult' "$trx_file")
 
-              if [ "$outcome" = "Passed" ]; then
-                status_class="status-pass"
-                status_symbol="✓"
-              elif [ "$outcome" = "Failed" ]; then
-                status_class="status-fail"
-                status_symbol="✗"
-              else
-                status_class="status-skipped"
-                status_symbol="⏭️"
-              fi
-
-              test_list_html+=$(printf '                <div class="test-item" data-name="%s">\n' "$(echo "$test_name" | tr '[:upper:]' '[:lower:]')")
-              test_list_html+=$(printf '                    <div class="test-status %s">%s</div>\n' "$status_class" "$status_symbol")
-              test_list_html+=$(printf '                    <div class="test-name">%s</div>\n' "$test_name")
-              test_list_html+=$(printf '                    <div class="test-duration">%sms</div>\n' "$duration_ms")
-              test_list_html+='                </div>\n'
-            done < <(grep -E 'testName="[^"]*" outcome="[^"]*" duration="[0-9\.]*"' "$trx_file" | sed 's/.*<UnitTestResult //;s/\/>.*//')
+            echo "Found $test_count test cases in TRX file"
 
             export TOTAL=$total
             export PASSED=$passed
@@ -110,10 +120,9 @@ jobs:
 
             tmp_file=$(mktemp)
             printf '%s\n' "$test_list_html" > "$tmp_file"
-            sed -i '/<!-- TEST_LIST -->/r '"$tmp_file" test-reports/index.html.tmp
-            sed -i '/<!-- TEST_LIST -->/d' test-reports/index.html.tmp
-            mv test-reports/index.html.tmp test-reports/index.html
+            awk -v insert="$tmp_file" '/<!-- TEST_LIST -->/ { system("cat " insert); next } 1' test-reports/index.html.tmp > test-reports/index.html
             rm "$tmp_file"
+            rm test-reports/index.html.tmp
 
             echo "Generating README.md..."
             envsubst < .github/templates/test-report-readme.md > test-reports/README.md
