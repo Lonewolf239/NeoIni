@@ -14,6 +14,9 @@ jobs:
         with:
           dotnet-version: '8.0'
 
+      - name: Install gettext (for envsubst)
+        run: sudo apt-get update && sudo apt-get install -y gettext-base
+
       - name: Run tests and generate report
         run: |
           dotnet test NeoIni.Tests/NeoIni.Tests.csproj \
@@ -62,6 +65,15 @@ jobs:
             export STATUS_TEXT="$status_text"
             export TIMESTAMP="$(date '+%Y-%m-%d %H:%M:%S')"
 
+            if [ ! -f .github/templates/report-template.html ]; then
+              echo "Error: Template .github/templates/report-template.html not found"
+              exit 1
+            fi
+            if [ ! -f .github/templates/test-report-readme.md ]; then
+              echo "Error: Template .github/templates/test-report-readme.md not found"
+              exit 1
+            fi
+
             envsubst < .github/templates/report-template.html > test-reports/index.html
 
             tmp_file=$(mktemp)
@@ -71,6 +83,9 @@ jobs:
             rm "$tmp_file"
 
             envsubst < .github/templates/test-report-readme.md > test-reports/README.md
+          else
+            echo "No TRX file found"
+            exit 1
           fi
 
       - name: Deploy to GitHub Pages
