@@ -64,8 +64,11 @@ jobs:
 
             envsubst < .github/templates/report-template.html > test-reports/index.html
 
-            sed -i "/<!-- TEST_LIST -->/r /dev/stdin" test-reports/index.html <<< "$test_list_html"
+            tmp_file=$(mktemp)
+            echo "$test_list_html" > "$tmp_file"
+            sed -i "/<!-- TEST_LIST -->/r $tmp_file" test-reports/index.html
             sed -i "/<!-- TEST_LIST -->/d" test-reports/index.html
+            rm "$tmp_file"
 
             cat > test-reports/README.md << EOF
 # 📊 NeoIni Test Reports
