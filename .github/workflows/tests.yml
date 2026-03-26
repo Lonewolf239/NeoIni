@@ -40,7 +40,7 @@ jobs:
             fi
 
             test_list_html=""
-            while read -r test_name; do
+            while IFS= read -r test_name; do
               duration_line=$(grep -A 5 "testName=\"$test_name\"" "$trx_file" | grep -o 'duration="[0-9\.]*"' | head -1)
               test_duration=$(echo "$duration_line" | grep -o '[0-9\.]*')
               if [ -z "$test_duration" ]; then
@@ -70,7 +70,7 @@ jobs:
             sed -i "/<!-- TEST_LIST -->/d" test-reports/index.html
             rm "$tmp_file"
 
-            cat > test-reports/README.md << EOF
+            cat > test-reports/README.md << 'EOF'
 # 📊 NeoIni Test Reports
 
 ## Latest Report: $(date '+%Y-%m-%d %H:%M:%S')
