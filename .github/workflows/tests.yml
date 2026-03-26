@@ -64,11 +64,11 @@ jobs:
                 test_count=$((test_count + 1))
                 
                 if [ -z "$duration_sec" ]; then
-                    duration_ms="< 1"
+                    duration_ms="&lt; 1"
                 else
                     duration_ms=$(echo "$duration_sec * 1000" | bc | sed 's/\..*//')
                     if [ "$duration_ms" = "0" ]; then
-                        duration_ms="< 1"
+                        duration_ms="&lt; 1"
                     fi
                 fi
                 
@@ -83,11 +83,11 @@ jobs:
                     status_symbol="⏭️"
                 fi
                 
-                test_list_html+=$(printf '                <div class="test-item" data-name="%s">\n' "$(echo "$test_name" | tr '[:upper:]' '[:lower:]')")
-                test_list_html+=$(printf '                    <div class="test-status %s">%s</div>\n' "$status_class" "$status_symbol")
-                test_list_html+=$(printf '                    <div class="test-name">%s</div>\n' "$test_name")
-                test_list_html+=$(printf '                    <div class="test-duration">%sms</div>\n' "$duration_ms")
-                test_list_html+='                </div>\n'
+                test_list_html+=$(printf '<div class="test-item" data-name="%s">' "$(echo "$test_name" | tr '[:upper:]' '[:lower:]')")
+                test_list_html+=$(printf '<div class="test-status %s">%s</div>' "$status_class" "$status_symbol")
+                test_list_html+=$(printf '<div class="test-name">%s</div>' "$test_name")
+                test_list_html+=$(printf '<div class="test-duration">%sms</div>' "$duration_ms")
+                test_list_html+='</div>'
             done < <(grep '<UnitTestResult' "$trx_file")
 
             echo "Found $test_count test cases in TRX file"
