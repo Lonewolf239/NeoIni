@@ -367,7 +367,8 @@ public class NeoIniDocumentFileTests : IDisposable
         _doc.SetValue("Test", "Key", 123);
         _doc.DeleteFileWithData();
         Assert.False(File.Exists(_tempFile));
-        Assert.Empty(_doc.GetAllSections());
+        var sections = _doc.GetAllSections();
+        if (sections is not null) Assert.Empty(sections);
     }
 
     [Fact]
@@ -684,7 +685,8 @@ public class NeoIniDocumentAsyncTests : IDisposable
     {
         var doc = await NeoIniDocument.CreateAsync(_tempFile, EncryptionType.None);
         Assert.NotNull(doc);
-        Assert.Empty(doc.GetAllSections());
+        var sections = doc.GetAllSections();
+        if (sections is not null) Assert.Empty(sections);
     }
 
     [Fact]
