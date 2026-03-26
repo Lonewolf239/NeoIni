@@ -26,4 +26,5 @@ jobs:
           files: |
             ./TestResults/**/*.trx
           comment_mode: always
-          hide_comments: false
+          check_run: false
+          job_summary: true
