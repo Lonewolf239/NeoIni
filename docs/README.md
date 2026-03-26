@@ -231,6 +231,18 @@ Full method, options, and event reference — [API.md](./API.md)
 
 ---
 
+## Commercial License
+
+NeoIni is released under the **GPLv3** license. If this license does not meet your requirements (e.g., for proprietary or commercial software), a **commercial license** is available.
+
+Please contact the developer directly:
+
+- **Telegram:** [@an1onime](https://t.me/an1onime)
+
+> Licensing options include perpetual licenses, and enterprise agreements. Prices start at **$199** for a single product.
+
+---
+
 ## Philosophy
 
 **Black Box Design** — all internal logic is hidden behind the simple public API of `NeoIniDocument`. You work only with methods and events, without thinking about implementation details. NeoIni config files are owned and managed by the library; human comments are intentionally not preserved in standard mode (the in-file warning header signals this). For hand-edited configs, use [Human-editable mode](./HUMAN-MODE.md).
