@@ -75,7 +75,6 @@ jobs:
 
 ## Latest Report: $(date '+%Y-%m-%d %H:%M:%S')
 
-### Statistics
 - ✅ Total Tests: $total
 - ✅ Passed: $passed
 - ❌ Failed: $failed
