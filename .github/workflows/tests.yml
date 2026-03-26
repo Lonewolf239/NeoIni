@@ -12,17 +12,18 @@ jobs:
         with:
           dotnet-version: '8.0'
       
-      - name: Run tests with coverage and report
+      - name: Run tests
         run: |
           dotnet test NeoIni.Tests/NeoIni.Tests.csproj \
             --configuration Release \
             --logger "trx" \
-            --logger "html" \
             --results-directory ./TestResults
       
-      - name: Upload test results
-        uses: actions/upload-artifact@v4
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
         if: always()
         with:
-          name: test-results
-          path: ./TestResults
+          files: |
+            ./TestResults/**/*.trx
+          comment_mode: always
+          hide_comments: false
