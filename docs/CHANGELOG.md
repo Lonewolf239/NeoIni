@@ -4,6 +4,22 @@
 ## Changelog · NeoIni
 
 <details open>
+<summary><strong>3.2.2</strong> — March 26, 2026</summary>
+
+#### List of changes
+
+- **Fixed missing `SectionChanged` event invocations** throughout the codebase.  
+  Previously, the `SectionChanged` event was not fired when keys were added, updated, removed, or renamed. This made it impossible to reliably track changes at the section level.  
+  Now the event is properly raised in all scenarios that modify section content:
+  - `AddKey` / `AddKeyAsync`
+  - `SetValue` / `SetValueAsync`
+  - `GetValue` / `GetValueAsync`
+  - `RemoveKey` / `RemoveKeyAsync`
+  - `RenameKey` / `RenameKeyAsync`
+
+</details>
+
+<details>
 <summary><strong>3.2.1</strong> — March 23, 2026</summary>
 
 #### List of changes

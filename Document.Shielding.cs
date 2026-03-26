@@ -75,6 +75,7 @@ namespace NeoIni
             ValidateValue(valueString, true);
             using (Lock.WriteLock()) NeoIniReaderCore.AddKey(Data, section, key, valueString);
             KeyAdded?.Invoke(this, new KeyEventArgs(section, key, valueString));
+            SectionChanged?.Invoke(this, new SectionEventArgs(section));
         }
 
         internal async Task AddKeyHelperAsync<T>(string section, string key, T value, CancellationToken ct = default)
@@ -86,6 +87,7 @@ namespace NeoIni
             ValidateValue(valueString, true);
             await ExecuteWithWriteLockAsync(() => NeoIniReaderCore.AddKey(Data, section, key, valueString), ct).ConfigureAwait(false);
             KeyAdded?.Invoke(this, new KeyEventArgs(section, key, valueString));
+            SectionChanged?.Invoke(this, new SectionEventArgs(section));
         }
 
 #if NETSTANDARD2_0
@@ -113,6 +115,11 @@ namespace NeoIni
                         valueAdded = true;
                     }
                 }
+            }
+            if (valueAdded)
+            {
+                KeyAdded?.Invoke(this, new KeyEventArgs(section, key, stringValue));
+                SectionChanged?.Invoke(this, new SectionEventArgs(section));
             }
             return (valueAdded, stringValue);
         }
@@ -142,6 +149,11 @@ namespace NeoIni
                             valueAdded = true;
                         }
                     }, ct).ConfigureAwait(false);
+            if (valueAdded)
+            {
+                KeyAdded?.Invoke(this, new KeyEventArgs(section, key, stringValue));
+                SectionChanged?.Invoke(this, new SectionEventArgs(section));
+            }
             return (valueAdded, stringValue);
         }
 
@@ -155,6 +167,7 @@ namespace NeoIni
             using (Lock.WriteLock()) keyExists = NeoIniReaderCore.SetValue(Data, section, key, valueString);
             if (keyExists) KeyChanged?.Invoke(this, new KeyEventArgs(section, key, valueString));
             else KeyAdded?.Invoke(this, new KeyEventArgs(section, key, valueString));
+            SectionChanged?.Invoke(this, new SectionEventArgs(section));
         }
 
         internal async Task SetValueHelperAsync<T>(string section, string key, T value, CancellationToken ct = default)
@@ -168,6 +181,7 @@ namespace NeoIni
             await ExecuteWithWriteLockAsync(() => keyExists = NeoIniReaderCore.SetValue(Data, section, key, valueString), ct).ConfigureAwait(false);
             if (keyExists) KeyChanged?.Invoke(this, new KeyEventArgs(section, key, valueString));
             else KeyAdded?.Invoke(this, new KeyEventArgs(section, key, valueString));
+            SectionChanged?.Invoke(this, new SectionEventArgs(section));
         }
 
         internal void RemoveKeyHelper(string section, string key)
@@ -221,6 +235,7 @@ namespace NeoIni
             ValidateTwoValue(oldKey, newKey);
             using (Lock.WriteLock()) NeoIniReaderCore.RenameKey(Data, section, oldKey, newKey);
             KeyRenamed?.Invoke(this, new KeyRenamedEventArgs(section, oldKey, newKey));
+            SectionChanged?.Invoke(this, new SectionEventArgs(section));
         }
 
         internal async Task RenameKeyHelperAsync(string section, string oldKey, string newKey, CancellationToken ct = default)
@@ -230,6 +245,7 @@ namespace NeoIni
             ValidateTwoValue(oldKey, newKey);
             await ExecuteWithWriteLockAsync(() => NeoIniReaderCore.RenameKey(Data, section, oldKey, newKey), ct).ConfigureAwait(false);
             KeyRenamed?.Invoke(this, new KeyRenamedEventArgs(section, oldKey, newKey));
+            SectionChanged?.Invoke(this, new SectionEventArgs(section));
         }
 
         internal void RenameSectionHelper(string oldSection, string newSection)

@@ -4,6 +4,22 @@
 ## Changelog · NeoIni
 
 <details open>
+<summary><strong>3.2.2</strong> — 26 марта 2026</summary>
+
+#### List of changes
+
+- **Исправлено отсутствие вызовов события `SectionChanged`** во всей кодовой базе.  
+  Ранее событие `SectionChanged` не вызывалось при добавлении, обновлении, удалении или переименовании ключей. Это делало невозможным надёжное отслеживание изменений на уровне секций.  
+  Теперь событие корректно вызывается во всех сценариях, изменяющих содержимое секции:
+  - `AddKey` / `AddKeyAsync`
+  - `SetValue` / `SetValueAsync`
+  - `GetValue` / `GetValueAsync`
+  - `RemoveKey` / `RemoveKeyAsync`
+  - `RenameKey` / `RenameKeyAsync`
+
+</details>
+
+<details>
 <summary><strong>3.2.1</strong> — 23 марта 2026</summary>
 
 #### List of changes

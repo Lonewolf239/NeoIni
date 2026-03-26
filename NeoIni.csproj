@@ -3,7 +3,7 @@
 		<TargetFrameworks>net6.0;net7.0;net8.0;net9.0;net10.0;netstandard2.0</TargetFrameworks>
 		<Nullable>enable</Nullable>
 		<PackageId>NeoIni</PackageId>
-		<Version>3.2.1</Version>
+		<Version>3.2.2</Version>
 		<Authors>Lonewolf239</Authors>
 		<Description>Modern, thread-safe INI configuration library for .NET 6+ with AES-256 encryption, checksum validation, hot reload, and source generators. Supports .NET Standard 2.0 for legacy environments.</Description>
 		<PackageTags>ini;config;encryption;ini-parser;configuration;secure-config;aes-ini;.NET6;.NET7;.NET8;.NET9;.NET10;hot-reload;source-generator</PackageTags>
@@ -31,10 +31,10 @@
 		<Content Remove="NeoIniDemo\**" />
 		<None Remove="NeoIniDemo\**" />
 		<EmbeddedResource Remove="NeoIniDemo\**" />
-		<Compile Remove="NeoIniTest\**" />
-		<Content Remove="NeoIniTest\**" />
-		<None Remove="NeoIniTest\**" />
-		<EmbeddedResource Remove="NeoIniTest\**" />
+		<Compile Remove="NeoIni.Tests\**" />
+		<Content Remove="NeoIni.Tests\**" />
+		<None Remove="NeoIni.Tests\**" />
+		<EmbeddedResource Remove="NeoIni.Tests\**" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="Generators\NeoIni.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
