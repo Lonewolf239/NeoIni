@@ -235,11 +235,24 @@ Full method, options, and event reference — [API.md](./API.md)
 
 NeoIni is released under the **GPLv3** license. If this license does not meet your requirements (e.g., for proprietary or commercial software), a **commercial license** is available.
 
-Please contact the developer directly:
+The commercial license grants you the right to use NeoIni in proprietary applications without the need to disclose your source code. It also includes priority support and access to private updates.
+
+**Pricing:**
+
+| License Type | Price | Includes |
+|--------------|-------|----------|
+| Individual | **$49** | For a single developer, one product. |
+| Team | **$199** | For up to 5 developers, up to 3 products. |
+| Enterprise | **$499** | Unlimited developers and products, one year of priority support and updates. |
+
+All licenses are perpetual (one-time payment). Annual support and update subscriptions are available for 20% of the license price.
+
+To purchase or inquire about custom licensing, please contact the developer directly:
 
 - **Telegram:** [@an1onime](https://t.me/an1onime)
+- **Email:** neoinilicense@gmail.com
 
-> Licensing options include perpetual licenses, and enterprise agreements. Prices start at **$199** for a single product.
+*Prices are in USD and subject to change.*
 
 ---
 

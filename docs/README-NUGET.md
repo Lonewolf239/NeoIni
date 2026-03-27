@@ -172,6 +172,31 @@ Full method, options, and event reference — [API.md](https://github.com/Lonewo
 
 ---
 
+## Commercial License
+
+NeoIni is released under the **GPLv3** license. If this license does not meet your requirements (e.g., for proprietary or commercial software), a **commercial license** is available.
+
+The commercial license grants you the right to use NeoIni in proprietary applications without the need to disclose your source code. It also includes priority support and access to private updates.
+
+**Pricing:**
+
+| License Type | Price | Includes |
+|--------------|-------|----------|
+| Individual | **$49** | For a single developer, one product. |
+| Team | **$199** | For up to 5 developers, up to 3 products. |
+| Enterprise | **$499** | Unlimited developers and products, one year of priority support and updates. |
+
+All licenses are perpetual (one-time payment). Annual support and update subscriptions are available for 20% of the license price.
+
+To purchase or inquire about custom licensing, please contact the developer directly:
+
+- **Telegram:** [@an1onime](https://t.me/an1onime)
+- **Email:** neoinilicense@gmail.com
+
+*Prices are in USD and subject to change.*
+
+---
+
 ## Philosophy
 
 **Black Box Design** — all internal logic is hidden behind the simple public API of `NeoIniDocument`. You work only with methods and events, without thinking about implementation details. NeoIni config files are owned and managed by the library; human comments are intentionally not preserved in standard mode (the in-file warning header signals this). For hand-edited configs, use [Human-editable mode](https://github.com/Lonewolf239/NeoIni/blob/main/docs/HUMAN-MODE.md).

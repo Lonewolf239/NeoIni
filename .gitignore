@@ -5,6 +5,7 @@
 
 NeoIniTest/
 NeoIniDemo/demo_config.ini*
+LicenseTemplates/
 
 # dotenv files
 .env
