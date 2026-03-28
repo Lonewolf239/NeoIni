@@ -14,9 +14,9 @@ namespace NeoIni
     /// <br/>
     /// Developer: <a href="https://github.com/Lonewolf239">Lonewolf239</a>
     /// <br/>
-    /// <b>Target Frameworks: .NET 6+ and .NET Standard 2.0</b>
+    /// <b>Target Frameworks: .NET 5+ and .NET Standard 2.0</b>
     /// <br/>
-    /// <b>Version: 3.2.2</b>
+    /// <b>Version: 3.3</b>
     /// <br/>
     /// <b>Black Box Philosophy:</b> This class follows a strict "black box" design principle - users interact only through the public API without needing to understand internal implementation details. Input goes in, processed output comes out, internals remain hidden and abstracted.
     /// </summary>
@@ -384,6 +384,61 @@ namespace NeoIni
         public async Task SetValueAsync<T>(string section, string key, T value, CancellationToken cancellationToken = default)
         {
             await SetValueHelperAsync<T>(section, key, value, cancellationToken).ConfigureAwait(false);
+            await DoAutoSaveAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Sets multiple key-value pairs in the INI document in a single batch operation.
+        /// All specified values are written (added or updated) and then an automatic save is performed.
+        /// </summary>
+        /// <param name="values">
+        /// An array of <see cref="NeoIniValue"/> objects representing the key-value pairs to set.
+        /// Each item must contain a non‑null <see cref="NeoIniValue.Section"/> and <see cref="NeoIniValue.Key"/>,
+        /// otherwise the helper methods may throw an exception.
+        /// </param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if the <paramref name="values"/> array or any of its elements is <c>null</c>, or if a required property is missing.
+        /// </exception>
+        /// <remarks>
+        /// This method processes each <see cref="NeoIniValue"/> by calling <see cref="SetValueHelper{T}"/>
+        /// for the corresponding section, key, and string value.
+        /// After all values are set, <see cref="DoAutoSave"/> is invoked to persist changes according to the current auto‑save settings.
+        /// </remarks>
+        public void SetValues(NeoIniValue[] values)
+        {
+            foreach (var value in values)
+                SetValueHelper<string>(value.Section, value.Key, value.Value);
+            DoAutoSave();
+        }
+
+        /// <summary>
+        /// Asynchronously sets multiple key-value pairs in the INI document in a single batch operation.
+        /// All specified values are written (added or updated) and then an automatic save is performed.
+        /// </summary>
+        /// <param name="values">
+        /// An array of <see cref="NeoIniValue"/> objects representing the key-value pairs to set.
+        /// Each item must contain a non‑null <see cref="NeoIniValue.Section"/> and <see cref="NeoIniValue.Key"/>,
+        /// otherwise the helper methods may throw an exception.
+        /// </param>
+        /// <param name="cancellationToken">
+        /// A cancellation token to observe while performing the asynchronous operations.
+        /// </param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if the <paramref name="values"/> array or any of its elements is <c>null</c>, or if a required property is missing.
+        /// </exception>
+        /// <exception cref="OperationCanceledException">
+        /// Thrown if the <paramref name="cancellationToken"/> is canceled.
+        /// </exception>
+        /// <remarks>
+        /// This method processes each <see cref="NeoIniValue"/> by calling <see cref="SetValueHelperAsync{T}"/>
+        /// for the corresponding section, key, and string value.
+        /// After all values are set, <see cref="DoAutoSaveAsync"/> is invoked to persist changes according to the current auto‑save settings.
+        /// </remarks>
+        public async Task SetValuesAsync(NeoIniValue[] values, CancellationToken cancellationToken = default)
+        {
+            foreach (var value in values)
+                await SetValueHelperAsync<string>(value.Section, value.Key, value.Value).ConfigureAwait(false);
             await DoAutoSaveAsync(cancellationToken).ConfigureAwait(false);
         }
 

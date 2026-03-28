@@ -15,6 +15,7 @@
 | `GetValueClamped<T>` | Чтение типизированного значения с ограничением в диапазоне min/max | `GetValueClampedAsync<T>` |
 | `TryGetValue<T>` | Чтение типизированного значения без модификации файла и без AutoAdd | – |
 | `SetValue<T>` | Установка/создание ключа со значением | `SetValueAsync<T>` |
+| `SetValues<T>` | Установка/создание нескольких пар ключ-значение | `SetValuesAsync<T>` |
 | `SetValueClamped<T>` | Установка/создание ключа со значением, ограниченным в диапазоне | `SetValueClampedAsync<T>` |
 | `AddSection` | Создание секции, если она отсутствует | `AddSectionAsync` |
 | `AddKey<T>` | Добавление уникального ключа со значением | `AddKeyAsync<T>` |

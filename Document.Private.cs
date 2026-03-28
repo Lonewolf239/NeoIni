@@ -122,7 +122,7 @@ namespace NeoIni
 #endif
         }
 
-        private void ThrowIfEmpty(string value, bool useAEVRule = true)
+        private void ThrowIfEmpty(string? value, bool useAEVRule = true)
         {
             if (useAEVRule && AllowEmptyValues) return;
             if (string.IsNullOrEmpty(value)) throw new EmptyValueNotAllowedException(nameof(value));
@@ -206,13 +206,13 @@ namespace NeoIni
             }
         }
 
-        private void ValidateValue(string value, bool isValue = false)
+        private void ValidateValue(string? value, bool isValue = false)
         {
             ThrowIfEmpty(value, isValue);
             ThrowIfContainsUnsupportedChars(value, isValue);
         }
 
-        private void ValidateTwoValue(string value1, string value2)
+        private void ValidateTwoValue(string? value1, string? value2)
         {
             ValidateValue(value1, false);
             ValidateValue(value2, false);

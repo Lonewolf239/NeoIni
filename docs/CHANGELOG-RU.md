@@ -4,6 +4,16 @@
 ## Changelog · NeoIni
 
 <details open>
+<summary><strong>3.3</strong> — 29 марта 2026</summary>
+
+#### List of changes
+
+- **Добавлена поддержка .NET 5** – библиотека теперь поддерживает `net5.0` наряду с существующими фреймворками.
+- **Добавлены методы `SetValues` / `SetValuesAsync`** – новые массовые операции, позволяющие устанавливать несколько пар ключ-значение за один вызов, что повышает производительность и удобство.
+
+</details>
+
+<details>
 <summary><strong>3.2.2</strong> — 26 марта 2026</summary>
 
 #### List of changes

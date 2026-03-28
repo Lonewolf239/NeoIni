@@ -15,6 +15,7 @@ Complete reference for all public methods, options, and events exposed by `NeoIn
 | `GetValueClamped<T>` | Read typed value and clamp it between min/max | `GetValueClampedAsync<T>` |
 | `TryGetValue<T>` | Read typed value without modifying the file and without AutoAdd | – |
 | `SetValue<T>` | Set/create key-value | `SetValueAsync<T>` |
+| `SetValues<T>` | Set/create multiple key-value pairs (bulk) | `SetValuesAsync<T>` |
 | `SetValueClamped<T>` | Set/create key-value and clamp it within range | `SetValueClampedAsync<T>` |
 | `AddSection` | Create section if missing | `AddSectionAsync` |
 | `AddKey<T>` | Add unique key-value | `AddKeyAsync<T>` |

@@ -4,6 +4,16 @@
 ## Changelog · NeoIni
 
 <details open>
+<summary><strong>3.3</strong> — March 29, 2026</summary>
+
+#### List of changes
+
+- **Added .NET 5 support** – the library now targets `net5.0` alongside existing frameworks.
+- **Added `SetValues` / `SetValuesAsync` methods** – new bulk operations that allow setting multiple key-value pairs in a single call, improving performance and convenience.
+
+</details>
+
+<details>
 <summary><strong>3.2.2</strong> — March 26, 2026</summary>
 
 #### List of changes

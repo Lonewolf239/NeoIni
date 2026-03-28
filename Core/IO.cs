@@ -14,7 +14,7 @@ namespace NeoIni.Core
         internal static async Task WriteBytesAsync(string path, byte[] data, CancellationToken ct)
         {
             ct.ThrowIfCancellationRequested();
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NET5_0
             using (var fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None, 4096, true))
                 await fs.WriteAsync(data, 0, data.Length, ct).ConfigureAwait(false);
 #else
@@ -27,7 +27,7 @@ namespace NeoIni.Core
         internal static async Task<byte[]> ReadAllBytesAsync(string path, CancellationToken ct)
         {
             ct.ThrowIfCancellationRequested();
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NET5_0
             using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, useAsync: true))
             {
                 long length = fs.Length;

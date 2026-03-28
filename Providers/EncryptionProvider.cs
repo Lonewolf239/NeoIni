@@ -20,7 +20,7 @@ namespace NeoIni.Providers
         {
             if (password is null) throw new ArgumentNullException(nameof(password));
             if (salt is null) throw new ArgumentNullException(nameof(salt));
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NET5_0
             using var rfc2898 = new Rfc2898DeriveBytes(password, salt, Pbkdf2Iterations);
             return rfc2898.GetBytes(keySize);
 #else

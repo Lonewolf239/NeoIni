@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Globalization;
 using Data = System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<string, string>>;
 
 namespace NeoIni.Models
@@ -162,6 +164,46 @@ namespace NeoIni.Models
             Line = line;
             CommentType = commentType;
             Content = content;
+        }
+    }
+
+    /// <summary>
+    /// Represents a key-value pair used for bulk operations on an INI document.
+    /// This class encapsulates a section, key, and a value that will be stored as a string.
+    /// </summary>
+    /// <remarks>
+    /// When constructing a <see cref="NeoIniValue"/>, if the provided value implements <see cref="IFormattable"/>,
+    /// its string representation is obtained using the invariant culture to ensure consistent formatting.
+    /// </remarks>
+    public class NeoIniValue
+    {
+        /// <summary>Gets the name of the section where the key-value pair belongs.</summary>
+        public string Section { get; }
+
+        /// <summary>Gets the key name of the key-value pair.</summary>
+        public string Key { get; }
+
+        /// <summary>
+        /// Gets the string representation of the value.
+        /// This value is derived from the object passed to the constructor, formatted using invariant culture if applicable.
+        /// </summary>
+        public string Value { get; }
+
+        /// <summary>Initializes a new instance of the <see cref="NeoIniValue"/> class.</summary>
+        /// <param name="section">The name of the section for the key-value pair.</param>
+        /// <param name="key">The key name.</param>
+        /// <param name="value">
+        /// The value to be stored. If the value implements <see cref="IFormattable"/>, it is converted to a string using
+        /// <see cref="CultureInfo.InvariantCulture"/>; otherwise, <see cref="object.ToString"/> is used.
+        /// If <paramref name="value"/> is <c>null</c>, an empty string is stored.
+        /// </param>
+        public NeoIniValue(string? section, string? key, object? value)
+        {
+            if (section is null || key is null) throw new ArgumentNullException();
+            Section = section;
+            Key = key;
+            if (value is IFormattable formattable) Value = formattable.ToString(null, CultureInfo.InvariantCulture);
+            else Value = value?.ToString() ?? string.Empty;
         }
     }
 

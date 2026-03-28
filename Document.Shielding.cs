@@ -51,7 +51,7 @@ namespace NeoIni
             Saved?.Invoke(this, EventArgs.Empty);
         }
 
-        internal void AddSectionHelper(string section)
+        internal void AddSectionHelper(string? section)
         {
             ThrowIfDisposed();
             ValidateValue(section);
@@ -59,7 +59,7 @@ namespace NeoIni
             SectionAdded?.Invoke(this, new SectionEventArgs(section));
         }
 
-        internal async Task AddSectionHelperAsync(string section, CancellationToken ct = default)
+        internal async Task AddSectionHelperAsync(string? section, CancellationToken ct = default)
         {
             ThrowIfDisposed();
             ValidateValue(section);
@@ -67,7 +67,7 @@ namespace NeoIni
             SectionAdded?.Invoke(this, new SectionEventArgs(section));
         }
 
-        internal void AddKeyHelper<T>(string section, string key, T value)
+        internal void AddKeyHelper<T>(string? section, string? key, T value)
         {
             ThrowIfDisposed();
             ValidateTwoValue(section, key);
@@ -78,7 +78,7 @@ namespace NeoIni
             SectionChanged?.Invoke(this, new SectionEventArgs(section));
         }
 
-        internal async Task AddKeyHelperAsync<T>(string section, string key, T value, CancellationToken ct = default)
+        internal async Task AddKeyHelperAsync<T>(string? section, string? key, T value, CancellationToken ct = default)
         {
             ThrowIfDisposed();
             ValidateTwoValue(section, key);
@@ -157,7 +157,7 @@ namespace NeoIni
             return (valueAdded, stringValue);
         }
 
-        internal void SetValueHelper<T>(string section, string key, T value)
+        internal void SetValueHelper<T>(string? section, string? key, T value)
         {
             ThrowIfDisposed();
             ValidateTwoValue(section, key);
@@ -170,7 +170,7 @@ namespace NeoIni
             SectionChanged?.Invoke(this, new SectionEventArgs(section));
         }
 
-        internal async Task SetValueHelperAsync<T>(string section, string key, T value, CancellationToken ct = default)
+        internal async Task SetValueHelperAsync<T>(string? section, string? key, T value, CancellationToken ct = default)
         {
             ThrowIfDisposed();
             ValidateTwoValue(section, key);
@@ -184,7 +184,7 @@ namespace NeoIni
             SectionChanged?.Invoke(this, new SectionEventArgs(section));
         }
 
-        internal void RemoveKeyHelper(string section, string key)
+        internal void RemoveKeyHelper(string? section, string? key)
         {
             ThrowIfDisposed();
             using (Lock.WriteLock()) NeoIniReaderCore.RemoveKey(Data, section, key);
@@ -192,7 +192,7 @@ namespace NeoIni
             SectionChanged?.Invoke(this, new SectionEventArgs(section));
         }
 
-        internal async Task RemoveKeyHelperAsync(string section, string key, CancellationToken ct = default)
+        internal async Task RemoveKeyHelperAsync(string? section, string? key, CancellationToken ct = default)
         {
             ThrowIfDisposed();
             await ExecuteWithWriteLockAsync(() => NeoIniReaderCore.RemoveKey(Data, section, key), ct).ConfigureAwait(false);
@@ -200,35 +200,35 @@ namespace NeoIni
             SectionChanged?.Invoke(this, new SectionEventArgs(section));
         }
 
-        internal void RemoveSectionHelper(string section)
+        internal void RemoveSectionHelper(string? section)
         {
             ThrowIfDisposed();
             using (Lock.WriteLock()) NeoIniReaderCore.RemoveSection(Data, section);
             SectionRemoved?.Invoke(this, new SectionEventArgs(section));
         }
 
-        internal async Task RemoveSectionHelperAsync(string section, CancellationToken ct = default)
+        internal async Task RemoveSectionHelperAsync(string? section, CancellationToken ct = default)
         {
             ThrowIfDisposed();
             await ExecuteWithWriteLockAsync(() => NeoIniReaderCore.RemoveSection(Data, section), ct).ConfigureAwait(false);
             SectionRemoved?.Invoke(this, new SectionEventArgs(section));
         }
 
-        internal void ClearSectionHelper(string section)
+        internal void ClearSectionHelper(string? section)
         {
             ThrowIfDisposed();
             using (Lock.WriteLock()) NeoIniReaderCore.ClearSection(Data, section);
             SectionChanged?.Invoke(this, new SectionEventArgs(section));
         }
 
-        internal async Task ClearSectionHelperAsync(string section, CancellationToken ct = default)
+        internal async Task ClearSectionHelperAsync(string? section, CancellationToken ct = default)
         {
             ThrowIfDisposed();
             await ExecuteWithWriteLockAsync(() => NeoIniReaderCore.ClearSection(Data, section), ct).ConfigureAwait(false);
             SectionChanged?.Invoke(this, new SectionEventArgs(section));
         }
 
-        internal void RenameKeyHelper(string section, string oldKey, string newKey)
+        internal void RenameKeyHelper(string? section, string? oldKey, string? newKey)
         {
             ThrowIfDisposed();
             ValidateValue(section);
@@ -238,7 +238,7 @@ namespace NeoIni
             SectionChanged?.Invoke(this, new SectionEventArgs(section));
         }
 
-        internal async Task RenameKeyHelperAsync(string section, string oldKey, string newKey, CancellationToken ct = default)
+        internal async Task RenameKeyHelperAsync(string? section, string? oldKey, string? newKey, CancellationToken ct = default)
         {
             ThrowIfDisposed();
             ValidateValue(section);
@@ -248,7 +248,7 @@ namespace NeoIni
             SectionChanged?.Invoke(this, new SectionEventArgs(section));
         }
 
-        internal void RenameSectionHelper(string oldSection, string newSection)
+        internal void RenameSectionHelper(string? oldSection, string? newSection)
         {
             ThrowIfDisposed();
             ValidateTwoValue(oldSection, newSection);
@@ -256,7 +256,7 @@ namespace NeoIni
             SectionRenamed?.Invoke(this, new SectionRenamedEventArgs(oldSection, newSection));
         }
 
-        internal async Task RenameSectionHelperAsync(string oldSection, string newSection, CancellationToken ct = default)
+        internal async Task RenameSectionHelperAsync(string? oldSection, string? newSection, CancellationToken ct = default)
         {
             ThrowIfDisposed();
             ValidateTwoValue(oldSection, newSection);
