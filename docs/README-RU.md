@@ -3,7 +3,6 @@
 [![.NET 5+](https://img.shields.io/badge/.NET-5+-2D2D2D?style=for-the-badge&logo=dotnet&logoColor=FFFFFF)](https://dotnet.microsoft.com/)
 [![.NET Standard 2.0](https://img.shields.io/badge/.NET%20Standard-2.0-2D2D2D?style=for-the-badge&logo=dotnet&logoColor=FFFFFF)](https://learn.microsoft.com/ru-ru/dotnet/standard/net-standard?tabs=net-standard-2-0)
 [![GPLv3](https://img.shields.io/badge/License-GPLv3-2D2D2D?style=for-the-badge&logo=gnu&logoColor=FFFFFF)](https://github.com/Lonewolf239/NeoIni/blob/main/LICENSE)
-[![Thread-Safe](https://img.shields.io/badge/Thread-Safe-2D2D2D?style=for-the-badge&logo=verified&logoColor=FFFFFF)](#thread-safe)
 
 [![Wiki](https://img.shields.io/badge/NeoIni-WIKI-2D2D2D?style=for-the-badge&logo=github&logoColor=FFFFFF)](https://github.com/Lonewolf239/NeoIni/wiki/Главная)
 [![Roadmap](https://img.shields.io/badge/ROADMAP-2D2D2D?style=for-the-badge&logo=map&logoColor=FFFFFF)](./ROADMAP-RU.md)
@@ -33,7 +32,7 @@ dotnet add package NeoIni
 | | Feature | Details |
 |---|---------|---------|
 | 🔒 | **AES-256 encryption** | Прозрачное шифрование на уровне файла (CBC, IV + per-file salt). Ключ генерируется из окружения пользователя или задаётся вручную. |
-| 🛡️ | <a name="thread-safe"></a> **SHA-256 checksum** | Проверка целостности при каждой загрузке/сохранении. При несовпадении — событие `ChecksumMismatch` + автоматический откат на `.backup`. |
+| 🛡️ | **SHA-256 checksum** | Проверка целостности при каждой загрузке/сохранении. При несовпадении — событие `ChecksumMismatch` + автоматический откат на `.backup`. |
 | 🔐 | **Thread-safe** | `AsyncReaderWriterLock` защищает все операции чтения и записи при конкурентном доступе и полностью поддерживает `async`/`await`. |
 | 📦 | **Typed Get/Set** | Чтение и запись `bool`, `int`, `double`, `DateTime`, `enum`, `string` и других типов с автоматическим парсингом и значениями по умолчанию. |
 | ⚡ | **AutoSave & AutoBackup** | Автоматическое сохранение после N операций. Атомарная запись через `.tmp` + откат на `.backup` при ошибках. |
