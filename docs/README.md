@@ -3,7 +3,6 @@
 [![.NET 5+](https://img.shields.io/badge/.NET-5+-2D2D2D?style=for-the-badge&logo=dotnet&logoColor=FFFFFF)](https://dotnet.microsoft.com/)
 [![.NET Standard 2.0](https://img.shields.io/badge/.NET%20Standard-2.0-2D2D2D?style=for-the-badge&logo=dotnet&logoColor=FFFFFF)](https://learn.microsoft.com/en-us/dotnet/standard/net-standard?tabs=net-standard-2-0)
 [![GPLv3](https://img.shields.io/badge/License-GPLv3-2D2D2D?style=for-the-badge&logo=gnu&logoColor=FFFFFF)](https://github.com/Lonewolf239/NeoIni/blob/main/LICENSE)
-[![Thread-Safe](https://img.shields.io/badge/Thread-Safe-2D2D2D?style=for-the-badge&logo=verified&logoColor=FFFFFF)](#thread-safe)
 
 [![Wiki](https://img.shields.io/badge/NeoIni-WIKI-2D2D2D?style=for-the-badge&logo=github&logoColor=FFFFFF)](https://github.com/Lonewolf239/NeoIni/wiki)
 [![Roadmap](https://img.shields.io/badge/ROADMAP-2D2D2D?style=for-the-badge&logo=map&logoColor=FFFFFF)](./ROADMAP.md)
@@ -33,7 +32,7 @@ dotnet add package NeoIni
 | | Feature | Details |
 |---|---------|---------|
 | 🔒 | **AES-256 encryption** | Transparent file-level encryption (CBC, IV + per-file salt). Key derived from user environment or a custom password. |
-| 🛡️ | <a name="thread-safe"></a> **SHA-256 checksum** | Integrity validation on every load/save. On mismatch — `ChecksumMismatch` event + automatic `.backup` fallback. |
+| 🛡️ | **SHA-256 checksum** | Integrity validation on every load/save. On mismatch — `ChecksumMismatch` event + automatic `.backup` fallback. |
 | 🔐 | **Thread-safe** | `AsyncReaderWriterLock` protects all read/write operations under concurrent access with full `async`/`await` support. |
 | 📦 | **Typed Get/Set** | Read and write `bool`, `int`, `double`, `DateTime`, `enum`, `string` and more with automatic parsing and defaults. |
 | ⚡ | **AutoSave & AutoBackup** | Automatic saving after N operations. Atomic writes via `.tmp` + `.backup` fallback on errors. |
