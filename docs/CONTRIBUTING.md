@@ -67,4 +67,4 @@ PRs are reviewed by the maintainer. Address feedback promptly — stale PRs may 
 
 ### License
 
-By contributing, you agree that your contributions are licensed under the [MIT License](./LICENSE).
+By contributing, you agree that your contributions are licensed under the [GPLv3](https://github.com/Lonewolf239/NeoIni/blob/main/LICENSE).
