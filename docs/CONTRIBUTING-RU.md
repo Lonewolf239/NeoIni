@@ -1,5 +1,5 @@
-[![EN](https://img.shields.io/badge/CONTRIBUTING-EN-2D2D2D?style=for-the-badge&logo=github&logoColor=FFFFFF)](./CONTRIBUTING.md)
-[![RU](https://img.shields.io/badge/CONTRIBUTING-RU-2D2D2D?style=for-the-badge&logo=google-translate&logoColor=FFFFFF)](./CONTRIBUTING-RU.md)
+[![EN](https://img.shields.io/badge/CONTRIBUTING-EN-2D2D2D?style=for-the-badge&logo=github&logoColor=FFFFFF)](https://github.com/Lonewolf239/NeoIni/blob/main/docs/CONTRIBUTING.md)
+[![RU](https://img.shields.io/badge/CONTRIBUTING-RU-2D2D2D?style=for-the-badge&logo=google-translate&logoColor=FFFFFF)](https://github.com/Lonewolf239/NeoIni/blob/main/docs/CONTRIBUTING-RU.md)
 
 ## Contributing to NeoIni
 

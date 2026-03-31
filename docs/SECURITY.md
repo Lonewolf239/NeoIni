@@ -1,5 +1,5 @@
-[![EN](https://img.shields.io/badge/SECURITY-EN-2D2D2D?style=for-the-badge&logo=github&logoColor=FFFFFF)](./SECURITY.md)
-[![RU](https://img.shields.io/badge/SECURITY-RU-2D2D2D?style=for-the-badge&logo=google-translate&logoColor=FFFFFF)](./SECURITY-RU.md)
+[![EN](https://img.shields.io/badge/SECURITY-EN-2D2D2D?style=for-the-badge&logo=github&logoColor=FFFFFF)](https://github.com/Lonewolf239/NeoIni/blob/main/docs/SECURITY.md)
+[![RU](https://img.shields.io/badge/SECURITY-RU-2D2D2D?style=for-the-badge&logo=google-translate&logoColor=FFFFFF)](https://github.com/Lonewolf239/NeoIni/blob/main/docs/SECURITY-RU.md)
 
 ## Security policy · NeoIni
 
