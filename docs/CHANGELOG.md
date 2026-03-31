@@ -4,6 +4,17 @@
 ## Changelog · NeoIni
 
 <details open>
+<summary><strong>3.4</strong> — March 31, 2026</summary>
+
+#### List of changes
+
+- **Internal class extracted to a separate library** – the `AsyncReaderWriterLock` class (previously internal) has been moved to a dedicated NuGet package `AsyncReaderWriterLock` (version 1.0.1).
+- The main library now has a transitive dependency on the new package. This is an internal refactoring and does not affect the public API or require any code changes in consuming projects.
+- If you need to use `AsyncReaderWriterLock` directly in your own code, you can now reference the standalone package explicitly.
+
+</details>
+
+<details>
 <summary><strong>3.3</strong> — March 29, 2026</summary>
 
 #### List of changes

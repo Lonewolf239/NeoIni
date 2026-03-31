@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using AsyncLocks;
 using NeoIni.Core;
 using NeoIni.Models;
 using NeoIni.Providers;
