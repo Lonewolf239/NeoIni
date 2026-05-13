@@ -44,12 +44,11 @@ namespace NeoIni
         public void Dispose()
         {
             try { Dispose(true); }
-            catch (Exception ex)
-            {
 #if DEBUG
-                System.Diagnostics.Trace.WriteLine($"NeoIni: Save on dispose failed: {ex.Message}");
+            catch (Exception ex) { System.Diagnostics.Trace.WriteLine($"NeoIni: Save on dispose failed: {ex.Message}"); }
+#else
+            catch { }
 #endif
-            }
             GC.SuppressFinalize(this);
         }
 
@@ -58,12 +57,11 @@ namespace NeoIni
         public async ValueTask DisposeAsync()
         {
             try { await DisposeAsync(true).ConfigureAwait(false); }
-            catch (Exception ex)
-            {
 #if DEBUG
-                System.Diagnostics.Trace.WriteLine($"NeoIni: Async save on dispose failed: {ex.Message}");
+            catch (Exception ex) { System.Diagnostics.Trace.WriteLine($"NeoIni: Save on dispose failed: {ex.Message}"); }
+#else
+            catch { }
 #endif
-            }
             GC.SuppressFinalize(this);
         }
 #endif
