@@ -73,7 +73,12 @@ namespace NeoIni
             ValidateTwoValue(section, key);
             string valueString = NeoIniParser.ValueToString(value);
             ValidateValue(valueString, true);
-            using (Lock.WriteLock()) NeoIniReaderCore.AddKey(Data, section, key, valueString);
+            try { using (Lock.WriteLock()) NeoIniReaderCore.AddKey(Data, section, key, valueString); }
+            catch (InvalidOperationException e)
+            {
+                Provider.RaiseError(this, new ProviderErrorEventArgs(e));
+                return;
+            }
             KeyAdded?.Invoke(this, new KeyEventArgs(section, key, valueString));
             SectionChanged?.Invoke(this, new SectionEventArgs(section));
         }

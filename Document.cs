@@ -16,7 +16,7 @@ namespace NeoIni
     /// <br/>
     /// <b>Target Frameworks: .NET 5+ and .NET Standard 2.0</b>
     /// <br/>
-    /// <b>Version: 3.4</b>
+    /// <b>Version: 3.4.1</b>
     /// <br/>
     /// <b>Black Box Philosophy:</b> This class follows a strict "black box" design principle - users interact only through the public API without needing to understand internal implementation details. Input goes in, processed output comes out, internals remain hidden and abstracted.
     /// </summary>
@@ -41,11 +41,31 @@ namespace NeoIni
         }
 
         /// <summary>Releases managed resources and saves changes to the file</summary>
-        public void Dispose() { Dispose(true); GC.SuppressFinalize(this); }
+        public void Dispose()
+        {
+            try { Dispose(true); }
+            catch (Exception ex)
+            {
+#if DEBUG
+                System.Diagnostics.Trace.WriteLine($"NeoIni: Save on dispose failed: {ex.Message}");
+#endif
+            }
+            GC.SuppressFinalize(this);
+        }
 
 #if !NETSTANDARD2_0
         /// <summary>Asynchronously releases managed resources and saves changes to the file</summary>
-        public async ValueTask DisposeAsync() { await DisposeAsync(true).ConfigureAwait(false); GC.SuppressFinalize(this); }
+        public async ValueTask DisposeAsync()
+        {
+            try { await DisposeAsync(true).ConfigureAwait(false); }
+            catch (Exception ex)
+            {
+#if DEBUG
+                System.Diagnostics.Trace.WriteLine($"NeoIni: Async save on dispose failed: {ex.Message}");
+#endif
+            }
+            GC.SuppressFinalize(this);
+        }
 #endif
 
         /// <summary>
@@ -104,9 +124,12 @@ namespace NeoIni
         public void SaveFile()
         {
             ThrowIfDisposed();
-            string content = GetSaveContent();
-            Provider.Save(content, UseChecksum);
-            FinalizeSave();
+            try
+            {
+                string content = GetSaveContent();
+                Provider.Save(content, UseChecksum);
+            }
+            finally { FinalizeSave(); }
         }
 
         /// <summary>Asynchronously saves the current data to the INI file</summary>
@@ -114,9 +137,12 @@ namespace NeoIni
         {
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
-            string content = await GetSaveContentAsync(cancellationToken).ConfigureAwait(false);
-            await Provider.SaveAsync(content, UseChecksum, cancellationToken).ConfigureAwait(false);
-            await FinalizeSaveAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                string content = await GetSaveContentAsync(cancellationToken).ConfigureAwait(false);
+                await Provider.SaveAsync(content, UseChecksum, cancellationToken).ConfigureAwait(false);
+            }
+            finally { await FinalizeSaveAsync(cancellationToken).ConfigureAwait(false); }
         }
 
         /// <summary>Determines whether a specific section exists in the loaded data</summary>
@@ -160,9 +186,18 @@ namespace NeoIni
         /// <param name="section">The name of the target section.</param>
         /// <param name="key">The name of the key to create.</param>
         /// <param name="value">The value to assign to the key.</param>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when the specified key already exists in the given section.
+        /// Use <see cref="SetValue{T}"/> to update an existing key.
+        /// </exception>
         public void AddKey<T>(string section, string key, T value)
         {
-            AddKeyHelper<T>(section, key, value);
+            try { AddKeyHelper<T>(section, key, value); }
+            catch (InvalidOperationException e)
+            {
+                Provider.RaiseError(this, new ProviderErrorEventArgs(e));
+                return;
+            }
             DoAutoSave();
         }
 
@@ -172,9 +207,18 @@ namespace NeoIni
         /// <param name="key">The name of the key to create.</param>
         /// <param name="value">The value to assign to the key.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when the specified key already exists in the given section.
+        /// Use <see cref="SetValue{T}"/> to update an existing key.
+        /// </exception>
         public async Task AddKeyAsync<T>(string section, string key, T value, CancellationToken cancellationToken = default)
         {
-            await AddKeyHelperAsync<T>(section, key, value, cancellationToken).ConfigureAwait(false);
+            try { await AddKeyHelperAsync<T>(section, key, value, cancellationToken).ConfigureAwait(false); }
+            catch (InvalidOperationException e)
+            {
+                Provider.RaiseError(this, new ProviderErrorEventArgs(e));
+                return;
+            }
             await DoAutoSaveAsync(cancellationToken).ConfigureAwait(false);
         }
 
@@ -566,9 +610,18 @@ namespace NeoIni
         /// <param name="section">The section containing the key to rename</param>
         /// <param name="oldKey">The current name of the key</param>
         /// <param name="newKey">The new name for the key</param>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when the new key name already exists in the same section,
+        /// or when the old key does not exist (the operation silently does nothing in that case).
+        /// </exception>
         public void RenameKey(string section, string oldKey, string newKey)
         {
-            RenameKeyHelper(section, oldKey, newKey);
+            try { RenameKeyHelper(section, oldKey, newKey); }
+            catch (InvalidOperationException e)
+            {
+                Provider.RaiseError(this, new ProviderErrorEventArgs(e));
+                return;
+            }
             DoAutoSave();
         }
 
@@ -577,18 +630,36 @@ namespace NeoIni
         /// <param name="oldKey">The current name of the key</param>
         /// <param name="newKey">The new name for the key</param>
         /// <param name="cancellationToken">Cancellation token.</param>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when the new key name already exists in the same section,
+        /// or when the old key does not exist (the operation silently does nothing in that case).
+        /// </exception>
         public async Task RenameKeyAsync(string section, string oldKey, string newKey, CancellationToken cancellationToken = default)
         {
-            await RenameKeyHelperAsync(section, oldKey, newKey, cancellationToken).ConfigureAwait(false);
+            try { await RenameKeyHelperAsync(section, oldKey, newKey, cancellationToken).ConfigureAwait(false); }
+            catch (InvalidOperationException e)
+            {
+                Provider.RaiseError(this, new ProviderErrorEventArgs(e));
+                return;
+            }
             await DoAutoSaveAsync(cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>Renames an entire section by moving all its contents to a new section name and removing the old one</summary>
         /// <param name="oldSection">The current name of the section</param>
         /// <param name="newSection">The new name for the section</param>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when the new section name already exists. 
+        /// If the old section does not exist, the operation silently does nothing.
+        /// </exception>
         public void RenameSection(string oldSection, string newSection)
         {
-            RenameSectionHelper(oldSection, newSection);
+            try { RenameSectionHelper(oldSection, newSection); }
+            catch (InvalidOperationException e)
+            {
+                Provider.RaiseError(this, new ProviderErrorEventArgs(e));
+                return;
+            }
             DoAutoSave();
         }
 
@@ -596,9 +667,18 @@ namespace NeoIni
         /// <param name="oldSection">The current name of the section</param>
         /// <param name="newSection">The new name for the section</param>
         /// <param name="cancellationToken">Cancellation token.</param>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when the new section name already exists.
+        /// If the old section does not exist, the operation silently does nothing.
+        /// </exception>
         public async Task RenameSectionAsync(string oldSection, string newSection, CancellationToken cancellationToken = default)
         {
-            await RenameSectionHelperAsync(oldSection, newSection, cancellationToken).ConfigureAwait(false);
+            try { await RenameSectionHelperAsync(oldSection, newSection, cancellationToken).ConfigureAwait(false); }
+            catch (InvalidOperationException e)
+            {
+                Provider.RaiseError(this, new ProviderErrorEventArgs(e));
+                return;
+            }
             await DoAutoSaveAsync(cancellationToken).ConfigureAwait(false);
         }
 

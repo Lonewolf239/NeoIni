@@ -63,7 +63,11 @@ namespace NeoIni
         public bool UseChecksum
         {
             get => !HumanMode && _UseChecksum;
-            set => _UseChecksum = value;
+            set
+            {
+                if (HumanMode) throw new ModeConflictException();
+                _UseChecksum = value;
+            }
         }
 
         /// <summary>

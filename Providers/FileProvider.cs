@@ -150,8 +150,8 @@ namespace NeoIni.Providers
                     if (useChecksum) ms.Write(WarningBytes, 0, WarningBytes.Length);
                     ms.Write(plaintextBytes, 0, plaintextBytes.Length);
 #else
-					if (useChecksum) await ms.WriteAsync(WarningBytes, ct).ConfigureAwait(false);
-					await ms.WriteAsync(plaintextBytes, ct).ConfigureAwait(false);
+                    if (useChecksum) await ms.WriteAsync(WarningBytes, ct).ConfigureAwait(false);
+                    await ms.WriteAsync(plaintextBytes, ct).ConfigureAwait(false);
 #endif
                     ct.ThrowIfCancellationRequested();
                     dataWithChecksum = AddChecksum(ms.ToArray(), useChecksum);
@@ -167,14 +167,14 @@ namespace NeoIni.Providers
                         ms.Write(header, 0, header.Length);
                         if (useChecksum) ms.Write(WarningBytes, 0, WarningBytes.Length);
 #else
-						await using MemoryStream ms = new();
-						await ms.WriteAsync(header, ct).ConfigureAwait(false);
-						if (useChecksum) await ms.WriteAsync(WarningBytes, ct).ConfigureAwait(false);
+                    await using MemoryStream ms = new();
+                    await ms.WriteAsync(header, ct).ConfigureAwait(false);
+                    if (useChecksum) await ms.WriteAsync(WarningBytes, ct).ConfigureAwait(false);
 #endif
-                        await EncryptionProvider.EncryptAsync(ms, EncryptionKey, Salt, plaintextBytes, ct).ConfigureAwait(false);
-                        ct.ThrowIfCancellationRequested();
-                        dataWithChecksum = AddChecksum(ms.ToArray(), useChecksum);
-                        await NeoIniIO.WriteBytesAsync(TempFilePath, dataWithChecksum, ct).ConfigureAwait(false);
+                    await EncryptionProvider.EncryptAsync(ms, EncryptionKey, Salt, plaintextBytes, ct).ConfigureAwait(false);
+                    ct.ThrowIfCancellationRequested();
+                    dataWithChecksum = AddChecksum(ms.ToArray(), useChecksum);
+                    await NeoIniIO.WriteBytesAsync(TempFilePath, dataWithChecksum, ct).ConfigureAwait(false);
 #if NETSTANDARD2_0
                     }
 #endif
@@ -191,11 +191,13 @@ namespace NeoIni.Providers
         {
             if (path is null) return null;
             if (!File.Exists(path)) return null;
-            byte[] fileBytes = NeoIniIO.ReadAllBytes(path);
-            if (!TryParseHeader(fileBytes, out var headerParameters)) return null;
+            byte[] headerBytes = NeoIniIO.ReadBytes(path, HeaderSize);
+            if (!TryParseHeader(headerBytes, out var headerParameters)) return null;
             if (headerParameters is null) return null;
             if (!headerParameters.IsEncrypted) return null;
-            if (!TryReadSalt(fileBytes, headerParameters.HeaderLength, headerParameters.HasChecksum, out byte[]? salt)) return null;
+            int saltIndex = HeaderSize + IvSize;
+            if (headerParameters.HasChecksum) saltIndex += WarningBytes.Length;
+            byte[] salt = NeoIniIO.ReadBytes(path, SaltSize, saltIndex);
             return salt;
         }
 
@@ -203,9 +205,13 @@ namespace NeoIni.Providers
         {
             if (!File.Exists(FilePath)) return Array.Empty<byte>();
             var lastWrite = File.GetLastWriteTimeUtc(FilePath);
-            var length = new FileInfo(FilePath).Length;
+            long length = new FileInfo(FilePath).Length;
             using var ms = new MemoryStream();
 #if NETSTANDARD2_0
+            byte[] ticksBytes = BitConverter.GetBytes(lastWrite.Ticks);
+            byte[] lengthBytes = BitConverter.GetBytes(length);
+            ms.Write(ticksBytes, 0, ticksBytes.Length);
+            ms.Write(lengthBytes, 0, lengthBytes.Length);
 #else
             ms.Write(BitConverter.GetBytes(lastWrite.Ticks));
             ms.Write(BitConverter.GetBytes(length));
@@ -215,13 +221,8 @@ namespace NeoIni.Providers
 
         public void RaiseError(object? sender, ProviderErrorEventArgs e)
         {
-#if NETSTANDARD2_0
-            if (!(Error is null)) Error.Invoke(sender, e);
-#else
-
-            if (Error is not null) Error.Invoke(sender, e);
-#endif
-            else throw e.Exception;
+            if (Error is null) throw e.Exception;
+            else Error.Invoke(sender, e);
         }
     }
 }

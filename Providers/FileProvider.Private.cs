@@ -213,26 +213,11 @@ namespace NeoIni.Providers
             catch (IOException ex) { return ReadError(ex, isBackup); }
         }
 
-        private static bool TryReadSalt(byte[] fileBytes, int headerLength, bool hasChecksum, out byte[]? salt)
-        {
-            int start = headerLength + (hasChecksum ? WarningBytes.Length : 0) + IvSize;
-            if (fileBytes.Length < start + SaltSize) { salt = null; return false; }
-#if NETSTANDARD2_0
-            salt = new byte[SaltSize];
-            Array.Copy(fileBytes, start, salt, 0, SaltSize);
-#else
-            salt = fileBytes[start..(start + SaltSize)];
-#endif
-            return true;
-        }
-
         private static bool TryParseHeader(byte[]? fileBytes, out HeaderParameters? headerParameters)
         {
             headerParameters = null;
-            if (fileBytes is null) return false;
-            if (fileBytes.Length < HeaderSize) return false;
+            if (fileBytes is null || fileBytes.Length < HeaderSize) return false;
 #if NETSTANDARD2_0
-            if (fileBytes.Length < FileSignature.Length) return false;
             for (int i = 0; i < FileSignature.Length; i++) { if (fileBytes[i] != FileSignature[i]) return false; }
 #else
             if (!fileBytes.AsSpan(0, FileSignature.Length).SequenceEqual(FileSignature)) return false;

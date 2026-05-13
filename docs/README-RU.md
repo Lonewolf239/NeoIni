@@ -22,7 +22,7 @@ dotnet add package NeoIni
 ```
 
 - **Пакет:** [nuget.org/packages/NeoIni](https://www.nuget.org/packages/NeoIni)
-- **Версия:** 3.4 | **.NET 5+** | **.NET Standard 2.0**
+- **Версия:** 3.4.1 | **.NET 5+** | **.NET Standard 2.0**
 - **Разработчик:** [Lonewolf239](https://github.com/Lonewolf239)
 
 ---
@@ -36,7 +36,7 @@ dotnet add package NeoIni
 | 🔐 | **Thread-safe** | `AsyncReaderWriterLock` защищает все операции чтения и записи при конкурентном доступе и полностью поддерживает `async`/`await`. |
 | 📦 | **Typed Get/Set** | Чтение и запись `bool`, `int`, `double`, `DateTime`, `enum`, `string` и других типов с автоматическим парсингом и значениями по умолчанию. |
 | ⚡ | **AutoSave & AutoBackup** | Автоматическое сохранение после N операций. Атомарная запись через `.tmp` + откат на `.backup` при ошибках. |
-| 🔄 | **Hot-reload** | File watcher с поллингом и сравнением контрольных сумм — обновление конфига без перезапуска. |
+| 🔄 | **Hot-reload** | Горячая перезагрузка на основе опроса с сравнением контрольных сумм. |
 | 🧩 | **Pluggable providers** | Интерфейс `INeoIniProvider` — храните конфиги в базе данных, удалённом сервисе, памяти или любом другом бэкенде. |
 | 🗺️ | **Object mapping** | Source-generated `Get<T>()` / `Set<T>()` для POCO-классов через `NeoIniKeyAttribute`. |
 | ✏️ | **Human-editable mode** | Сохранение комментариев и форматирования для ручного редактирования INI-файлов (без checksum, без шифрования). |
@@ -88,7 +88,11 @@ string host = document.GetValue("Database", "Host", "127.0.0.1");
 int    port = document.GetValue("Database", "Port", 3306);
 
 // Чтение без побочных эффектов (без AutoAdd, без модификации файла)
-int level = document.TryGetValue("Game", "Level", 1);
+if (document.TryGetValue("Game", "Level", out int level))
+{
+    /* use level */
+}
+else level = 1;
 ```
 
 ```csharp
@@ -159,6 +163,7 @@ document.UseAutoAdd = true;
 document.UseChecksum = true;
 document.SaveOnDispose = true;
 document.AllowEmptyValues = true;
+document.UseShielding = true;
 ```
 
 </details>

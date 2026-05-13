@@ -62,8 +62,11 @@ public class MyDatabaseProvider : INeoIniProvider
         // or null if not supported
     }
 
-    public void RaiseError(object sender, ProviderErrorEventArgs e)
-        => Error?.Invoke(sender ?? this, e);
+    public void RaiseError(object? sender, ProviderErrorEventArgs e)
+    {
+        if (Error is null) throw e.Exception;
+        else Error.Invoke(sender, e);
+    }
 }
 ```
 
@@ -71,6 +74,7 @@ public class MyDatabaseProvider : INeoIniProvider
 
 ### Notes
 
+- The `RaiseError` implementation should raise the `Error` event, and if there are no subscribers, throw an `e.Exception` exception to maintain compatibility with `NeoIniDocument` expectations.
 - All existing file-based constructors (`new NeoIniDocument(path)`, encryption variants) continue to work — they use the built-in `NeoIniFileProvider` internally.
 - `UseAutoBackup`, `DeleteFile`, `DeleteBackup`, and `GetEncryptionPassword` are file-provider-specific. Calling them on a custom provider throws `UnsupportedProviderOperationException`.
 - Hot-reload works with any provider that returns a meaningful value from `GetStateChecksum()`.

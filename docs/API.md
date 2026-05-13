@@ -60,6 +60,7 @@ Complete reference for all public methods, options, and events exposed by `NeoIn
 | `UseChecksum` | Calculates and verifies checksums during load/save operations | `true` |
 | `SaveOnDispose` | Automatically saves the configuration when the instance is disposed | `true` |
 | `AllowEmptyValues` | Permits configuration keys to be saved with empty or null values | `true` |
+| `UseShielding` | Enables quoted values (e.g., key = "value ; not a comment") | `false` |
 
 **Built-in presets:** `Default`, `Safe`, `Performance`, `ReadOnly`, `BufferedAutoSave(interval)`.
 
@@ -84,3 +85,5 @@ Complete reference for all public methods, options, and events exposed by `NeoIn
 | `ChecksumMismatch` | Called when the checksum does not match while loading |
 | `SearchCompleted` | Called after each search with the pattern and match count |
 | `Error` | Called when errors occur (parsing, saving, reading, etc.) |
+
+> **Note:** If no handlers are subscribed to an event, the provider (by default) throws an exception. For silent handling, always subscribe to `Error`.

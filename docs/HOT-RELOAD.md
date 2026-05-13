@@ -65,3 +65,4 @@ The built‑in file monitor is used by default when you omit the parameter. Cust
 Hot‑reload works with any `INeoIniProvider` that returns a meaningful value from `GetStateChecksum()`. The built‑in `NeoIniFileProvider` uses the file’s last‑write timestamp and size as its checksum. Custom providers can return any byte array that changes when the underlying data changes.
 
 > **Note:** In versions prior to 2.0, hot‑reload was built directly into `NeoIniReader` and did not support custom monitors. Upgrade to 2.0 to take advantage of the new pluggable architecture.
+> **Explanation:** The built-in file provider uses a combination of the last write date and file size. This is sufficient for most scenarios.

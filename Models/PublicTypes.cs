@@ -104,15 +104,15 @@ namespace NeoIni.Models
     public class NeoIniData
     {
         /// <summary>Gets the structured dictionary containing sections, keys, and their corresponding values.</summary>
-        public Data? Data { get; }
+        public Data Data { get; }
 
         /// <summary>Gets the collection of comments preserved from the INI source.</summary>
-        public List<Comment>? Comments { get; }
+        public List<Comment> Comments { get; }
 
         /// <summary>Initializes a new instance of the <see cref="NeoIniData"/> class.</summary>
         /// <param name="data">The parsed INI data structure.</param>
         /// <param name="comments">The list of parsed INI comments.</param>
-        public NeoIniData(Data? data, List<Comment>? comments)
+        public NeoIniData(Data data, List<Comment> comments)
         {
             Data = data;
             Comments = comments;

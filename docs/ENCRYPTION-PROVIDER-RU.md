@@ -33,7 +33,7 @@ using System.Threading.Tasks;
 using NeoIni.Models;
 using NeoIni.Providers;
 
-public class MyAesGcmEncryptionProvider : IEncryptionProvider
+public class MyAesEncryptionProvider : IEncryptionProvider
 {
     public EncryptionParameters GetEncryptionParameters(string? password = null, byte[]? salt = null)
     {
@@ -55,7 +55,7 @@ public class MyAesGcmEncryptionProvider : IEncryptionProvider
         // Порядок ОБЯЗАТЕЛЕН: IV (16) + Salt (16) + EncryptedData.
         // Этот порядок требуется для совместимости со встроенным файловым провайдером.
         using var aes = Aes.Create();
-        aes.Mode = CipherMode.GCM; // пример
+        aes.Mode = CipherMode.CBC;
         aes.Key = key;
         aes.GenerateIV();
         memoryStream.Write(aes.IV, 0, aes.IV.Length);
@@ -72,7 +72,7 @@ public class MyAesGcmEncryptionProvider : IEncryptionProvider
     {
         // Асинхронная версия – тот же порядок
         using var aes = Aes.Create();
-        aes.Mode = CipherMode.GCM;
+        aes.Mode = CipherMode.CBC;
         aes.Key = key;
         aes.GenerateIV();
         ct.ThrowIfCancellationRequested();
@@ -90,7 +90,7 @@ public class MyAesGcmEncryptionProvider : IEncryptionProvider
     {
         // Расшифровка с использованием ключа и IV (соль уже использована при выводе ключа)
         using var aes = Aes.Create();
-        aes.Mode = CipherMode.GCM;
+        aes.Mode = CipherMode.CBC;
         aes.Key = key;
         aes.IV = iv;
         using var ms = new MemoryStream(encryptedBytes);
@@ -105,7 +105,7 @@ public class MyAesGcmEncryptionProvider : IEncryptionProvider
     {
         // Асинхронная версия
         using var aes = Aes.Create();
-        aes.Mode = CipherMode.GCM;
+        aes.Mode = CipherMode.CBC;
         aes.Key = key;
         aes.IV = iv;
         ct.ThrowIfCancellationRequested();

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using NeoIni.Models;
 using NeoIni.Providers;
 
@@ -8,6 +9,8 @@ namespace NeoIni
     {
         private NeoIniDocument(NeoIniOptions? options, IEncryptionProvider? encryptionProvider, string? path, EncryptionType encryptionType)
         {
+            Data = new Dictionary<string, Dictionary<string, string>>();
+            Comments = new List<Comment>();
             FilePath = path;
             EncryptionType = encryptionType;
             EncryptionProvider = encryptionProvider ?? new NeoIniEncryptionProvider();

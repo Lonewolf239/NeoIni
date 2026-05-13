@@ -25,8 +25,9 @@ NeoIniDocument document = await NeoIniDocument.CreateHumanModeAsync("config.ini"
 
 - **Comments preserved:** Lines starting with `;` are kept intact across load/save cycles.
 - **Original ordering:** Sections and keys remain in their original order.
-- **No checksum:** `UseChecksum` is disabled — the file is not checksummed or integrity-checked.
+- **No checksum:** The `UseChecksum` property is ignored; checksum is never calculated or checked.
 - **No encryption:** AES-256 encryption is not available in human mode.
+- **No shielding:** `UseShielding` cannot be enabled because escaping quotes is incompatible with manual editing
 
 ---
 

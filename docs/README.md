@@ -22,7 +22,7 @@ dotnet add package NeoIni
 ```
 
 - **Package:** [nuget.org/packages/NeoIni](https://www.nuget.org/packages/NeoIni)
-- **Version:** 3.4 | **.NET 5+** | **.NET Standard 2.0**
+- **Version:** 3.4.1 | **.NET 5+** | **.NET Standard 2.0**
 - **Developer:** [Lonewolf239](https://github.com/Lonewolf239)
 
 ---
@@ -36,7 +36,7 @@ dotnet add package NeoIni
 | 🔐 | **Thread-safe** | `AsyncReaderWriterLock` protects all read/write operations under concurrent access with full `async`/`await` support. |
 | 📦 | **Typed Get/Set** | Read and write `bool`, `int`, `double`, `DateTime`, `enum`, `string` and more with automatic parsing and defaults. |
 | ⚡ | **AutoSave & AutoBackup** | Automatic saving after N operations. Atomic writes via `.tmp` + `.backup` fallback on errors. |
-| 🔄 | **Hot-reload** | File watcher with polling and checksum comparison — live config updates without restart. |
+| 🔄 | **Hot-reload** | Polling-based hot‑reload with checksum comparison. |
 | 🧩 | **Pluggable providers** | `INeoIniProvider` interface — store configs in a database, remote service, memory, or any custom backend. |
 | 🗺️ | **Object mapping** | Source-generated `Get<T>()` / `Set<T>()` for POCO classes via `NeoIniKeyAttribute`. |
 | ✏️ | **Human-editable mode** | Preserve comments and formatting for hand-edited INI files (no checksum, no encryption). |
@@ -88,7 +88,11 @@ string host = document.GetValue("Database", "Host", "127.0.0.1");
 int    port = document.GetValue("Database", "Port", 3306);
 
 // Read without side effects (no AutoAdd, no file modification)
-int level = document.TryGetValue("Game", "Level", 1);
+if (document.TryGetValue("Game", "Level", out int level))
+{
+    /* use level */
+}
+else level = 1;
 ```
 
 ```csharp
@@ -159,6 +163,7 @@ document.UseAutoAdd = true;
 document.UseChecksum = true;
 document.SaveOnDispose = true;
 document.AllowEmptyValues = true;
+document.UseShielding = true;
 ```
 
 </details>

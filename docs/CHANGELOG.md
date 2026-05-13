@@ -4,11 +4,42 @@
 ## Changelog · NeoIni
 
 <details open>
+<summary><strong>3.4.1</strong> — May 13, 2026</summary>
+
+#### List of changes
+
+- **Improved auto‑save thread safety**
+  - Added `IsSaving` flag to prevent re‑entrancy in `DoAutoSave`/`DoAutoSaveAsync`.
+  - Auto‑save now correctly handles concurrent invocations.
+- **Behavior changes for adding/renaming keys and sections**
+  - `AddKey` now throws `InvalidOperationException` if the key already exists (previously ignored).
+  - `RenameKey` throws `InvalidOperationException` if the new key already exists (previously overwritten).
+  - `RenameSection` throws `InvalidOperationException` if the new section already exists (previously ignored).
+- **Better error handling in public methods**
+  - `Dispose` and `DisposeAsync` now have `try-catch` blocks that suppress save errors (traced in `DEBUG` builds).
+- **File I/O optimization**
+  - Added `NeoIniIO.ReadBytes` to read arbitrary file ranges without loading the entire file.
+  - `NeoIniFileProvider.GetSalt` now reads only the header and salt, reducing memory usage and I/O time.
+- **HotReloadMonitor improvements**
+  - Added `MonitorTask` field to track the background task.
+  - `Dispose` now waits for the task to complete (`MonitorTask?.Wait()`) for proper resource cleanup.
+- **Type changes (non‑nullable)**
+  - `Data` field in `NeoIniDocument` is no longer nullable; initialized as an empty dictionary in the constructor.
+  - `Comments` field is also initialized as an empty list.
+  - `NeoIniData` class now requires non‑nullable `Data` and `Comments` (previously allowed `null`).
+- **.NET Standard 2.0 support**
+  - `GetStateChecksum` now has an implementation for `NETSTANDARD2_0` (was missing).
+- **Dependency update**
+  - `AsyncReaderWriterLock` package version upgraded from `1.0.1` to `1.0.2`.
+
+</details>
+
+<details>
 <summary><strong>3.4</strong> — March 31, 2026</summary>
 
 #### List of changes
 
-- **Internal class extracted to a separate library** – the `AsyncReaderWriterLock` class (previously internal) has been moved to a dedicated NuGet package `AsyncReaderWriterLock` (version 1.0.1).
+- **Internal class extracted to a separate library** – the `AsyncReaderWriterLock` class (previously internal) has been moved to a dedicated NuGet package `AsyncReaderWriterLock`.
 - The main library now has a transitive dependency on the new package. This is an internal refactoring and does not affect the public API or require any code changes in consuming projects.
 - If you need to use `AsyncReaderWriterLock` directly in your own code, you can now reference the standalone package explicitly.
 

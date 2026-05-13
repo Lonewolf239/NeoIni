@@ -33,7 +33,7 @@ using System.Threading.Tasks;
 using NeoIni.Models;
 using NeoIni.Providers;
 
-public class MyAesGcmEncryptionProvider : IEncryptionProvider
+public class MyAesEncryptionProvider : IEncryptionProvider
 {
     public EncryptionParameters GetEncryptionParameters(string? password = null, byte[]? salt = null)
     {
@@ -55,7 +55,7 @@ public class MyAesGcmEncryptionProvider : IEncryptionProvider
         // The order MUST be: IV (16) + Salt (16) + EncryptedData.
         // This order is required for compatibility with the built-in file provider.
         using var aes = Aes.Create();
-        aes.Mode = CipherMode.GCM; // example
+        aes.Mode = CipherMode.CBC;
         aes.Key = key;
         aes.GenerateIV();
         memoryStream.Write(aes.IV, 0, aes.IV.Length);
@@ -72,7 +72,7 @@ public class MyAesGcmEncryptionProvider : IEncryptionProvider
     {
         // Async version – same ordering
         using var aes = Aes.Create();
-        aes.Mode = CipherMode.GCM;
+        aes.Mode = CipherMode.CBC;
         aes.Key = key;
         aes.GenerateIV();
         ct.ThrowIfCancellationRequested();
@@ -90,7 +90,7 @@ public class MyAesGcmEncryptionProvider : IEncryptionProvider
     {
         // Decrypt using the key and IV (salt is already used in key derivation, not needed here)
         using var aes = Aes.Create();
-        aes.Mode = CipherMode.GCM;
+        aes.Mode = CipherMode.CBC;
         aes.Key = key;
         aes.IV = iv;
         using var ms = new MemoryStream(encryptedBytes);
@@ -105,7 +105,7 @@ public class MyAesGcmEncryptionProvider : IEncryptionProvider
     {
         // Async version
         using var aes = Aes.Create();
-        aes.Mode = CipherMode.GCM;
+        aes.Mode = CipherMode.CBC;
         aes.Key = key;
         aes.IV = iv;
         ct.ThrowIfCancellationRequested();

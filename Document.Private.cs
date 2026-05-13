@@ -18,8 +18,8 @@ namespace NeoIni
         private readonly IEncryptionProvider EncryptionProvider;
         private EncryptionType EncryptionType = EncryptionType.None;
 
-        private Dictionary<string, Dictionary<string, string>>? Data;
-        private List<Comment>? Comments;
+        private Dictionary<string, Dictionary<string, string>> Data;
+        private List<Comment> Comments;
         private readonly AsyncReaderWriterLock Lock = new AsyncReaderWriterLock();
 
         private bool Disposed = false;
@@ -31,6 +31,7 @@ namespace NeoIni
         private bool HumanMode = false;
 
         private int _AutoSaveInterval;
+        private int IsSaving = 0;
         private int SaveIterationCounter = 0;
 
         private bool _UseChecksum;
@@ -54,14 +55,20 @@ namespace NeoIni
             if (Interlocked.CompareExchange(ref DisposeState, 1, 0) != 0) return;
             if (disposing)
             {
-                SafeStopHotReload();
-                if (ExtractContent() is string content)
+                try
                 {
-                    Provider.Save(content, UseChecksum);
-                    Saved?.Invoke(this, EventArgs.Empty);
+                    SafeStopHotReload();
+                    if (ExtractContent() is string content)
+                    {
+                        Provider.Save(content, UseChecksum);
+                        Saved?.Invoke(this, EventArgs.Empty);
+                    }
                 }
-                DataCleared?.Invoke(this, EventArgs.Empty);
-                Lock.Dispose();
+                finally
+                {
+                    DataCleared?.Invoke(this, EventArgs.Empty);
+                    Lock.Dispose();
+                }
             }
             Disposed = true;
         }
@@ -73,14 +80,20 @@ namespace NeoIni
             if (Interlocked.CompareExchange(ref DisposeState, 1, 0) != 0) return;
             if (disposing)
             {
-                SafeStopHotReload();
-                if (ExtractContent() is string content)
+                try
                 {
-                    await Provider.SaveAsync(content, UseChecksum, CancellationToken.None).ConfigureAwait(false);
-                    Saved?.Invoke(this, EventArgs.Empty);
+                    SafeStopHotReload();
+                    if (ExtractContent() is string content)
+                    {
+                        await Provider.SaveAsync(content, UseChecksum, CancellationToken.None).ConfigureAwait(false);
+                        Saved?.Invoke(this, EventArgs.Empty);
+                    }
                 }
-                DataCleared?.Invoke(this, EventArgs.Empty);
-                Lock.Dispose();
+                finally
+                {
+                    DataCleared?.Invoke(this, EventArgs.Empty);
+                    Lock.Dispose();
+                }
             }
             Disposed = true;
         }
@@ -88,14 +101,14 @@ namespace NeoIni
 
         internal void Load()
         {
-            var neoIniData = Provider.GetData();
+            var neoIniData = Provider.GetData(HumanMode);
             Data = neoIniData.Data;
             Comments = neoIniData.Comments;
         }
 
         internal async Task LoadAsync(CancellationToken cancellationToken = default)
         {
-            var neoIniData = await Provider.GetDataAsync(ct: cancellationToken).ConfigureAwait(false);
+            var neoIniData = await Provider.GetDataAsync(HumanMode, ct: cancellationToken).ConfigureAwait(false);
             Data = neoIniData.Data;
             Comments = neoIniData.Comments;
         }
@@ -152,24 +165,35 @@ namespace NeoIni
 
         private bool ShouldAutoSave()
         {
-            if (!UseAutoSave) return false;
+            if (Interlocked.CompareExchange(ref IsSaving, 1, 0) != 0) return false;
+            if (!UseAutoSave) { Interlocked.Exchange(ref IsSaving, 0); return false; }
             if (AutoSaveInterval == 0) return true;
-            return Interlocked.Increment(ref SaveIterationCounter) % AutoSaveInterval == 0;
+            if (Interlocked.Increment(ref SaveIterationCounter) % AutoSaveInterval == 0) return true;
+            Interlocked.Exchange(ref IsSaving, 0);
+            return false;
         }
 
         private void DoAutoSave()
         {
             if (!ShouldAutoSave()) return;
-            AutoSave?.Invoke(this, EventArgs.Empty);
-            SaveFile();
+            try
+            {
+                AutoSave?.Invoke(this, EventArgs.Empty);
+                SaveFile();
+            }
+            finally { Interlocked.Exchange(ref IsSaving, 0); }
         }
 
         private async Task DoAutoSaveAsync(CancellationToken ct)
         {
             ct.ThrowIfCancellationRequested();
             if (!ShouldAutoSave()) return;
-            AutoSave?.Invoke(this, EventArgs.Empty);
-            await SaveFileAsync(ct).ConfigureAwait(false);
+            try
+            {
+                AutoSave?.Invoke(this, EventArgs.Empty);
+                await SaveFileAsync(ct).ConfigureAwait(false);
+            }
+            finally { Interlocked.Exchange(ref IsSaving, 0); }
         }
 
         private async void OnHotReloadChangeDetected(object? sender, EventArgs e)

@@ -17,6 +17,7 @@ namespace NeoIni.Providers
         private readonly ManualResetEventSlim PauseEvent = new ManualResetEventSlim(true);
         private int PollingInterval;
         private bool Disposed;
+        private Task? MonitorTask;
 
         public event EventHandler? ChangeDetected;
 
@@ -33,7 +34,7 @@ namespace NeoIni.Providers
                 PollingInterval = pollingInterval;
                 PauseEvent.Set();
             }
-            Task.Run(RunAsync, CancellationToken.None);
+            MonitorTask = Task.Run(RunAsync, CancellationToken.None);
         }
 
         private async Task RunAsync()
@@ -98,6 +99,9 @@ namespace NeoIni.Providers
         {
             if (Disposed) return;
             Stop();
+            try { MonitorTask?.Wait(); }
+            catch (AggregateException) { }
+            MonitorTask?.Dispose();
             Lock.Dispose();
             PauseEvent.Dispose();
             Disposed = true;
