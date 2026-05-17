@@ -4,6 +4,18 @@
 ## Changelog · NeoIni
 
 <details open>
+<summary><strong>3.4.2</strong> — 17 мая 2026</summary>
+
+#### List of changes
+
+- **Исправлена проблема с часовым поясом DateTime**
+  - Значения `DateTime` теперь сохраняются в UTC ISO формате (`yyyy-MM-ddTHH:mm:ss.fffZ`) и корректно парсятся независимо от локального часового пояса.
+  - `FormatInvariant` теперь обрабатывает `DateTime` и `DateTimeOffset` с конвертацией в UTC.
+  - `TryParseValue` теперь поддерживает ISO 8601 формат для `DateTime` как основную стратегию парсинга с fallback на инвариантную культуру.
+
+</details>
+
+<details>
 <summary><strong>3.4.1</strong> — 13 мая 2026</summary>
 
 #### List of changes

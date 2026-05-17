@@ -12,11 +12,19 @@ namespace NeoIni.Core
     internal partial class NeoIniParser
     {
 #if NETSTANDARD2_0
-        internal static string FormatInvariant<T>(T value) =>
+        internal static string FormatInvariant<T>(T value)
 #else
-        internal static string FormatInvariant<T>(T? value) =>
+        internal static string FormatInvariant<T>(T? value)
 #endif
-            value is IFormattable formattable ? formattable.ToString(null, CultureInfo.InvariantCulture) : value?.ToString() ?? string.Empty;
+        {
+            if (value is DateTime dt)
+                return dt.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffZ", CultureInfo.InvariantCulture);
+            if (value is DateTimeOffset dto)
+                return dto.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffZ", CultureInfo.InvariantCulture);
+            return value is IFormattable formattable
+                ? formattable.ToString(null, CultureInfo.InvariantCulture)
+                : value?.ToString() ?? string.Empty;
+        }
 
 #if NETSTANDARD2_0
         internal static string ValueToString<T>(T value)
@@ -77,8 +85,14 @@ namespace NeoIni.Core
                 if (targetType == typeof(bool))
                     return bool.TryParse(value, out bool boolResult) ? (T)(object)boolResult : defaultValue;
                 if (targetType == typeof(DateTime))
-                    return DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out DateTime dtResult) ?
-                         (T)(object)dtResult : defaultValue;
+                {
+                    if (DateTime.TryParseExact(value, "yyyy-MM-ddTHH:mm:ss.fffZ", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal,
+                                out DateTime dtResult))
+                        return (T)(object)dtResult;
+                    if (DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out dtResult))
+                        return (T)(object)dtResult;
+                    return defaultValue;
+                }
                 return (T)Convert.ChangeType(value, targetType, CultureInfo.InvariantCulture);
             }
             catch (FormatException ex)
@@ -104,8 +118,14 @@ namespace NeoIni.Core
                 if (targetType == typeof(bool))
                     return bool.TryParse(value, out bool boolResult) ? (T)(object)boolResult : defaultValue;
                 if (targetType == typeof(DateTime))
-                    return DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out DateTime dtResult) ?
-                         (T)(object)dtResult : defaultValue;
+                {
+                    if (DateTime.TryParseExact(value, "yyyy-MM-ddTHH:mm:ss.fffZ", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal,
+                                out DateTime dtResult))
+                        return (T)(object)dtResult;
+                    if (DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out dtResult))
+                        return (T)(object)dtResult;
+                    return defaultValue;
+                }
                 return (T?)Convert.ChangeType(value, targetType, CultureInfo.InvariantCulture);
             }
             catch (FormatException ex)
@@ -217,8 +237,8 @@ namespace NeoIni.Core
 #if NETSTANDARD2_0
                     string keyValueLine = string.Format("{0} = {1}{2}{1}", kvp.Key, useShielding ? "\"" : string.Empty, kvp.Value);
 #else
-					string keyValueLine = $"{kvp.Key} = " +
-						$"{(useShielding ? '"' : string.Empty)}{kvp.Value}{(useShielding ? '"' : string.Empty)}";
+                    string keyValueLine = $"{kvp.Key} = " +
+                        $"{(useShielding ? '"' : string.Empty)}{kvp.Value}{(useShielding ? '"' : string.Empty)}";
 #endif
                     content.AppendLine(GetContentHelper(kvp.Key, keyValueLine, comments));
                 }

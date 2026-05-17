@@ -4,6 +4,18 @@
 ## Changelog · NeoIni
 
 <details open>
+<summary><strong>3.4.2</strong> — May 17, 2026</summary>
+
+#### List of changes
+
+- **Fixed DateTime timezone issue**
+  - `DateTime` values are now stored in UTC ISO format (`yyyy-MM-ddTHH:mm:ss.fffZ`) and parsed correctly regardless of local timezone.
+  - `FormatInvariant` now handles `DateTime` and `DateTimeOffset` with UTC conversion.
+  - `TryParseValue` now supports ISO 8601 format for `DateTime` as primary parsing strategy with fallback to invariant culture.
+
+</details>
+
+<details>
 <summary><strong>3.4.1</strong> — May 13, 2026</summary>
 
 #### List of changes
