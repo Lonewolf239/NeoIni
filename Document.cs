@@ -10,13 +10,19 @@ using NeoIni.Providers;
 namespace NeoIni
 {
     /// <summary>
-    /// Secure, thread-safe INI configuration library for .NET with built-in integrity checking, AES-256 encryption, and a pluggable provider architecture.
+    /// Provides a secure, thread-safe configuration management framework with INI-based persistence.
+    /// <para>
+    /// <b>Important:</b> This is NOT a classic INI parser. It is a configuration system that uses an extended INI format 
+    /// as its serialization layer, adding AES-256 encryption, SHA-256 checksums, hot-reload, pluggable providers, 
+    /// automatic backup, and atomic writes. The stored files are binary-enhanced INI with headers and checksums, 
+    /// not plain text INI intended for manual editing (unless Human Mode is enabled).
+    /// </para>
     /// <br/>
     /// Developer: <a href="https://github.com/Lonewolf239">Lonewolf239</a>
     /// <br/>
     /// <b>Target Frameworks: .NET 5+ and .NET Standard 2.0</b>
     /// <br/>
-    /// <b>Version: 3.4.2</b>
+    /// <b>Version: 3.4.3</b>
     /// <br/>
     /// <b>Black Box Philosophy:</b> This class follows a strict "black box" design principle - users interact only through the public API without needing to understand internal implementation details. Input goes in, processed output comes out, internals remain hidden and abstracted.
     /// </summary>
@@ -26,7 +32,7 @@ namespace NeoIni
     public partial class NeoIniDocument : IDisposable, IAsyncDisposable
 #endif
     {
-        /// <summary>Returns the INI data formatted as it would appear in the file</summary>
+        /// <summary>Returns the serialized configuration data (INI format) formatted as it would appear in the file</summary>
         /// <returns>
         /// A string containing the serialized INI content of this instance,
         /// formatted exactly as it would be written to the underlying file.
@@ -118,7 +124,7 @@ namespace NeoIni
             HotReloadMonitor = null;
         }
 
-        /// <summary>Saves the current data to an INI file with checksums and encryption applied, if enabled</summary>
+        /// <summary>Saves the current configuration to the storage, applying checksums and encryption if enabled.</summary>
         public void SaveFile()
         {
             ThrowIfDisposed();
@@ -130,7 +136,7 @@ namespace NeoIni
             finally { FinalizeSave(); }
         }
 
-        /// <summary>Asynchronously saves the current data to the INI file</summary>
+        /// <summary>Asynchronously saves the current configuration to the storage, applying checksums and encryption if enabled.</summary>
         public async Task SaveFileAsync(CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
@@ -775,8 +781,10 @@ namespace NeoIni
             if (Provider is not NeoIniFileProvider)
 #endif
                 throw new UnsupportedProviderOperationException("Retrieving the auto-generated encryption password is only supported when using the default file provider.");
-            if (EncryptionType == EncryptionType.None) return "AutoEncryption is disabled";
-            if (EncryptionType == EncryptionType.Custom) return "CustomEncryptionPassword is used. For security reasons, the password is not saved.";
+            if (EncryptionType == EncryptionType.None)
+                throw new InvalidOperationException("AutoEncryption is disabled");
+            if (EncryptionType == EncryptionType.Custom)
+                throw new InvalidOperationException("CustomEncryptionPassword is used. For security reasons, the password is not saved.");
             return EncryptionProvider.GetEncryptionPassword(NeoIniFileProvider.GetSalt(FilePath));
         }
     }

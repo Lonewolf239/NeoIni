@@ -4,6 +4,17 @@
 ## Changelog · NeoIni
 
 <details open>
+<summary><strong>3.4.3</strong> — May 31, 2026</summary>
+
+#### List of changes
+
+- Updated documentation: clarified that NeoIni is a configuration framework with INI-based persistence, not a classic INI parser
+- Added warning to README about library‑managed files vs. manual editing
+- Corrected NuGet package description and tags
+
+</details>
+
+<details>
 <summary><strong>3.4.2</strong> — May 17, 2026</summary>
 
 #### List of changes

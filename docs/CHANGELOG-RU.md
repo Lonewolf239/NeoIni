@@ -4,6 +4,17 @@
 ## Changelog · NeoIni
 
 <details open>
+<summary><strong>3.4.3</strong> — 31 мая 2026</summary>
+
+#### List of changes
+
+- Обновлена документация: уточнено, что NeoIni — это конфигурационный фреймворк с INI-подобной сериализацией, а не классический парсер INI
+- Добавлено предупреждение в README о файлах, управляемых библиотекой
+- Исправлены описание и теги пакета NuGet
+
+</details>
+
+<details>
 <summary><strong>3.4.2</strong> — 17 мая 2026</summary>
 
 #### List of changes

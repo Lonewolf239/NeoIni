@@ -15,14 +15,16 @@
 
 # NeoIni
 
-Secure, thread-safe INI configuration library for .NET with built-in integrity checking, AES-256 encryption, and a pluggable provider architecture.
+**Secure, thread-safe configuration framework for .NET with INI-based persistence** — includes AES-256 encryption, SHA-256 integrity checks, hot reload, pluggable providers, and atomic backups.
+
+> ⚠️ **Not a classic INI parser** – NeoIni is a **configuration management system** that uses an extended INI format as its storage layer. Files written in standard mode contain binary headers, checksums, and encryption metadata, making them unsuitable for direct manual editing (use Human Mode for hand-edited configs).
 
 ```bash
 dotnet add package NeoIni
 ```
 
 - **Package:** [nuget.org/packages/NeoIni](https://www.nuget.org/packages/NeoIni)
-- **Version:** 3.4.2 | **.NET 5+** | **.NET Standard 2.0**
+- **Version:** 3.4.3 | **.NET 5+** | **.NET Standard 2.0**
 - **Developer:** [Lonewolf239](https://github.com/Lonewolf239)
 
 ---
@@ -262,4 +264,8 @@ To purchase or inquire about custom licensing, please contact the developer dire
 
 ## Philosophy
 
-**Black Box Design** — all internal logic is hidden behind the simple public API of `NeoIniDocument`. You work only with methods and events, without thinking about implementation details. NeoIni config files are owned and managed by the library; human comments are intentionally not preserved in standard mode (the in-file warning header signals this). For hand-edited configs, use [Human-editable mode](./HUMAN-MODE.md).
+**Black Box Design** — all internal logic is hidden behind the simple public API of `NeoIniDocument`. You work only with methods and events, without worrying about implementation details.
+
+**Standard Mode vs Human Mode** – In standard mode, NeoIni owns the configuration file completely: it adds a binary header, checksums, and optional encryption. This guarantees integrity but makes the file unsuitable for manual editing (a warning header is inserted). For human‑edited INI files, use the **Human Mode** (experimental) which disables checksums and encryption, preserving comments and formatting.
+
+Thus, NeoIni is not a replacement for lightweight INI parsers – it is a **robust configuration subsystem** that happens to serialize to a text format that resembles INI.

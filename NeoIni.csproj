@@ -3,10 +3,10 @@
 		<TargetFrameworks>net5.0;net6.0;net7.0;net8.0;net9.0;net10.0;netstandard2.0</TargetFrameworks>
 		<Nullable>enable</Nullable>
 		<PackageId>NeoIni</PackageId>
-		<Version>3.4.2</Version>
+		<Version>3.4.3</Version>
 		<Authors>Lonewolf239</Authors>
-		<Description>Modern, thread-safe INI configuration library for .NET 5+ with AES-256 encryption, checksum validation, hot reload, and source generators. Supports .NET Standard 2.0 for legacy environments.</Description>
-		<PackageTags>ini;config;encryption;ini-parser;configuration;secure-config;aes-ini;.NET5;.NET6;.NET7;.NET8;.NET9;.NET10;hot-reload;source-generator</PackageTags>
+		<Description>Modern, thread-safe configuration framework for .NET 5+ with INI-like persistence, AES-256 encryption, checksum validation, hot reload, pluggable providers, and source generators. Supports .NET Standard 2.0 for legacy environments.</Description>
+		<PackageTags>config;configuration;ini-serialization;encryption;secure-config;aes-config;.NET5;.NET6;.NET7;.NET8;.NET9;.NET10;hot-reload;source-generator;config-framework</PackageTags>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
 		<RepositoryType>git</RepositoryType>
