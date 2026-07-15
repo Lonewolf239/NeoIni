@@ -9,10 +9,10 @@
 #### List of changes
 
 - **Documentation improvements**
-  - Clarified that NeoIni is a configuration framework with INI-based persistence, not a classic INI parser.
-  - Added warning to README about library-managed files vs. manual editing.
+    - Clarified that NeoIni is a configuration framework with INI-based persistence, not a classic INI parser.
+    - Added warning to README about library-managed files vs. manual editing.
 - **Package metadata updates**
-  - Corrected NuGet package description and tags.
+    - Corrected NuGet package description and tags.
 
 </details>
 
