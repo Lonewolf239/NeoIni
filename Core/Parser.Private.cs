@@ -30,9 +30,9 @@ namespace NeoIni.Core
             valueSpan = line[(quoteIndex + 1)..];
             int closeQuoteIndex = valueSpan.IndexOf('"');
             if (closeQuoteIndex == -1) return line;
-			if (valueSpan[(closeQuoteIndex + 1)..].Contains('"'))
-				throw new MalformedShieldingException();
-			valueSpan = valueSpan[..closeQuoteIndex];
+            if (valueSpan[(closeQuoteIndex + 1)..].Contains('"'))
+                throw new MalformedShieldingException();
+            valueSpan = valueSpan[..closeQuoteIndex];
             return valueSpan;
         }
 #endif
@@ -126,8 +126,8 @@ namespace NeoIni.Core
             beforeSemicolon = trimmed.Substring(0, semicolonIndex).Trim();
             afterSemicolon = trimmed.Substring(semicolonIndex + 1).Trim();
 #else
-			beforeSemicolon = trimmed[..semicolonIndex].Trim();
-			afterSemicolon = trimmed[(semicolonIndex + 1)..].Trim();
+            beforeSemicolon = trimmed[..semicolonIndex].Trim();
+            afterSemicolon = trimmed[(semicolonIndex + 1)..].Trim();
 #endif
             return true;
         }

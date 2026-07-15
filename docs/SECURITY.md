@@ -11,24 +11,24 @@ Report vulnerabilities responsibly so they can be fixed before public disclosure
 
 NeoIni follows a tiered support model:
 
-| Abbreviation | Meaning | Scope |
-|--------------|---------|-------|
-| **CSR** | Current Stable Release | Full security patches and bug fixes |
-| **LSR** | Long-term Stable Release | No patches — available for download only |
-| **DSR** | Deprecated Stable Release | No patches — upgrade strongly recommended |
+| Abbreviation | Meaning                   | Scope                                     |
+| ------------ | ------------------------- | ----------------------------------------- |
+| **CSR**      | Current Stable Release    | Full security patches and bug fixes       |
+| **LSR**      | Long-term Stable Release  | No patches — available for download only  |
+| **DSR**      | Deprecated Stable Release | No patches — upgrade strongly recommended |
 
-| Version | Status | Support |
-|---------|--------|---------|
-| 3.4.3 | **CSR** | Security patches + bug fixes |
-| 3.4.2 | LSR | Available for download |
-| 3.4.1 | LSR | Available for download |
-| 3.4 | LSR | Available for download |
-| 3.3 | LSR | Available for download |
-| 3.2.2 | LSR | Available for download |
-| 3.2.1 | LSR | Available for download |
-| 3.2 | LSR | Available for download |
-| 3.1 | LSR | Available for download |
-| 3.0 | LSR | Available for download |
+| Version              | Status  | Support                                                                                                       |
+| -------------------- | ------- | ------------------------------------------------------------------------------------------------------------- |
+| 3.4.3                | **CSR** | Security patches + bug fixes                                                                                  |
+| 3.4.2                | LSR     | Available for download                                                                                        |
+| 3.4.1                | LSR     | Available for download                                                                                        |
+| 3.4                  | LSR     | Available for download                                                                                        |
+| 3.3                  | LSR     | Available for download                                                                                        |
+| 3.2.2                | LSR     | Available for download                                                                                        |
+| 3.2.1                | LSR     | Available for download                                                                                        |
+| 3.2                  | LSR     | Available for download                                                                                        |
+| 3.1                  | LSR     | Available for download                                                                                        |
+| 3.0                  | LSR     | Available for download                                                                                        |
 | 2.x, 1.x and earlier | **DSR** | Incomplete, buggy, or deprecated versions. If you are using versions older than 2.0, please upgrade to 3.2.1. |
 
 ---

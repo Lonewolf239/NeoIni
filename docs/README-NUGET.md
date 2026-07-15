@@ -18,22 +18,22 @@ dotnet add package NeoIni
 
 ## Features
 
-| | Feature | Details |
-|---|---------|---------|
-| 🔒 | **AES-256 encryption** | Transparent file-level encryption (CBC, IV + per-file salt). Key derived from user environment or a custom password. |
-| 🛡️ | **SHA-256 checksum** | Integrity validation on every load/save. On mismatch — `ChecksumMismatch` event + automatic `.backup` fallback. |
-| 🔐 | **Thread-safe** | `AsyncReaderWriterLock` protects all read/write operations under concurrent access with full `async`/`await` support. |
-| 📦 | **Typed Get/Set** | Read and write `bool`, `int`, `double`, `DateTime`, `enum`, `string` and more with automatic parsing and defaults. |
-| ⚡ | **AutoSave & AutoBackup** | Automatic saving after N operations. Atomic writes via `.tmp` + `.backup` fallback on errors. |
-| 🔄 | **Hot-reload** | Polling-based hot‑reload with checksum comparison. |
-| 🧩 | **Pluggable providers** | `INeoIniProvider` interface — store configs in a database, remote service, memory, or any custom backend. |
-| 🗺️ | **Object mapping** | Source-generated `Get<T>()` / `Set<T>()` for POCO classes via `NeoIniKeyAttribute`. |
-| ✏️ | **Human-editable mode** | Preserve comments and formatting for hand-edited INI files (no checksum, no encryption). |
-| 📡 | **Full async API** | Async versions for all major operations — `CreateAsync`, `GetValueAsync`, `SaveFileAsync`, etc. |
-| 🔍 | **Search & TryGet** | Case-insensitive search across keys/values. `TryGetValue<T>` reads without modifying the file. |
-| 📢 | **Rich event system** | 14 events: save, load, key/section CRUD, autosave, checksum mismatch, errors, search completion. |
-| 🔑 | **Easy migration** | Transfer encrypted configs between machines via `GetEncryptionPassword()`. |
-| 📦 | **Black-box design** | Single entrypoint — `NeoIniDocument` owns and manages everything behind a clean public API. |
+|     | Feature                   | Details                                                                                                               |
+| --- | ------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| 🔒  | **AES-256 encryption**    | Transparent file-level encryption (CBC, IV + per-file salt). Key derived from user environment or a custom password.  |
+| 🛡️  | **SHA-256 checksum**      | Integrity validation on every load/save. On mismatch — `ChecksumMismatch` event + automatic `.backup` fallback.       |
+| 🔐  | **Thread-safe**           | `AsyncReaderWriterLock` protects all read/write operations under concurrent access with full `async`/`await` support. |
+| 📦  | **Typed Get/Set**         | Read and write `bool`, `int`, `double`, `DateTime`, `enum`, `string` and more with automatic parsing and defaults.    |
+| ⚡  | **AutoSave & AutoBackup** | Automatic saving after N operations. Atomic writes via `.tmp` + `.backup` fallback on errors.                         |
+| 🔄  | **Hot-reload**            | Polling-based hot‑reload with checksum comparison.                                                                    |
+| 🧩  | **Pluggable providers**   | `INeoIniProvider` interface — store configs in a database, remote service, memory, or any custom backend.             |
+| 🗺️  | **Object mapping**        | Source-generated `Get<T>()` / `Set<T>()` for POCO classes via `NeoIniKeyAttribute`.                                   |
+| ✏️  | **Human-editable mode**   | Preserve comments and formatting for hand-edited INI files (no checksum, no encryption).                              |
+| 📡  | **Full async API**        | Async versions for all major operations — `CreateAsync`, `GetValueAsync`, `SaveFileAsync`, etc.                       |
+| 🔍  | **Search & TryGet**       | Case-insensitive search across keys/values. `TryGetValue<T>` reads without modifying the file.                        |
+| 📢  | **Rich event system**     | 14 events: save, load, key/section CRUD, autosave, checksum mismatch, errors, search completion.                      |
+| 🔑  | **Easy migration**        | Transfer encrypted configs between machines via `GetEncryptionPassword()`.                                            |
+| 📦  | **Black-box design**      | Single entrypoint — `NeoIniDocument` owns and manages everything behind a clean public API.                           |
 
 ---
 
@@ -187,11 +187,11 @@ The commercial license grants you the right to use NeoIni in proprietary applica
 
 **Pricing:**
 
-| License Type | Price | Includes |
-|--------------|-------|----------|
-| Individual | **$49** | For a single developer, one product. |
-| Team | **$199** | For up to 5 developers, up to 3 products. |
-| Enterprise | **$499** | Unlimited developers and products, one year of priority support and updates. |
+| License Type | Price    | Includes                                                                     |
+| ------------ | -------- | ---------------------------------------------------------------------------- |
+| Individual   | **$49**  | For a single developer, one product.                                         |
+| Team         | **$199** | For up to 5 developers, up to 3 products.                                    |
+| Enterprise   | **$499** | Unlimited developers and products, one year of priority support and updates. |
 
 All licenses are perpetual (one-time payment). Annual support and update subscriptions are available for 20% of the license price.
 
@@ -200,7 +200,7 @@ To purchase or inquire about custom licensing, please contact the developer dire
 - **Telegram:** [@an1onime](https://t.me/an1onime)
 - **Email:** neoinilicense@gmail.com
 
-*Prices are in USD and subject to change.*
+_Prices are in USD and subject to change._
 
 ---
 

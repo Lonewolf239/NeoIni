@@ -22,9 +22,9 @@
 #### List of changes
 
 - **Исправлена проблема с часовым поясом DateTime**
-  - Значения `DateTime` теперь сохраняются в UTC ISO формате (`yyyy-MM-ddTHH:mm:ss.fffZ`) и корректно парсятся независимо от локального часового пояса.
-  - `FormatInvariant` теперь обрабатывает `DateTime` и `DateTimeOffset` с конвертацией в UTC.
-  - `TryParseValue` теперь поддерживает ISO 8601 формат для `DateTime` как основную стратегию парсинга с fallback на инвариантную культуру.
+    - Значения `DateTime` теперь сохраняются в UTC ISO формате (`yyyy-MM-ddTHH:mm:ss.fffZ`) и корректно парсятся независимо от локального часового пояса.
+    - `FormatInvariant` теперь обрабатывает `DateTime` и `DateTimeOffset` с конвертацией в UTC.
+    - `TryParseValue` теперь поддерживает ISO 8601 формат для `DateTime` как основную стратегию парсинга с fallback на инвариантную культуру.
 
 </details>
 
@@ -34,28 +34,28 @@
 #### List of changes
 
 - **Улучшена потокобезопасность автосохранения**
-  - Добавлен флаг `IsSaving`, предотвращающий реентерацию в `DoAutoSave`/`DoAutoSaveAsync`.
-  - Теперь автосохранение корректно обрабатывает конкурентные вызовы.
+    - Добавлен флаг `IsSaving`, предотвращающий реентерацию в `DoAutoSave`/`DoAutoSaveAsync`.
+    - Теперь автосохранение корректно обрабатывает конкурентные вызовы.
 - **Изменено поведение при добавлении/переименовании ключей и секций**
-  - Метод `AddKey` теперь выбрасывает `InvalidOperationException` при попытке добавить уже существующий ключ (ранее операция игнорировалась).
-  - Метод `RenameKey` выбрасывает `InvalidOperationException`, если новый ключ уже существует (ранее происходила перезапись).
-  - Метод `RenameSection` выбрасывает `InvalidOperationException`, если новый раздел уже существует (ранее операция игнорировалась).
+    - Метод `AddKey` теперь выбрасывает `InvalidOperationException` при попытке добавить уже существующий ключ (ранее операция игнорировалась).
+    - Метод `RenameKey` выбрасывает `InvalidOperationException`, если новый ключ уже существует (ранее происходила перезапись).
+    - Метод `RenameSection` выбрасывает `InvalidOperationException`, если новый раздел уже существует (ранее операция игнорировалась).
 - **Улучшена обработка ошибок в публичных методах**
-  - В `Dispose` и `DisposeAsync` добавлены блоки `try-catch`, подавляющие исключения при сохранении (в `DEBUG` вывод в трассировку).
+    - В `Dispose` и `DisposeAsync` добавлены блоки `try-catch`, подавляющие исключения при сохранении (в `DEBUG` вывод в трассировку).
 - **Оптимизация работы с файлами**
-  - Добавлен метод `NeoIniIO.ReadBytes` для чтения произвольного фрагмента файла без загрузки всего содержимого.
-  - Метод `NeoIniFileProvider.GetSalt` теперь читает только заголовок и соль, а не весь файл, что снижает потребление памяти и времени ввода-вывода.
+    - Добавлен метод `NeoIniIO.ReadBytes` для чтения произвольного фрагмента файла без загрузки всего содержимого.
+    - Метод `NeoIniFileProvider.GetSalt` теперь читает только заголовок и соль, а не весь файл, что снижает потребление памяти и времени ввода-вывода.
 - **Улучшение Hot Reload монитора**
-  - Добавлено поле `MonitorTask` для отслеживания фоновой задачи.
-  - В `Dispose` добавлено ожидание завершения задачи (`MonitorTask?.Wait()`) для корректного освобождения ресурсов.
+    - Добавлено поле `MonitorTask` для отслеживания фоновой задачи.
+    - В `Dispose` добавлено ожидание завершения задачи (`MonitorTask?.Wait()`) для корректного освобождения ресурсов.
 - **Изменения в типах данных (non-nullable)**
-  - Поле `Data` в `NeoIniDocument` больше не nullable, инициализируется пустым словарём в конструкторе.
-  - Поле `Comments` также инициализируется пустым списком.
-  - Класс `NeoIniData` теперь требует non-nullable `Data` и `Comments` (ранее допускал `null`).
+    - Поле `Data` в `NeoIniDocument` больше не nullable, инициализируется пустым словарём в конструкторе.
+    - Поле `Comments` также инициализируется пустым списком.
+    - Класс `NeoIniData` теперь требует non-nullable `Data` и `Comments` (ранее допускал `null`).
 - **Поддержка .NET Standard 2.0**
-  - В `GetStateChecksum` добавлена реализация для `NETSTANDARD2_0` (ранее отсутствовала).
+    - В `GetStateChecksum` добавлена реализация для `NETSTANDARD2_0` (ранее отсутствовала).
 - **Обновление зависимостей**
-  - Версия пакета `AsyncReaderWriterLock` повышена с `1.0.1` до `1.0.2`.
+    - Версия пакета `AsyncReaderWriterLock` повышена с `1.0.1` до `1.0.2`.
 
 </details>
 
@@ -88,11 +88,11 @@
 - **Исправлено отсутствие вызовов события `SectionChanged`** во всей кодовой базе.  
   Ранее событие `SectionChanged` не вызывалось при добавлении, обновлении, удалении или переименовании ключей. Это делало невозможным надёжное отслеживание изменений на уровне секций.  
   Теперь событие корректно вызывается во всех сценариях, изменяющих содержимое секции:
-  - `AddKey` / `AddKeyAsync`
-  - `SetValue` / `SetValueAsync`
-  - `GetValue` / `GetValueAsync`
-  - `RemoveKey` / `RemoveKeyAsync`
-  - `RenameKey` / `RenameKeyAsync`
+    - `AddKey` / `AddKeyAsync`
+    - `SetValue` / `SetValueAsync`
+    - `GetValue` / `GetValueAsync`
+    - `RemoveKey` / `RemoveKeyAsync`
+    - `RenameKey` / `RenameKeyAsync`
 
 </details>
 
@@ -104,12 +104,12 @@
 - **Исправлено форматирование литералов в генераторе кода** для числовых типов и перечислений в значениях по умолчанию атрибута `NeoIniKeyAttribute`.  
   Ранее значения `float`, `decimal`, `uint`, `long`, `ulong` и `enum` генерировались без необходимого суффикса или приведения, что приводило к ошибкам компиляции.  
   Теперь генератор корректно выводит:
-  - `f` для `float`
-  - `m` для `decimal`
-  - `u` для `uint`
-  - `L` для `long`
-  - `UL` для `ulong`
-  - явное приведение для перечислений, например `(MyEnum)2`
+    - `f` для `float`
+    - `m` для `decimal`
+    - `u` для `uint`
+    - `L` для `long`
+    - `UL` для `ulong`
+    - явное приведение для перечислений, например `(MyEnum)2`
 - **Класс `NeoIniEncryptionProvider` сделан публичным**.  
   Встроенный провайдер AES‑256‑CBC теперь доступен пользователям для прямого использования (например, при композиции кастомных провайдеров или в тестах). Ранее он был `internal`.
 
@@ -123,11 +123,11 @@
 - **Добавлена поддержка .NET Standard 2.0** – библиотека теперь может использоваться на .NET Framework 4.6.2+, .NET Core 2.x и других платформах, совместимых с netstandard2.0.
 - Условная компиляция для современных API (например, `Span<T>`, `ValueTask`, `IAsyncDisposable`, `RandomAccess`) с реализациями-заглушками для netstandard2.0.
 - Полное соответствие функциональности для всех целевых фреймворков:
-  - Шифрование AES-256 со встроенным `NeoIniEncryptionProvider`
-  - Мониторинг горячей перезагрузки (Hot Reload)
-  - Потокобезопасная блокировка `AsyncReaderWriterLock`, адаптированная как для `ValueTask`, так и для `Task`
-  - Режим «Human mode» (экспериментальный) и экранирование (shielding)
-  - Автоматическая проверка контрольных сумм и создание резервных копий
+    - Шифрование AES-256 со встроенным `NeoIniEncryptionProvider`
+    - Мониторинг горячей перезагрузки (Hot Reload)
+    - Потокобезопасная блокировка `AsyncReaderWriterLock`, адаптированная как для `ValueTask`, так и для `Task`
+    - Режим «Human mode» (экспериментальный) и экранирование (shielding)
+    - Автоматическая проверка контрольных сумм и создание резервных копий
 - Незначительные внутренние оптимизации при парсинге и сериализации.
 
 </details>
@@ -138,10 +138,10 @@
 #### List of changes
 
 - **Критическое изменение**: интерфейс `IEncryptionProvider` дополнен методами шифрования/дешифрования:
-  - `void Encrypt(MemoryStream, byte[] key, byte[] salt, byte[] plaintextBytes)`
-  - `Task EncryptAsync(MemoryStream, byte[] key, byte[] salt, byte[] plaintextBytes, CancellationToken ct)`
-  - `byte[] Decrypt(byte[] key, byte[] iv, byte[] encryptedBytes)`
-  - `Task<byte[]> DecryptAsync(byte[] key, byte[] iv, byte[] encryptedBytes, CancellationToken ct)`
+    - `void Encrypt(MemoryStream, byte[] key, byte[] salt, byte[] plaintextBytes)`
+    - `Task EncryptAsync(MemoryStream, byte[] key, byte[] salt, byte[] plaintextBytes, CancellationToken ct)`
+    - `byte[] Decrypt(byte[] key, byte[] iv, byte[] encryptedBytes)`
+    - `Task<byte[]> DecryptAsync(byte[] key, byte[] iv, byte[] encryptedBytes, CancellationToken ct)`
 - Логика шифрования перенесена из `NeoIniFileProvider` в `NeoIniEncryptionProvider` (встроенная реализация AES)
 - `NeoIniFileProvider` теперь делегирует фактическое шифрование экземпляру `IEncryptionProvider`
 
@@ -333,8 +333,8 @@
 - Добавлено поле `AllowEmptyValues` для управления пустыми состояниями данных
 - Улучшена общая оптимизация кода и производительность выполнения
 - Добавлены новые методы API с ограничением значений (`clamped`):
-  - `AddKeyClamped<T>` (`AddKeyClampedAsync<T>`)
-  - `SetValueClamped<T>` (`SetValueClampedAsync<T>`)
+    - `AddKeyClamped<T>` (`AddKeyClampedAsync<T>`)
+    - `SetValueClamped<T>` (`SetValueClampedAsync<T>`)
 - Переименованы методы API для согласованности: `AddKeyInSection` -> `AddKey` (включая асинхронные варианты) и `SetKey` -> `SetValue` (включая асинхронные варианты)
 
 </details>
@@ -392,9 +392,9 @@
 #### List of changes
 
 - Переработан `NeoIniFileProvider`:
-  - Добавлен заголовок информации о файле
-  - Реализовано автоматическое дешифрование зашифрованных файлов при чтении, если экземпляр создан с отключённым шифрованием, а файл зашифрован в автоматическом режиме
-  - Улучшена логика чтения файла: теперь данные файла всегда читаются корректно, независимо от того, как файл был открыт (ранее открытие файла с контрольной суммой, но без её указания, могло вызывать ошибку)
+    - Добавлен заголовок информации о файле
+    - Реализовано автоматическое дешифрование зашифрованных файлов при чтении, если экземпляр создан с отключённым шифрованием, а файл зашифрован в автоматическом режиме
+    - Улучшена логика чтения файла: теперь данные файла всегда читаются корректно, независимо от того, как файл был открыт (ранее открытие файла с контрольной суммой, но без её указания, могло вызывать ошибку)
 - Добавлен метод `NeoIniReader.ToString()`
 - Удалён избыточный и неиспользуемый код
 
@@ -528,17 +528,17 @@
 #### List of changes
 
 - Удалены избыточные асинхронные методы:
-  - `SectionExistsAsync`
-  - `KeyExistsAsync`
-  - `GetAllSectionsAsync`
-  - `GetAllKeysAsync`
-  - `GetSectionAsync`
-  - `FindKeyInAllSectionsAsync`
-  - `SearchAsync`
-  - `ReloadFromFileAsync`
-  - `DeleteFileAsync`
-  - `DeleteFileWithDataAsync`
-  - `GetEncryptionPasswordAsync`
+    - `SectionExistsAsync`
+    - `KeyExistsAsync`
+    - `GetAllSectionsAsync`
+    - `GetAllKeysAsync`
+    - `GetSectionAsync`
+    - `FindKeyInAllSectionsAsync`
+    - `SearchAsync`
+    - `ReloadFromFileAsync`
+    - `DeleteFileAsync`
+    - `DeleteFileWithDataAsync`
+    - `GetEncryptionPasswordAsync`
 
 </details>
 
@@ -567,18 +567,18 @@
 #### List of changes
 
 - Добавлены новые методы API:
-  - `GetSection`
-  - `GetSectionAsync`
-  - `FindKeyInAllSections`
-  - `FindKeyInAllSectionsAsync`
-  - `ClearSection`
-  - `ClearSectionAsync`
-  - `RenameKey`
-  - `RenameKeyAsync`
-  - `RenameSection`
-  - `RenameSectionAsync`
-  - `Search`
-  - `SearchAsync`
+    - `GetSection`
+    - `GetSectionAsync`
+    - `FindKeyInAllSections`
+    - `FindKeyInAllSectionsAsync`
+    - `ClearSection`
+    - `ClearSectionAsync`
+    - `RenameKey`
+    - `RenameKeyAsync`
+    - `RenameSection`
+    - `RenameSectionAsync`
+    - `Search`
+    - `SearchAsync`
 - Поддержка .NET 6.0
 - Добавлена иконка
 

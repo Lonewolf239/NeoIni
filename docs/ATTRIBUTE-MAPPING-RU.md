@@ -14,6 +14,7 @@
 #### Syntax changes between versions
 
 - **NeoIni 1.8 и старше** – значение по умолчанию задаётся через именованное свойство `DefaultValue`:
+
 ```csharp
 [NeoIniKey("General", "AppName", DefaultValue = "MyApp")]
 ```

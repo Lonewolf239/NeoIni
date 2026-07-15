@@ -38,14 +38,14 @@ Features that align with the [Roadmap](./ROADMAP.md) are prioritized.
 
 1. **Fork & clone** the repository.
 2. **Create a branch** from `main`:
-   - Bug fix: `fix/short-description`
-   - Feature: `feature/short-description`
-   - Docs: `docs/short-description`
+    - Bug fix: `fix/short-description`
+    - Feature: `feature/short-description`
+    - Docs: `docs/short-description`
 3. **Write code** following the existing conventions:
-   - All public API changes require XML doc comments.
-   - Thread safety: acquire the internal lock for any shared-state access.
-   - Async methods must accept and forward `CancellationToken`.
-   - No additional dependencies without prior discussion.
+    - All public API changes require XML doc comments.
+    - Thread safety: acquire the internal lock for any shared-state access.
+    - Async methods must accept and forward `CancellationToken`.
+    - No additional dependencies without prior discussion.
 4. **Test** your changes — include unit tests for new functionality and regression tests for bug fixes.
 5. **Open a pull request** against `main`.
 
@@ -53,12 +53,12 @@ Features that align with the [Roadmap](./ROADMAP.md) are prioritized.
 
 ### Pull request requirements
 
-| Requirement | Details |
-|-------------|---------|
-| Branch | Based on latest `main` |
-| Scope | One logical change per PR |
-| Tests | All existing tests pass; new tests cover the change |
-| Docs | Update relevant docs if the public API changes |
+| Requirement     | Details                                                             |
+| --------------- | ------------------------------------------------------------------- |
+| Branch          | Based on latest `main`                                              |
+| Scope           | One logical change per PR                                           |
+| Tests           | All existing tests pass; new tests cover the change                 |
+| Docs            | Update relevant docs if the public API changes                      |
 | Commit messages | Imperative mood, concise (`Fix checksum race on concurrent reload`) |
 
 PRs are reviewed by the maintainer. Address feedback promptly — stale PRs may be closed after 30 days.

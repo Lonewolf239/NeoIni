@@ -14,6 +14,7 @@ Decorate properties with `NeoIniKeyAttribute`. The attribute takes two required 
 #### Syntax changes between versions
 
 - **NeoIni 1.8 and earlier** – default value is set via the named property `DefaultValue`:
+
 ```csharp
 [NeoIniKey("General", "AppName", DefaultValue = "MyApp")]
 ```

@@ -22,9 +22,9 @@
 #### List of changes
 
 - **Fixed DateTime timezone issue**
-  - `DateTime` values are now stored in UTC ISO format (`yyyy-MM-ddTHH:mm:ss.fffZ`) and parsed correctly regardless of local timezone.
-  - `FormatInvariant` now handles `DateTime` and `DateTimeOffset` with UTC conversion.
-  - `TryParseValue` now supports ISO 8601 format for `DateTime` as primary parsing strategy with fallback to invariant culture.
+    - `DateTime` values are now stored in UTC ISO format (`yyyy-MM-ddTHH:mm:ss.fffZ`) and parsed correctly regardless of local timezone.
+    - `FormatInvariant` now handles `DateTime` and `DateTimeOffset` with UTC conversion.
+    - `TryParseValue` now supports ISO 8601 format for `DateTime` as primary parsing strategy with fallback to invariant culture.
 
 </details>
 
@@ -34,28 +34,28 @@
 #### List of changes
 
 - **Improved auto‑save thread safety**
-  - Added `IsSaving` flag to prevent re‑entrancy in `DoAutoSave`/`DoAutoSaveAsync`.
-  - Auto‑save now correctly handles concurrent invocations.
+    - Added `IsSaving` flag to prevent re‑entrancy in `DoAutoSave`/`DoAutoSaveAsync`.
+    - Auto‑save now correctly handles concurrent invocations.
 - **Behavior changes for adding/renaming keys and sections**
-  - `AddKey` now throws `InvalidOperationException` if the key already exists (previously ignored).
-  - `RenameKey` throws `InvalidOperationException` if the new key already exists (previously overwritten).
-  - `RenameSection` throws `InvalidOperationException` if the new section already exists (previously ignored).
+    - `AddKey` now throws `InvalidOperationException` if the key already exists (previously ignored).
+    - `RenameKey` throws `InvalidOperationException` if the new key already exists (previously overwritten).
+    - `RenameSection` throws `InvalidOperationException` if the new section already exists (previously ignored).
 - **Better error handling in public methods**
-  - `Dispose` and `DisposeAsync` now have `try-catch` blocks that suppress save errors (traced in `DEBUG` builds).
+    - `Dispose` and `DisposeAsync` now have `try-catch` blocks that suppress save errors (traced in `DEBUG` builds).
 - **File I/O optimization**
-  - Added `NeoIniIO.ReadBytes` to read arbitrary file ranges without loading the entire file.
-  - `NeoIniFileProvider.GetSalt` now reads only the header and salt, reducing memory usage and I/O time.
+    - Added `NeoIniIO.ReadBytes` to read arbitrary file ranges without loading the entire file.
+    - `NeoIniFileProvider.GetSalt` now reads only the header and salt, reducing memory usage and I/O time.
 - **HotReloadMonitor improvements**
-  - Added `MonitorTask` field to track the background task.
-  - `Dispose` now waits for the task to complete (`MonitorTask?.Wait()`) for proper resource cleanup.
+    - Added `MonitorTask` field to track the background task.
+    - `Dispose` now waits for the task to complete (`MonitorTask?.Wait()`) for proper resource cleanup.
 - **Type changes (non‑nullable)**
-  - `Data` field in `NeoIniDocument` is no longer nullable; initialized as an empty dictionary in the constructor.
-  - `Comments` field is also initialized as an empty list.
-  - `NeoIniData` class now requires non‑nullable `Data` and `Comments` (previously allowed `null`).
+    - `Data` field in `NeoIniDocument` is no longer nullable; initialized as an empty dictionary in the constructor.
+    - `Comments` field is also initialized as an empty list.
+    - `NeoIniData` class now requires non‑nullable `Data` and `Comments` (previously allowed `null`).
 - **.NET Standard 2.0 support**
-  - `GetStateChecksum` now has an implementation for `NETSTANDARD2_0` (was missing).
+    - `GetStateChecksum` now has an implementation for `NETSTANDARD2_0` (was missing).
 - **Dependency update**
-  - `AsyncReaderWriterLock` package version upgraded from `1.0.1` to `1.0.2`.
+    - `AsyncReaderWriterLock` package version upgraded from `1.0.1` to `1.0.2`.
 
 </details>
 
@@ -88,11 +88,11 @@
 - **Fixed missing `SectionChanged` event invocations** throughout the codebase.  
   Previously, the `SectionChanged` event was not fired when keys were added, updated, removed, or renamed. This made it impossible to reliably track changes at the section level.  
   Now the event is properly raised in all scenarios that modify section content:
-  - `AddKey` / `AddKeyAsync`
-  - `SetValue` / `SetValueAsync`
-  - `GetValue` / `GetValueAsync`
-  - `RemoveKey` / `RemoveKeyAsync`
-  - `RenameKey` / `RenameKeyAsync`
+    - `AddKey` / `AddKeyAsync`
+    - `SetValue` / `SetValueAsync`
+    - `GetValue` / `GetValueAsync`
+    - `RemoveKey` / `RemoveKeyAsync`
+    - `RenameKey` / `RenameKeyAsync`
 
 </details>
 
@@ -104,12 +104,12 @@
 - **Fixed source generator literal formatting** for numeric types and enums in `NeoIniKeyAttribute` default values.  
   Previously, `float`, `decimal`, `uint`, `long`, `ulong` and `enum` values were generated without the required suffix or cast, causing compilation errors.  
   Now the generator correctly emits:
-  - `f` for `float`
-  - `m` for `decimal`
-  - `u` for `uint`
-  - `L` for `long`
-  - `UL` for `ulong`
-  - explicit cast for enums, e.g., `(MyEnum)2`
+    - `f` for `float`
+    - `m` for `decimal`
+    - `u` for `uint`
+    - `L` for `long`
+    - `UL` for `ulong`
+    - explicit cast for enums, e.g., `(MyEnum)2`
 - **Made `NeoIniEncryptionProvider` public**.  
   The built‑in AES‑256‑CBC encryption provider is now accessible to users who need to reference it directly (e.g., for custom provider composition or testing). Previously it was `internal`.
 
@@ -123,11 +123,11 @@
 - **Added .NET Standard 2.0 support** – library can now be used on .NET Framework 4.6.2+, .NET Core 2.x, and other platforms compatible with netstandard2.0.
 - Conditional compilation for modern APIs (e.g., `Span<T>`, `ValueTask`, `IAsyncDisposable`, `RandomAccess`) with fallback implementations for netstandard2.0.
 - Full parity of features across all target frameworks:
-  - AES-256 encryption with built‑in `NeoIniEncryptionProvider`
-  - Hot reload monitoring
-  - Thread‑safe `AsyncReaderWriterLock` adapted for both `ValueTask` and `Task`
-  - Human mode (experimental) and shielding
-  - Automatic checksum validation and backup creation
+    - AES-256 encryption with built‑in `NeoIniEncryptionProvider`
+    - Hot reload monitoring
+    - Thread‑safe `AsyncReaderWriterLock` adapted for both `ValueTask` and `Task`
+    - Human mode (experimental) and shielding
+    - Automatic checksum validation and backup creation
 - Minor internal optimizations for parsing and serialization.
 
 </details>
@@ -138,10 +138,10 @@
 #### List of changes
 
 - **Breaking change**: `IEncryptionProvider` interface extended with encryption/decryption methods:
-  - `void Encrypt(MemoryStream, byte[] key, byte[] salt, byte[] plaintextBytes)`
-  - `Task EncryptAsync(MemoryStream, byte[] key, byte[] salt, byte[] plaintextBytes, CancellationToken ct)`
-  - `byte[] Decrypt(byte[] key, byte[] iv, byte[] encryptedBytes)`
-  - `Task<byte[]> DecryptAsync(byte[] key, byte[] iv, byte[] encryptedBytes, CancellationToken ct)`
+    - `void Encrypt(MemoryStream, byte[] key, byte[] salt, byte[] plaintextBytes)`
+    - `Task EncryptAsync(MemoryStream, byte[] key, byte[] salt, byte[] plaintextBytes, CancellationToken ct)`
+    - `byte[] Decrypt(byte[] key, byte[] iv, byte[] encryptedBytes)`
+    - `Task<byte[]> DecryptAsync(byte[] key, byte[] iv, byte[] encryptedBytes, CancellationToken ct)`
 - Encryption logic moved from `NeoIniFileProvider` to `NeoIniEncryptionProvider` (built‑in AES implementation)
 - `NeoIniFileProvider` now delegates actual encryption/decryption to the `IEncryptionProvider` instance
 
@@ -333,8 +333,8 @@
 - Added the `AllowEmptyValues` field to manage empty data states
 - Improved overall code optimization and execution performance
 - Introduced new clamped API methods:
-  - `AddKeyClamped<T>` (`AddKeyClampedAsync<T>`)
-  - `SetValueClamped<T>` (`SetValueClampedAsync<T>`)
+    - `AddKeyClamped<T>` (`AddKeyClampedAsync<T>`)
+    - `SetValueClamped<T>` (`SetValueClampedAsync<T>`)
 - Renamed API methods for consistency: `AddKeyInSection` -> `AddKey` (including async variants) and `SetKey` -> `SetValue` (including async variants)
 
 </details>
@@ -392,9 +392,9 @@
 #### List of changes
 
 - Reworked NeoIniFileProvider:
-  - Added a file information header
-  - Implemented automatic decryption for encrypted files when reading, if the instance is created with encryption disabled and the file is encrypted in automode
-  - Improved file reading logic: file data is now always read correctly, regardless of how the file is opened (previously, opening a file with a checksum but without specifying the checksum could cause an error)
+    - Added a file information header
+    - Implemented automatic decryption for encrypted files when reading, if the instance is created with encryption disabled and the file is encrypted in automode
+    - Improved file reading logic: file data is now always read correctly, regardless of how the file is opened (previously, opening a file with a checksum but without specifying the checksum could cause an error)
 - Added NeoIniReader.ToString() method
 - Removed redundant and unused code
 
@@ -528,17 +528,17 @@
 #### List of changes
 
 - Removed unnecessary async methods:
-  - SectionExistsAsync
-  - KeyExistsAsync
-  - GetAllSectionsAsync
-  - GetAllKeysAsync
-  - GetSectionAsync
-  - FindKeyInAllSectionsAsync
-  - SearchAsync
-  - ReloadFromFileAsync
-  - DeleteFileAsync
-  - DeleteFileWithDataAsync
-  - GetEncryptionPasswordAsync
+    - SectionExistsAsync
+    - KeyExistsAsync
+    - GetAllSectionsAsync
+    - GetAllKeysAsync
+    - GetSectionAsync
+    - FindKeyInAllSectionsAsync
+    - SearchAsync
+    - ReloadFromFileAsync
+    - DeleteFileAsync
+    - DeleteFileWithDataAsync
+    - GetEncryptionPasswordAsync
 
 </details>
 
@@ -567,18 +567,18 @@
 #### List of changes
 
 - Added more API methods:
-  - GetSection
-  - GetSectionAsync
-  - FindKeyInAllSections
-  - FindKeyInAllSectionsAsync
-  - ClearSection
-  - ClearSectionAsync
-  - RenameKey
-  - RenameKeyAsync
-  - RenameSection
-  - RenameSectionAsync
-  - Search
-  - SearchAsync
+    - GetSection
+    - GetSectionAsync
+    - FindKeyInAllSections
+    - FindKeyInAllSectionsAsync
+    - ClearSection
+    - ClearSectionAsync
+    - RenameKey
+    - RenameKeyAsync
+    - RenameSection
+    - RenameSectionAsync
+    - Search
+    - SearchAsync
 - .NET 6.0 support
 - Added icon
 

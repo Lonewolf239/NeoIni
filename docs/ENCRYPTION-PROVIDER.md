@@ -128,7 +128,6 @@ public class MyAesEncryptionProvider : IEncryptionProvider
 
 > **Important:** The order of writing is **IV (16 bytes) + Salt (16 bytes) + EncryptedData**. This format is expected by `NeoIniFileProvider`. If you change it, your files will not be readable by the built-in provider (or vice‑versa). If you only use your own provider, you may use any format, but you must be consistent.
 
-
 ---
 
 ### Built-in provider
