@@ -21,7 +21,7 @@ namespace NeoIni.Models
     }
 
     /// <summary>
-    /// Represents errors that occur when a required cryptographic salt is missing or null.
+    /// Represents the error that occurs when a required cryptographic salt is missing or null.
     /// </summary>
     public class MissingSaltException : Exception
     {
@@ -52,6 +52,7 @@ namespace NeoIni.Models
         /// <summary>
         /// Initializes a new instance of the <see cref="UnsupportedIniCharacterException"/> class.
         /// </summary>
+        /// <param name="chars">The unsupported character(s) found in the string, included in the exception message.</param>
         public UnsupportedIniCharacterException(string chars) : base($"The string contains unsupported characters (such as {chars}).") { }
     }
 

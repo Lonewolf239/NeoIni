@@ -59,7 +59,7 @@ public class MyDatabaseProvider : INeoIniProvider
     public byte[] GetStateChecksum()
     {
         // Return a hash of the current state for hot-reload detection,
-        // or null if not supported
+        // or an empty array if not supported (the return type is non-nullable)
     }
 
     public void RaiseError(object? sender, ProviderErrorEventArgs e)

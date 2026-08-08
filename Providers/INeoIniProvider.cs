@@ -43,12 +43,17 @@ namespace NeoIni.Providers
         /// Returns a hash/checksum of the current storage state.
         /// Used by the hot-reload mechanism to detect external changes.
         /// </summary>
-        /// <returns>A byte array containing the hash, or <c>null</c> if the provider does not support this feature.</returns>
+        /// <returns>A byte array containing the hash, or an empty array if the provider does not support this feature.</returns>
         byte[] GetStateChecksum();
 
         /// <summary>Raises the <see cref="Error"/> event with the specified sender and error details.</summary>
         /// <param name="sender">The source of the error, or <c>null</c> to use the provider itself.</param>
         /// <param name="e">The event arguments containing the exception.</param>
+        /// <remarks>
+        /// Implementations should throw the exception contained in <paramref name="e"/> when <see cref="Error"/> has
+        /// no subscribers, and otherwise raise the event instead of throwing. Callers rely on this to fail loudly
+        /// by default while still allowing consumers to opt into handling errors via the event.
+        /// </remarks>
         void RaiseError(object? sender, ProviderErrorEventArgs e);
     }
 }

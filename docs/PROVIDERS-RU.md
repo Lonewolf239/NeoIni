@@ -59,7 +59,7 @@ public class MyDatabaseProvider : INeoIniProvider
     public byte[] GetStateChecksum()
     {
         // Верните хеш текущего состояния для обнаружения изменений (hot-reload),
-        // или null, если не поддерживается
+        // или пустой массив, если не поддерживается (тип возврата non-nullable)
     }
 
     public void RaiseError(object? sender, ProviderErrorEventArgs e)

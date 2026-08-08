@@ -246,7 +246,7 @@ namespace NeoIni.Providers
             byte[] calculatedChecksum = SHA256.HashData(dataSpan);
 #endif
             bool isValid = expectedChecksum.SequenceEqual(calculatedChecksum);
-            if (!isValid) ChecksumMismatch?.Invoke(this, new ChecksumMismatchEventArgs(calculatedChecksum, expectedChecksum.ToArray()));
+            if (!isValid) ChecksumMismatch?.Invoke(this, new ChecksumMismatchEventArgs(expectedChecksum.ToArray(), calculatedChecksum));
             return isValid;
         }
     }

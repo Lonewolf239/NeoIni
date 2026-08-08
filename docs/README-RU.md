@@ -25,7 +25,7 @@ dotnet add package NeoIni
 ```
 
 - **Пакет:** [nuget.org/packages/NeoIni](https://www.nuget.org/packages/NeoIni)
-- **Версия:** 3.4.3 | **.NET 5+** | **.NET Standard 2.0**
+- **Версия:** 3.4.4 | **.NET 5+** | **.NET Standard 2.0**
 - **Разработчик:** [Lonewolf239](https://github.com/Lonewolf239)
 
 ---
@@ -45,7 +45,7 @@ dotnet add package NeoIni
 | ✏️  | **Human-editable mode**   | Сохранение комментариев и форматирования для ручного редактирования INI-файлов (без checksum, без шифрования).                             |
 | 📡  | **Full async API**        | Асинхронные версии всех основных операций — `CreateAsync`, `GetValueAsync`, `SaveFileAsync` и т.д.                                         |
 | 🔍  | **Search & TryGet**       | Регистронезависимый поиск по ключам/значениям. `TryGetValue<T>` читает без модификации файла.                                              |
-| 📢  | **Rich event system**     | 14 событий: сохранение, загрузка, CRUD ключей/секций, autosave, checksum mismatch, ошибки, завершение поиска.                              |
+| 📢  | **Rich event system**     | 15 событий: сохранение, загрузка, CRUD ключей/секций, очистка данных, autosave, checksum mismatch, ошибки, завершение поиска.                              |
 | 🔑  | **Easy migration**        | Перенос зашифрованных конфигов между машинами через `GetEncryptionPassword()`.                                                             |
 | 📦  | **Black-box design**      | Единая точка входа — `NeoIniDocument` владеет и управляет всем за чистым публичным API.                                                    |
 
@@ -215,6 +215,7 @@ NeoIniDocument migrated = new("secure.ini", password);
 ```csharp
 using NeoIniDocument document = new("config.ini");
 // SaveFile() вызывается автоматически, если SaveOnDispose = true
+// Если это сохранение падает, ошибка трассируется и передаётся через Error (при подписке) — сам Dispose исключений не бросает
 // После Dispose — ObjectDisposedException при любом обращении
 ```
 

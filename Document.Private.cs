@@ -21,6 +21,7 @@ namespace NeoIni
         private Dictionary<string, Dictionary<string, string>> Data;
         private List<Comment> Comments;
         private readonly AsyncReaderWriterLock Lock = new AsyncReaderWriterLock();
+        private readonly SemaphoreSlim SaveGate = new SemaphoreSlim(1, 1);
 
         private bool Disposed = false;
         private int DisposeState = 0;
@@ -32,6 +33,7 @@ namespace NeoIni
 
         private int _AutoSaveInterval;
         private int IsSaving = 0;
+        private int PendingSave = 0;
         private int SaveIterationCounter = 0;
 
         private bool _UseChecksum;
@@ -58,16 +60,22 @@ namespace NeoIni
                 try
                 {
                     SafeStopHotReload();
-                    if (ExtractContent() is string content)
+                    SaveGate.Wait();
+                    try
                     {
-                        Provider.Save(content, UseChecksum);
-                        Saved?.Invoke(this, EventArgs.Empty);
+                        if (ExtractContent() is string content)
+                        {
+                            Provider.Save(content, UseChecksum);
+                            Saved?.Invoke(this, EventArgs.Empty);
+                        }
                     }
+                    finally { SaveGate.Release(); }
                 }
                 finally
                 {
                     DataCleared?.Invoke(this, EventArgs.Empty);
                     Lock.Dispose();
+                    SaveGate.Dispose();
                 }
             }
             Disposed = true;
@@ -83,16 +91,22 @@ namespace NeoIni
                 try
                 {
                     SafeStopHotReload();
-                    if (ExtractContent() is string content)
+                    await SaveGate.WaitAsync().ConfigureAwait(false);
+                    try
                     {
-                        await Provider.SaveAsync(content, UseChecksum, CancellationToken.None).ConfigureAwait(false);
-                        Saved?.Invoke(this, EventArgs.Empty);
+                        if (ExtractContent() is string content)
+                        {
+                            await Provider.SaveAsync(content, UseChecksum, CancellationToken.None).ConfigureAwait(false);
+                            Saved?.Invoke(this, EventArgs.Empty);
+                        }
                     }
+                    finally { SaveGate.Release(); }
                 }
                 finally
                 {
                     DataCleared?.Invoke(this, EventArgs.Empty);
                     Lock.Dispose();
+                    SaveGate.Dispose();
                 }
             }
             Disposed = true;
@@ -165,7 +179,11 @@ namespace NeoIni
 
         private bool ShouldAutoSave()
         {
-            if (Interlocked.CompareExchange(ref IsSaving, 1, 0) != 0) return false;
+            if (Interlocked.CompareExchange(ref IsSaving, 1, 0) != 0)
+            {
+                if (UseAutoSave) Interlocked.Exchange(ref PendingSave, 1);
+                return false;
+            }
             if (!UseAutoSave) { Interlocked.Exchange(ref IsSaving, 0); return false; }
             if (AutoSaveInterval == 0) return true;
             if (Interlocked.Increment(ref SaveIterationCounter) % AutoSaveInterval == 0) return true;
@@ -178,8 +196,12 @@ namespace NeoIni
             if (!ShouldAutoSave()) return;
             try
             {
-                AutoSave?.Invoke(this, EventArgs.Empty);
-                SaveFile();
+                do
+                {
+                    Interlocked.Exchange(ref PendingSave, 0);
+                    AutoSave?.Invoke(this, EventArgs.Empty);
+                    SaveFile();
+                } while (Interlocked.CompareExchange(ref PendingSave, 0, 0) == 1);
             }
             finally { Interlocked.Exchange(ref IsSaving, 0); }
         }
@@ -190,8 +212,12 @@ namespace NeoIni
             if (!ShouldAutoSave()) return;
             try
             {
-                AutoSave?.Invoke(this, EventArgs.Empty);
-                await SaveFileAsync(ct).ConfigureAwait(false);
+                do
+                {
+                    Interlocked.Exchange(ref PendingSave, 0);
+                    AutoSave?.Invoke(this, EventArgs.Empty);
+                    await SaveFileAsync(ct).ConfigureAwait(false);
+                } while (Interlocked.CompareExchange(ref PendingSave, 0, 0) == 1);
             }
             finally { Interlocked.Exchange(ref IsSaving, 0); }
         }

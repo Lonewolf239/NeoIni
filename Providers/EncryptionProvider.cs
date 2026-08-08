@@ -110,7 +110,7 @@ namespace NeoIni.Providers
         /// <param name="key">The encryption key (must be 32 bytes for AES-256).</param>
         /// <param name="salt">The salt used to derive the key (stored alongside the ciphertext for later decryption).</param>
         /// <param name="plaintextBytes">The plaintext data to encrypt.</param>
-        /// <param name="ct">Cancellation token to cancel the asynchronous operation.</param>
+        /// <param name="ct">Cancellation token.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
         /// <exception cref="ArgumentNullException">Thrown if any required parameter is <c>null</c>.</exception>
         /// <exception cref="OperationCanceledException">Thrown if the cancellation token is canceled.</exception>
@@ -164,7 +164,7 @@ namespace NeoIni.Providers
         /// <param name="key">The decryption key (must be 32 bytes for AES-256).</param>
         /// <param name="iv">The initialization vector (IV) used during encryption.</param>
         /// <param name="encryptedBytes">The ciphertext bytes to decrypt.</param>
-        /// <param name="ct">Cancellation token to cancel the asynchronous operation.</param>
+        /// <param name="ct">Cancellation token.</param>
         /// <returns>A task representing the asynchronous operation, with the decrypted plaintext bytes as the result.</returns>
         /// <exception cref="CryptographicException">Thrown if decryption fails due to invalid key, padding, or corrupted data.</exception>
         /// <exception cref="OperationCanceledException">Thrown if the cancellation token is canceled.</exception>

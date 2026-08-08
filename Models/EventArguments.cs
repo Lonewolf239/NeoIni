@@ -29,6 +29,7 @@ namespace NeoIni.Models
 
         /// <summary>Initializes a new instance of the <see cref="ProviderErrorEventArgs"/> class.</summary>
         /// <param name="exception">The exception containing information about the error.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="exception"/> is <c>null</c>.</exception>
         public ProviderErrorEventArgs(Exception exception) => Exception = exception ?? throw new ArgumentNullException(nameof(exception));
     }
 

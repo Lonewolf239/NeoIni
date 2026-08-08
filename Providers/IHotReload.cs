@@ -10,21 +10,18 @@ namespace NeoIni.Providers
     /// </summary>
     public interface IHotReloadMonitor : IDisposable
     {
-        /// <summary>
-        /// Occurs when a change is detected in the monitored configuration source.
-        /// Provides the new checksum of the source.
-        /// </summary>
+        /// <summary>Occurs when a change is detected in the monitored configuration source.</summary>
         event EventHandler? ChangeDetected;
 
         /// <summary>Starts monitoring for changes.</summary>
         /// <param name="pollingInterval">
-        /// The polling interval in milliseconds. 
+        /// The polling interval in milliseconds.
         /// The exact meaning depends on the implementation; typically it specifies how often to check for changes.
         /// </param>
         void Start(int pollingInterval);
 
         /// <summary>
-        /// Pauses change detection synchronously. 
+        /// Pauses change detection synchronously.
         /// Used during write operations to avoid triggering a reload while saving.
         /// </summary>
         void Pause();
@@ -33,7 +30,7 @@ namespace NeoIni.Providers
         void Continue();
 
         /// <summary>Asynchronously resumes change detection after a pause.</summary>
-        /// <param name="cancellationToken">A cancellation token that can be used to cancel the resume operation.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>A task representing the asynchronous resume operation.</returns>
         Task ContinueAsync(CancellationToken cancellationToken);
 

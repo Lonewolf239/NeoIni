@@ -19,7 +19,7 @@ namespace NeoIni.Annotations
 
         /// <summary>
         /// Optional default value (as string) used when the key is missing.
-        /// If null, NeoIniDocument's default handling is used.
+        /// If <c>null</c>, <see cref="NeoIniDocument"/>'s default handling is used.
         /// </summary>
         public string? DefaultValue { get; }
 

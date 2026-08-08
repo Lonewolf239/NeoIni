@@ -41,7 +41,7 @@ Complete reference for all public methods, options, and events exposed by `NeoIn
 | `DeleteFileWithData`    | Delete file and clear data                                      | –                         |
 | `DeleteBackup`          | Delete the backup file from disk                                | –                         |
 | `Clear`                 | Clear internal data structure completely                        | –                         |
-| `GetEncryptionPassword` | Get the encryption password (or status)                         | –                         |
+| `GetEncryptionPassword` | Get the auto-generated encryption password (throws if unavailable) | –                      |
 | `CreateAsync`           | Asynchronously create and initialize reader (static factory)    | –                         |
 | `CreateHumanMode`       | Create reader in human-editable mode                            | `CreateHumanModeAsync`    |
 
@@ -60,7 +60,7 @@ Complete reference for all public methods, options, and events exposed by `NeoIn
 | `UseChecksum`      | Calculates and verifies checksums during load/save operations                                  | `true`             |
 | `SaveOnDispose`    | Automatically saves the configuration when the instance is disposed                            | `true`             |
 | `AllowEmptyValues` | Permits configuration keys to be saved with empty or null values                               | `true`             |
-| `UseShielding`     | Enables quoted values (e.g., key = "value ; not a comment")                                    | `false`            |
+| `UseShielding`     | Enables quoted values (e.g., key = "value ; not a comment"); cannot be combined with Human Mode | `false`            |
 
 **Built-in presets:** `Default`, `Safe`, `Performance`, `ReadOnly`, `BufferedAutoSave(interval)`.
 
@@ -86,4 +86,4 @@ Complete reference for all public methods, options, and events exposed by `NeoIn
 | `SearchCompleted`  | Called after each search with the pattern and match count      |
 | `Error`            | Called when errors occur (parsing, saving, reading, etc.)      |
 
-> **Note:** If no handlers are subscribed to an event, the provider (by default) throws an exception. For silent handling, always subscribe to `Error`.
+> **Note:** Provider-level failures (file I/O, encryption, parsing) are reported via the `Error` event; if nothing is subscribed, the underlying exception is thrown instead. `AddKey`, `RenameKey`, and `RenameSection` (and their async versions) always throw `InvalidOperationException` on a conflict — they additionally notify `Error` when it has a subscriber, but subscribing does not suppress the exception.

@@ -56,7 +56,7 @@ namespace NeoIni.Providers
         /// <param name="key">The encryption key (typically 32 bytes for AES-256).</param>
         /// <param name="salt">The salt used for key derivation (16 bytes).</param>
         /// <param name="plaintextBytes">The plaintext data to encrypt.</param>
-        /// <param name="ct">A cancellation token to observe while waiting for the task to complete.</param>
+        /// <param name="ct">Cancellation token.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
         Task EncryptAsync(MemoryStream memoryStream, byte[] key, byte[] salt, byte[] plaintextBytes, CancellationToken ct = default);
 
@@ -79,7 +79,7 @@ namespace NeoIni.Providers
         /// <param name="encryptedBytes">
         /// The encrypted data to decrypt. This should contain only the payload (IV and salt have already been removed by the caller).
         /// </param>
-        /// <param name="ct">A cancellation token to observe while waiting for the task to complete.</param>
+        /// <param name="ct">Cancellation token.</param>
         /// <returns>A task representing the asynchronous operation, with the decrypted plaintext bytes as the result.</returns>
         Task<byte[]> DecryptAsync(byte[] key, byte[] iv, byte[] encryptedBytes, CancellationToken ct = default);
     }

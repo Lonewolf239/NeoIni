@@ -12,9 +12,9 @@ namespace NeoIni
     /// <summary>
     /// Provides a secure, thread-safe configuration management framework with INI-based persistence.
     /// <para>
-    /// <b>Important:</b> This is NOT a classic INI parser. It is a configuration system that uses an extended INI format 
-    /// as its serialization layer, adding AES-256 encryption, SHA-256 checksums, hot-reload, pluggable providers, 
-    /// automatic backup, and atomic writes. The stored files are binary-enhanced INI with headers and checksums, 
+    /// <b>Important:</b> This is NOT a classic INI parser. It is a configuration system that uses an extended INI format
+    /// as its serialization layer, adding AES-256 encryption, SHA-256 checksums, hot-reload, pluggable providers,
+    /// automatic backup, and atomic writes. The stored files are binary-enhanced INI with headers and checksums,
     /// not plain text INI intended for manual editing (unless Human Mode is enabled).
     /// </para>
     /// <br/>
@@ -22,7 +22,7 @@ namespace NeoIni
     /// <br/>
     /// <b>Target Frameworks: .NET 5+ and .NET Standard 2.0</b>
     /// <br/>
-    /// <b>Version: 3.4.3</b>
+    /// <b>Version: 3.4.4</b>
     /// <br/>
     /// <b>Black Box Philosophy:</b> This class follows a strict "black box" design principle - users interact only through the public API without needing to understand internal implementation details. Input goes in, processed output comes out, internals remain hidden and abstracted.
     /// </summary>
@@ -32,7 +32,7 @@ namespace NeoIni
     public partial class NeoIniDocument : IDisposable, IAsyncDisposable
 #endif
     {
-        /// <summary>Returns the serialized configuration data (INI format) formatted as it would appear in the file</summary>
+        /// <summary>Returns the serialized configuration data (INI format) formatted as it would appear in the file.</summary>
         /// <returns>
         /// A string containing the serialized INI content of this instance,
         /// formatted exactly as it would be written to the underlying file.
@@ -46,28 +46,36 @@ namespace NeoIni
             return content;
         }
 
-        /// <summary>Releases managed resources and saves changes to the file</summary>
+        /// <summary>Releases managed resources and saves changes to the file.</summary>
+        /// <remarks>
+        /// Never throws: if the final save fails, the exception is traced via <see cref="System.Diagnostics.Trace"/>
+        /// and reported through <see cref="Error"/> when a handler is attached, but it is not propagated to the caller.
+        /// </remarks>
         public void Dispose()
         {
             try { Dispose(true); }
-#if DEBUG
-            catch (Exception ex) { System.Diagnostics.Trace.WriteLine($"NeoIni: Save on dispose failed: {ex.Message}"); }
-#else
-            catch { }
-#endif
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.WriteLine($"NeoIni: Save on dispose failed: {ex.Message}");
+                try { Provider.RaiseError(this, new ProviderErrorEventArgs(ex)); } catch { }
+            }
             GC.SuppressFinalize(this);
         }
 
 #if !NETSTANDARD2_0
-        /// <summary>Asynchronously releases managed resources and saves changes to the file</summary>
+        /// <summary>Asynchronously releases managed resources and saves changes to the file.</summary>
+        /// <remarks>
+        /// Never throws: if the final save fails, the exception is traced via <see cref="System.Diagnostics.Trace"/>
+        /// and reported through <see cref="Error"/> when a handler is attached, but it is not propagated to the caller.
+        /// </remarks>
         public async ValueTask DisposeAsync()
         {
             try { await DisposeAsync(true).ConfigureAwait(false); }
-#if DEBUG
-            catch (Exception ex) { System.Diagnostics.Trace.WriteLine($"NeoIni: Save on dispose failed: {ex.Message}"); }
-#else
-            catch { }
-#endif
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.WriteLine($"NeoIni: Save on dispose failed: {ex.Message}");
+                try { Provider.RaiseError(this, new ProviderErrorEventArgs(ex)); } catch { }
+            }
             GC.SuppressFinalize(this);
         }
 #endif
@@ -125,31 +133,44 @@ namespace NeoIni
         }
 
         /// <summary>Saves the current configuration to the storage, applying checksums and encryption if enabled.</summary>
+        /// <remarks>Safe to call concurrently with other saves (automatic or manual, sync or async); the actual write is serialized internally.</remarks>
         public void SaveFile()
         {
             ThrowIfDisposed();
+            SaveGate.Wait();
             try
             {
                 string content = GetSaveContent();
                 Provider.Save(content, UseChecksum);
             }
-            finally { FinalizeSave(); }
+            finally
+            {
+                SaveGate.Release();
+                FinalizeSave();
+            }
         }
 
         /// <summary>Asynchronously saves the current configuration to the storage, applying checksums and encryption if enabled.</summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <remarks>Safe to call concurrently with other saves (automatic or manual, sync or async); the actual write is serialized internally.</remarks>
         public async Task SaveFileAsync(CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
+            await SaveGate.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 string content = await GetSaveContentAsync(cancellationToken).ConfigureAwait(false);
                 await Provider.SaveAsync(content, UseChecksum, cancellationToken).ConfigureAwait(false);
             }
-            finally { await FinalizeSaveAsync(cancellationToken).ConfigureAwait(false); }
+            finally
+            {
+                SaveGate.Release();
+                await FinalizeSaveAsync(cancellationToken).ConfigureAwait(false);
+            }
         }
 
-        /// <summary>Determines whether a specific section exists in the loaded data</summary>
+        /// <summary>Determines whether a specific section exists in the loaded data.</summary>
         /// <param name="section">The name of the section to search for.</param>
         /// <returns><c>true</c> if the section exists; otherwise, <c>false</c>.</returns>
         public bool SectionExists(string section)
@@ -158,7 +179,7 @@ namespace NeoIni
             using (Lock.ReadLock()) return NeoIniReaderCore.SectionExists(Data, section);
         }
 
-        /// <summary>Determines whether a specific key exists within a given section</summary>
+        /// <summary>Determines whether a specific key exists within a given section.</summary>
         /// <param name="section">The name of the section to search in.</param>
         /// <param name="key">The name of the key to search for.</param>
         /// <returns><c>true</c> if the key exists within the section; otherwise, <c>false</c>.</returns>
@@ -168,7 +189,7 @@ namespace NeoIni
             using (Lock.ReadLock()) return NeoIniReaderCore.KeyExists(Data, section, key);
         }
 
-        /// <summary>Adds a new section to the file if it does not already exist</summary>
+        /// <summary>Adds a new section to the file if it does not already exist.</summary>
         /// <param name="section">The name of the new section.</param>
         public void AddSection(string section)
         {
@@ -176,7 +197,7 @@ namespace NeoIni
             DoAutoSave();
         }
 
-        /// <summary>Asynchronously adds a new section to the file if it does not already exist</summary>
+        /// <summary>Asynchronously adds a new section to the file if it does not already exist.</summary>
         /// <param name="section">The name of the new section.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         public async Task AddSectionAsync(string section, CancellationToken cancellationToken = default)
@@ -185,7 +206,7 @@ namespace NeoIni
             await DoAutoSaveAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        /// <summary>Adds a new key-value pair to a specified section</summary>
+        /// <summary>Adds a new key-value pair to a specified section.</summary>
         /// <typeparam name="T">The type of the value being added.</typeparam>
         /// <param name="section">The name of the target section.</param>
         /// <param name="key">The name of the key to create.</param>
@@ -200,12 +221,12 @@ namespace NeoIni
             catch (InvalidOperationException e)
             {
                 Provider.RaiseError(this, new ProviderErrorEventArgs(e));
-                return;
+                throw;
             }
             DoAutoSave();
         }
 
-        /// <summary>Asynchronously adds a new key-value pair to a specified section</summary>
+        /// <summary>Asynchronously adds a new key-value pair to a specified section.</summary>
         /// <typeparam name="T">The type of the value being added.</typeparam>
         /// <param name="section">The name of the target section.</param>
         /// <param name="key">The name of the key to create.</param>
@@ -221,7 +242,7 @@ namespace NeoIni
             catch (InvalidOperationException e)
             {
                 Provider.RaiseError(this, new ProviderErrorEventArgs(e));
-                return;
+                throw;
             }
             await DoAutoSaveAsync(cancellationToken).ConfigureAwait(false);
         }
@@ -257,7 +278,6 @@ namespace NeoIni
             T clampedValue = NeoIniParser.Clamp(value, minValue, maxValue);
             await AddKeyAsync(section, key, clampedValue, cancellationToken).ConfigureAwait(false);
         }
-
 
         /// <summary>Attempts to retrieve a value of the specified type from the configuration data.</summary>
         /// <typeparam name="T">The expected type of the value to retrieve.</typeparam>
@@ -412,7 +432,7 @@ namespace NeoIni
         }
 #endif
 
-        /// <summary>Updates or creates a key-value pair in the specified section</summary>
+        /// <summary>Updates or creates a key-value pair in the specified section.</summary>
         /// <typeparam name="T">The type of the value to be stored.</typeparam>
         /// <param name="section">The name of the section where the value will be written.</param>
         /// <param name="key">The key to update or create.</param>
@@ -423,7 +443,7 @@ namespace NeoIni
             DoAutoSave();
         }
 
-        /// <summary>Asynchronously updates or creates a key-value pair in the specified section</summary>
+        /// <summary>Asynchronously updates or creates a key-value pair in the specified section.</summary>
         /// <typeparam name="T">The type of the value to be stored.</typeparam>
         /// <param name="section">The name of the section where the value will be written.</param>
         /// <param name="key">The key to update or create.</param>
@@ -468,10 +488,7 @@ namespace NeoIni
         /// Each item must contain a non‑null <see cref="NeoIniValue.Section"/> and <see cref="NeoIniValue.Key"/>,
         /// otherwise the helper methods may throw an exception.
         /// </param>
-        /// <param name="cancellationToken">
-        /// A cancellation token to observe while performing the asynchronous operations.
-        /// </param>
-        /// <returns>A task representing the asynchronous operation.</returns>
+        /// <param name="cancellationToken">Cancellation token.</param>
         /// <exception cref="ArgumentNullException">
         /// Thrown if the <paramref name="values"/> array or any of its elements is <c>null</c>, or if a required property is missing.
         /// </exception>
@@ -480,13 +497,14 @@ namespace NeoIni
         /// </exception>
         /// <remarks>
         /// This method processes each <see cref="NeoIniValue"/> by calling <see cref="SetValueHelperAsync{T}"/>
-        /// for the corresponding section, key, and string value.
+        /// for the corresponding section, key, and string value. The token is observed on every iteration,
+        /// so a cancellation request stops the batch before all values are written, not just before the final save.
         /// After all values are set, <see cref="DoAutoSaveAsync"/> is invoked to persist changes according to the current auto‑save settings.
         /// </remarks>
         public async Task SetValuesAsync(NeoIniValue[] values, CancellationToken cancellationToken = default)
         {
             foreach (var value in values)
-                await SetValueHelperAsync<string>(value.Section, value.Key, value.Value).ConfigureAwait(false);
+                await SetValueHelperAsync<string>(value.Section, value.Key, value.Value, cancellationToken).ConfigureAwait(false);
             await DoAutoSaveAsync(cancellationToken).ConfigureAwait(false);
         }
 
@@ -522,7 +540,7 @@ namespace NeoIni
             await SetValueAsync(section, key, clampedValue, cancellationToken).ConfigureAwait(false);
         }
 
-        /// <summary>Removes a specific key from a section in the INI file</summary>
+        /// <summary>Removes a specific key from a section in the INI file.</summary>
         /// <param name="section">The section containing the key.</param>
         /// <param name="key">The key to remove.</param>
         public void RemoveKey(string section, string key)
@@ -531,7 +549,7 @@ namespace NeoIni
             DoAutoSave();
         }
 
-        /// <summary>Asynchronously removes a specific key from a section in the INI file</summary>
+        /// <summary>Asynchronously removes a specific key from a section in the INI file.</summary>
         /// <param name="section">The section containing the key.</param>
         /// <param name="key">The key to remove.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -541,7 +559,7 @@ namespace NeoIni
             await DoAutoSaveAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        /// <summary>Removes an entire section and all its keys from the INI file</summary>
+        /// <summary>Removes an entire section and all its keys from the INI file.</summary>
         /// <param name="section">The name of the section to remove.</param>
         public void RemoveSection(string section)
         {
@@ -549,7 +567,7 @@ namespace NeoIni
             DoAutoSave();
         }
 
-        /// <summary>Asynchronously removes an entire section and all its keys from the INI file</summary>
+        /// <summary>Asynchronously removes an entire section and all its keys from the INI file.</summary>
         /// <param name="section">The name of the section to remove.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         public async Task RemoveSectionAsync(string section, CancellationToken cancellationToken = default)
@@ -558,7 +576,7 @@ namespace NeoIni
             await DoAutoSaveAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        /// <summary>Returns an array of all sections contained in the INI file</summary>
+        /// <summary>Returns an array of all sections contained in the INI file.</summary>
         /// <returns>An array of strings containing the names of all sections.</returns>
         public string[]? GetAllSections()
         {
@@ -566,7 +584,7 @@ namespace NeoIni
             using (Lock.ReadLock()) return Data?.Keys.ToArray();
         }
 
-        /// <summary>Returns an array of all keys in the specified INI file section</summary>
+        /// <summary>Returns an array of all keys in the specified INI file section.</summary>
         /// <param name="section">Name of the section to receive keys from.</param>
         /// <returns>An array of strings containing the names of all keys in the section, or an empty array if the section does not exist.</returns>
         public string[] GetAllKeys(string section)
@@ -575,7 +593,7 @@ namespace NeoIni
             using (Lock.ReadLock()) return NeoIniReaderCore.GetAllKeys(Data, section);
         }
 
-        /// <summary>Returns a dictionary containing all key-value pairs from the specified section</summary>
+        /// <summary>Returns a dictionary containing all key-value pairs from the specified section.</summary>
         /// <param name="section">The name of the section to retrieve.</param>
         /// <returns>A read-only copy of the section's key-value pairs, or an empty dictionary if the section does not exist.</returns>
         public Dictionary<string, string> GetSection(string section)
@@ -584,7 +602,7 @@ namespace NeoIni
             using (Lock.ReadLock()) return NeoIniReaderCore.GetSection(Data, section);
         }
 
-        /// <summary>Searches for a specific key across all sections and returns a dictionary mapping section names to their corresponding values</summary>
+        /// <summary>Searches for a specific key across all sections and returns a dictionary mapping section names to their corresponding values.</summary>
         /// <param name="key">The key name to search for across all sections.</param>
         /// <returns>A dictionary where keys are section names and values are the corresponding key values found, or an empty dictionary if no matches are found.</returns>
         public Dictionary<string, string> FindKey(string key)
@@ -593,7 +611,7 @@ namespace NeoIni
             using (Lock.ReadLock()) return NeoIniReaderCore.FindKeyInAllSections(Data, key);
         }
 
-        /// <summary>Clears all keys from the specified section while keeping the section itself intact</summary>
+        /// <summary>Clears all keys from the specified section while keeping the section itself intact.</summary>
         /// <param name="section">The name of the section to clear.</param>
         public void ClearSection(string section)
         {
@@ -601,7 +619,7 @@ namespace NeoIni
             DoAutoSave();
         }
 
-        /// <summary>Asynchronously clears all keys from the specified section</summary>
+        /// <summary>Asynchronously clears all keys from the specified section.</summary>
         /// <param name="section">The name of the section to clear.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         public async Task ClearSectionAsync(string section, CancellationToken cancellationToken = default)
@@ -610,10 +628,10 @@ namespace NeoIni
             await DoAutoSaveAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        /// <summary>Renames a key within a specific section by copying its value to a new key name and removing the old one</summary>
-        /// <param name="section">The section containing the key to rename</param>
-        /// <param name="oldKey">The current name of the key</param>
-        /// <param name="newKey">The new name for the key</param>
+        /// <summary>Renames a key within a specific section by copying its value to a new key name and removing the old one.</summary>
+        /// <param name="section">The section containing the key to rename.</param>
+        /// <param name="oldKey">The current name of the key.</param>
+        /// <param name="newKey">The new name for the key.</param>
         /// <exception cref="InvalidOperationException">
         /// Thrown when the new key name already exists in the same section,
         /// or when the old key does not exist (the operation silently does nothing in that case).
@@ -624,15 +642,15 @@ namespace NeoIni
             catch (InvalidOperationException e)
             {
                 Provider.RaiseError(this, new ProviderErrorEventArgs(e));
-                return;
+                throw;
             }
             DoAutoSave();
         }
 
-        /// <summary>Asynchronously renames a key within a specific section</summary>
-        /// <param name="section">The section containing the key to rename</param>
-        /// <param name="oldKey">The current name of the key</param>
-        /// <param name="newKey">The new name for the key</param>
+        /// <summary>Asynchronously renames a key within a specific section.</summary>
+        /// <param name="section">The section containing the key to rename.</param>
+        /// <param name="oldKey">The current name of the key.</param>
+        /// <param name="newKey">The new name for the key.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <exception cref="InvalidOperationException">
         /// Thrown when the new key name already exists in the same section,
@@ -644,16 +662,16 @@ namespace NeoIni
             catch (InvalidOperationException e)
             {
                 Provider.RaiseError(this, new ProviderErrorEventArgs(e));
-                return;
+                throw;
             }
             await DoAutoSaveAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        /// <summary>Renames an entire section by moving all its contents to a new section name and removing the old one</summary>
-        /// <param name="oldSection">The current name of the section</param>
-        /// <param name="newSection">The new name for the section</param>
+        /// <summary>Renames an entire section by moving all its contents to a new section name and removing the old one.</summary>
+        /// <param name="oldSection">The current name of the section.</param>
+        /// <param name="newSection">The new name for the section.</param>
         /// <exception cref="InvalidOperationException">
-        /// Thrown when the new section name already exists. 
+        /// Thrown when the new section name already exists.
         /// If the old section does not exist, the operation silently does nothing.
         /// </exception>
         public void RenameSection(string oldSection, string newSection)
@@ -662,14 +680,14 @@ namespace NeoIni
             catch (InvalidOperationException e)
             {
                 Provider.RaiseError(this, new ProviderErrorEventArgs(e));
-                return;
+                throw;
             }
             DoAutoSave();
         }
 
-        /// <summary>Asynchronously renames an entire section</summary>
-        /// <param name="oldSection">The current name of the section</param>
-        /// <param name="newSection">The new name for the section</param>
+        /// <summary>Asynchronously renames an entire section.</summary>
+        /// <param name="oldSection">The current name of the section.</param>
+        /// <param name="newSection">The new name for the section.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <exception cref="InvalidOperationException">
         /// Thrown when the new section name already exists.
@@ -681,14 +699,14 @@ namespace NeoIni
             catch (InvalidOperationException e)
             {
                 Provider.RaiseError(this, new ProviderErrorEventArgs(e));
-                return;
+                throw;
             }
             await DoAutoSaveAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        /// <summary>Searches for keys or values matching a pattern across all sections and returns matching entries</summary>
-        /// <param name="pattern">The search pattern to match against keys and values (case-insensitive)</param>
-        /// <returns>A list of <see cref="SearchResult"/> objects representing all matches found</returns>
+        /// <summary>Searches for keys or values matching a pattern across all sections and returns matching entries.</summary>
+        /// <param name="pattern">The search pattern to match against keys and values (case-insensitive).</param>
+        /// <returns>A list of <see cref="SearchResult"/> objects representing all matches found.</returns>
         public List<SearchResult> Search(string pattern)
         {
             ThrowIfDisposed();
@@ -698,7 +716,7 @@ namespace NeoIni
             return results;
         }
 
-        /// <summary>Reloads data from the INI file, updating the internal data structure</summary>
+        /// <summary>Reloads data from the INI file, updating the internal data structure.</summary>
         public void Reload()
         {
             ThrowIfDisposed();
@@ -712,7 +730,7 @@ namespace NeoIni
         }
 
         /// <summary>Asynchronously reloads data from the INI file, updating the internal data structure.</summary>
-        /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
         public async Task ReloadAsync(CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
@@ -726,15 +744,16 @@ namespace NeoIni
             Loaded?.Invoke(this, EventArgs.Empty);
         }
 
-        /// <summary>Removes the INI file from disk</summary>
+        /// <summary>Removes the INI file from disk.</summary>
+        /// <exception cref="UnsupportedProviderOperationException">Thrown when the underlying provider is not a file-based provider.</exception>
         public void DeleteFile()
         {
             ThrowIfDisposed();
             if (Provider is NeoIniFileProvider fileProvider) fileProvider.DeleteFile();
-            else throw new UnsupportedProviderOperationException();
+            else throw new UnsupportedProviderOperationException("The current INeoIniProvider does not support deleting the underlying file.");
         }
 
-        /// <summary>Deletes the INI file from disk and clears the internal data structure</summary>
+        /// <summary>Deletes the INI file from disk and clears the internal data structure.</summary>
         public void DeleteFileWithData()
         {
             DeleteFile();
@@ -746,7 +765,8 @@ namespace NeoIni
             DataCleared?.Invoke(this, EventArgs.Empty);
         }
 
-        /// <summary>Deletes the backup file from disk</summary>
+        /// <summary>Deletes the backup file from disk.</summary>
+        /// <exception cref="UnsupportedProviderOperationException">Thrown when the underlying provider is not a file-based provider.</exception>
         public void DeleteBackup()
         {
             ThrowIfDisposed();
@@ -754,7 +774,7 @@ namespace NeoIni
             else throw new UnsupportedProviderOperationException();
         }
 
-        /// <summary>Clears the internal data structure</summary>
+        /// <summary>Clears the internal data structure.</summary>
         public void Clear()
         {
             ThrowIfDisposed();
@@ -766,12 +786,17 @@ namespace NeoIni
             DataCleared?.Invoke(this, EventArgs.Empty);
         }
 
-        /// <summary>
-        /// Returns the current encryption password if encryption is enabled, or a status message if disabled.
-        /// Use the returned password in the NeoIniDocument(path, password) constructor on a new machine
-        /// to migrate the encrypted file without data loss.
-        /// </summary>
-        /// <returns>The generated encryption password or status message.</returns>
+        /// <summary>Returns the auto-generated encryption password for a document created with <see cref="EncryptionType.Auto"/>.</summary>
+        /// <returns>The auto-generated encryption password.</returns>
+        /// <exception cref="UnsupportedProviderOperationException">Thrown when the document does not use the default file provider.</exception>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when encryption is disabled (<see cref="EncryptionType.None"/>), or when a custom password
+        /// (<see cref="EncryptionType.Custom"/>) is used, since that password is never stored.
+        /// </exception>
+        /// <remarks>
+        /// Pass the returned password to the <see cref="NeoIniDocument(string, string, NeoIniOptions, bool)"/> constructor
+        /// on another machine to migrate the encrypted file without data loss.
+        /// </remarks>
         public string GetEncryptionPassword()
         {
             ThrowIfDisposed();

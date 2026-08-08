@@ -14,13 +14,13 @@ namespace NeoIni.Models
     {
         /// <summary>
         /// Determines whether changes are automatically written to the disk after every modification.
-        /// Default is <c>true</c>.
+        /// Default value is <c>true</c>.
         /// </summary>
         public bool UseAutoSave { get; set; } = true;
 
         /// <summary>
         /// Interval (in operations) between automatic saves when <see cref="UseAutoSave"/> is enabled.
-        /// Default value is 0.
+        /// Default value is <c>0</c>.
         /// </summary>
         public int AutoSaveInterval { get; set; } = 0;
 
@@ -31,8 +31,8 @@ namespace NeoIni.Models
         public bool UseAutoBackup { get; set; } = true;
 
         /// <summary>
-        /// Determines whether missing keys are automatically added to the file with a default value when requested via <see cref="NeoIniDocument.GetValue{T}"/>. 
-        /// Default is <c>true</c>.
+        /// Determines whether missing keys are automatically added to the file with a default value when requested via <see cref="NeoIniDocument.GetValue{T}"/>.
+        /// Default value is <c>true</c>.
         /// </summary>
         public bool UseAutoAdd { get; set; } = true;
 
@@ -55,12 +55,10 @@ namespace NeoIni.Models
         /// </summary>
         public bool AllowEmptyValues { get; set; } = true;
 
-        /// <summary>Determines whether data shielding is applied to the configuration.</summary>
+        /// <summary>
+        /// Determines whether data shielding is applied to the configuration.
         /// Default value is <c>false</c>.
-        /// <exception cref="ModeConflictException">
-        /// Thrown when attempting to set this property while Human Mode is active. 
-        /// Shielding is incompatible with the manual editing capabilities of Human Mode.
-        /// </exception>
+        /// </summary>
         public bool UseShielding { get; set; } = false;
 
         /// <summary>
@@ -94,6 +92,7 @@ namespace NeoIni.Models
         /// every specified number of operations instead of after every modification.
         /// </summary>
         /// <param name="interval">Number of operations between automatic saves; must be greater than zero.</param>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="interval"/> is less than or equal to zero.</exception>
         public static NeoIniOptions BufferedAutoSave(int interval)
         {
             if (interval <= 0) throw new ArgumentOutOfRangeException(nameof(interval), "Interval must be greater than zero.");
@@ -101,7 +100,7 @@ namespace NeoIni.Models
         }
 
         /// <summary>
-        /// Read-only behavior: never writes to disk and does not create missing keys,
+        /// Read-only behavior: never automatically writes to disk and does not create missing keys,
         /// but still verifies checksums when loading to detect corruption.
         /// </summary>
         public static NeoIniOptions ReadOnly => new NeoIniOptions()

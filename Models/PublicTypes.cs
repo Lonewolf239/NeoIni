@@ -26,7 +26,7 @@ namespace NeoIni.Models
 
         /// <summary>Determines whether the specified object is equal to the current object.</summary>
         /// <param name="obj">The object to compare with the current object.</param>
-        /// <returns>true if the specified object is equal to the current object; otherwise, false.</returns>
+        /// <returns><c>true</c> if the specified object is equal to the current object; otherwise, <c>false</c>.</returns>
         public override bool Equals(object? obj) => obj is EncryptionParameters other && Equals(Key, other.Key) && Equals(Salt, other.Salt);
 
         /// <summary>Serves as the default hash function.</summary>
@@ -75,7 +75,7 @@ namespace NeoIni.Models
 
         /// <summary>Determines whether the specified object is equal to the current object.</summary>
         /// <param name="obj">The object to compare with the current object.</param>
-        /// <returns>true if the specified object is equal to the current object; otherwise, false.</returns>
+        /// <returns><c>true</c> if the specified object is equal to the current object; otherwise, <c>false</c>.</returns>
         public override bool Equals(object? obj) => obj is SearchResult other && Section == other.Section && Key == other.Key && Value == other.Value;
 
         /// <summary>Serves as the default hash function.</summary>
@@ -197,6 +197,7 @@ namespace NeoIni.Models
         /// <see cref="CultureInfo.InvariantCulture"/>; otherwise, <see cref="object.ToString"/> is used.
         /// If <paramref name="value"/> is <c>null</c>, an empty string is stored.
         /// </param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="section"/> or <paramref name="key"/> is <c>null</c>.</exception>
         public NeoIniValue(string? section, string? key, object? value)
         {
             if (section is null || key is null) throw new ArgumentNullException();

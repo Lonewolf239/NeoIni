@@ -8,14 +8,15 @@ namespace NeoIni
     {
         /// <summary>
         /// Determines whether changes are automatically written to the disk after every modification.
-        /// Default is <c>true</c>.
+        /// Default value is <c>true</c>.
         /// </summary>
         public bool UseAutoSave { get; set; }
 
         /// <summary>
         /// Interval (in operations) between automatic saves when <see cref="UseAutoSave"/> is enabled.
-        /// Default value is 0.
+        /// Default value is <c>0</c>.
         /// </summary>
+        /// <exception cref="ArgumentException">Thrown when set to a negative value.</exception>
         public int AutoSaveInterval
         {
             get => _AutoSaveInterval;
@@ -50,8 +51,8 @@ namespace NeoIni
         }
 
         /// <summary>
-        /// Determines whether missing keys are automatically added to the file with a default value when requested via <see cref="GetValue{T}"/>. 
-        /// Default is <c>true</c>.
+        /// Determines whether missing keys are automatically added to the file with a default value when requested via <see cref="GetValue{T}"/>.
+        /// Default value is <c>true</c>.
         /// </summary>
         public bool UseAutoAdd { get; set; }
 
@@ -60,6 +61,7 @@ namespace NeoIni
         /// When enabled, the configuration file includes a checksum that detects corruption or tampering.
         /// Default value is <c>true</c>.
         /// </summary>
+        /// <exception cref="ModeConflictException">Thrown when attempting to set this property while Human Mode is active.</exception>
         public bool UseChecksum
         {
             get => !HumanMode && _UseChecksum;
@@ -82,10 +84,12 @@ namespace NeoIni
         /// </summary>
         public bool AllowEmptyValues { get; set; }
 
-        /// <summary>Determines whether data shielding is applied to the configuration.</summary>
+        /// <summary>
+        /// Determines whether data shielding is applied to the configuration.
         /// Default value is <c>false</c>.
+        /// </summary>
         /// <exception cref="ModeConflictException">
-        /// Thrown when attempting to set this property while Human Mode is active. 
+        /// Thrown when attempting to set this property while Human Mode is active.
         /// Shielding is incompatible with the manual editing capabilities of Human Mode.
         /// </exception>
         public bool UseShielding
