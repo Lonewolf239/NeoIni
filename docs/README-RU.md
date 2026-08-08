@@ -25,7 +25,7 @@ dotnet add package NeoIni
 ```
 
 - **Пакет:** [nuget.org/packages/NeoIni](https://www.nuget.org/packages/NeoIni)
-- **Версия:** 3.4.4 | **.NET 5+** | **.NET Standard 2.0**
+- **Версия:** 3.5.0 | **.NET 5+** | **.NET Standard 2.0**
 - **Разработчик:** [Lonewolf239](https://github.com/Lonewolf239)
 
 ---
@@ -195,7 +195,7 @@ document.Error            += (_, e) => Console.WriteLine($"Error: {e.Exception.M
   <summary>⚙️ Код: пример NeoIni</summary>
 
 ```csharp
-// Авто-шифрование — ключ генерируется из user/machine/domain + per-file salt
+// Авто-шифрование — ключ выводится из привязанного к машине секретного материала + соль на файл
 NeoIniDocument document = new("secure.ini", EncryptionType.Auto);
 
 // Получить пароль для миграции на другую машину

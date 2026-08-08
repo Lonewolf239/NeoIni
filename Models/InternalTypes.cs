@@ -15,12 +15,14 @@ namespace NeoIni.Models
     internal sealed class HeaderParameters
     {
         internal int HeaderLength;
+        internal byte Version { get; }
         internal bool HasChecksum { get; }
         internal bool IsEncrypted { get; }
         internal bool AutoModeEncryption { get; }
 
-        internal HeaderParameters(HeaderFlags flags)
+        internal HeaderParameters(byte version, HeaderFlags flags)
         {
+            Version = version;
             HasChecksum = flags.HasFlag(HeaderFlags.HasChecksum);
             IsEncrypted = flags.HasFlag(HeaderFlags.IsEncrypted);
             AutoModeEncryption = flags.HasFlag(HeaderFlags.AutoMode);

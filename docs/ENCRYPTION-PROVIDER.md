@@ -134,8 +134,21 @@ public class MyAesEncryptionProvider : IEncryptionProvider
 
 NeoIni ships with a default AES‑256‑CBC implementation (`NeoIniEncryptionProvider`). It is used automatically when you use constructors that do not specify a custom provider. It supports two modes:
 
-- **Auto‑encryption:** key derived from the current user/machine environment (non‑portable).
+- **Auto‑encryption:** key derived from machine‑bound secret material (non‑portable). See below.
 - **Password‑based:** key derived from a user‑supplied string via PBKDF2 (320 000 iterations).
+
+---
+
+### How auto-encryption derives its key (since 3.5)
+
+Earlier versions derived the automatic key from the current user name, machine name, and domain — values that are often visible over the network or simply guessable, so a file that only *looked* machine-bound could in practice be decrypted anywhere the attacker could reproduce that string. Since **3.5**, the key is instead derived from:
+
+- a random 256-bit secret generated once and stored locally (protected with **DPAPI**, `LocalMachine` scope, on Windows), and
+- a stable hardware/installation identifier (the registry `MachineGuid` on Windows, `/etc/machine-id` on Linux).
+
+Neither of these is observable by inspecting the encrypted file itself or by knowing public information about the machine — reproducing the key requires local access to that specific machine. This is a deliberate trade-off: it does not (and cannot) protect against an attacker who already has the same level of access as the process that created the file, but it removes the much larger attack surface of "guess the username and hostname."
+
+**Format version and migration:** the file format version byte was bumped to `2` for this change. Files encrypted with the old (version 1) automatic scheme are still read transparently — NeoIni detects the version, decrypts with the legacy derivation, and, if `UseAutoSave` is enabled (the default), immediately re-saves the file under the new scheme. If `UseAutoSave` is disabled (including via `NeoIniOptions.ReadOnly`), the migration save is skipped to honor that setting — the file is still decrypted and usable, but stays on version 1 until it's opened somewhere the save can happen. Password-based (`EncryptionType.Custom`) files are unaffected by this change, since they never depended on machine identity.
 
 ---
 
@@ -145,5 +158,6 @@ NeoIni ships with a default AES‑256‑CBC implementation (`NeoIniEncryptionPro
 - The `salt` parameter in `GetEncryptionParameters` is optional. If your provider does not use a salt, you can ignore it.
 - The returned `EncryptionParameters` must contain a valid key (non‑null) when encryption is enabled. If you return `null` key, the document will throw `MissingEncryptionKeyException`.
 - The provider should be stateless and thread‑safe, as it may be called concurrently from different documents.
+- Custom `IEncryptionProvider` implementations are unaffected by the file version bump — the version-aware legacy/new auto-derivation switch only applies to the built-in `NeoIniEncryptionProvider`.
 
 > **Note:** In versions prior to 2.0, encryption was hard‑coded to AES‑256‑CBC. Upgrade to 3.1 to take advantage of the new pluggable encryption architecture.

@@ -78,6 +78,28 @@ namespace NeoIni.Providers
             }
         }
 
+        private EncryptionParameters ResolveReadEncryptionParameters(string path, HeaderParameters headerParameters, out bool usedLegacyAuto)
+        {
+            usedLegacyAuto = false;
+            if (headerParameters.AutoModeEncryption && headerParameters.Version == LegacyAutoFileVersion &&
+                EncryptionProvider is NeoIniEncryptionProvider builtinProvider)
+            {
+                byte[]? saltFromFile = GetSalt(path);
+                if (saltFromFile is null) throw new MissingSaltException();
+                usedLegacyAuto = true;
+                return builtinProvider.GetLegacyAutoEncryptionParameters(saltFromFile);
+            }
+            return GetEncryptionParameters(path, headerParameters.AutoModeEncryption);
+        }
+
+        private void CompleteAutoMigration(byte[] salt)
+        {
+            var newParameters = EncryptionProvider.GetEncryptionParameters(salt: salt);
+            EncryptionKey = newParameters.Key;
+            Salt = newParameters.Salt;
+            PendingAutoMigration = true;
+        }
+
         private bool ValidateFile(byte[]? fileBytes, out HeaderParameters? headerParameters)
         {
             headerParameters = null;
@@ -109,6 +131,7 @@ namespace NeoIni.Providers
 
         private string[]? ReadFile(string path, bool isBackup)
         {
+            PendingAutoMigration = false;
             if (!File.Exists(path))
             {
                 if (isBackup) return null;
@@ -135,7 +158,7 @@ namespace NeoIni.Providers
                 }
                 else
                 {
-                    var encryptionParameters = GetEncryptionParameters(path, headerParameters.AutoModeEncryption);
+                    var encryptionParameters = ResolveReadEncryptionParameters(path, headerParameters, out bool usedLegacyAuto);
                     if (encryptionParameters.Key is null)
                         throw new MissingEncryptionKeyException("The encryption key cannot be null.");
                     byte[] iv = new byte[IvSize];
@@ -147,6 +170,7 @@ namespace NeoIni.Providers
                     Array.Copy(fileBytes, index, encryptedBytes, 0, encryptedLength);
                     byte[] decryptedBytes = EncryptionProvider.Decrypt(encryptionParameters.Key, iv, encryptedBytes);
                     content = Encoding.UTF8.GetString(decryptedBytes);
+                    if (usedLegacyAuto && !(encryptionParameters.Salt is null)) CompleteAutoMigration(encryptionParameters.Salt);
                     return SplitLines(content);
                 }
             }
@@ -160,6 +184,7 @@ namespace NeoIni.Providers
 
         private async Task<string[]?> ReadFileAsync(string path, bool isBackup, CancellationToken ct)
         {
+            PendingAutoMigration = false;
             ct.ThrowIfCancellationRequested();
             if (!File.Exists(path))
             {
@@ -189,7 +214,7 @@ namespace NeoIni.Providers
                 }
                 else
                 {
-                    var encryptionParameters = GetEncryptionParameters(path, headerParameters.AutoModeEncryption);
+                    var encryptionParameters = ResolveReadEncryptionParameters(path, headerParameters, out bool usedLegacyAuto);
                     if (encryptionParameters.Key is null)
                         throw new MissingEncryptionKeyException("The encryption key cannot be null.");
                     byte[] iv = new byte[IvSize];
@@ -204,6 +229,7 @@ namespace NeoIni.Providers
                     ct.ThrowIfCancellationRequested();
                     content = Encoding.UTF8.GetString(decryptedBytes);
                     ct.ThrowIfCancellationRequested();
+                    if (usedLegacyAuto && !(encryptionParameters.Salt is null)) CompleteAutoMigration(encryptionParameters.Salt);
                     return SplitLines(content);
                 }
             }
@@ -223,8 +249,8 @@ namespace NeoIni.Providers
             if (!fileBytes.AsSpan(0, FileSignature.Length).SequenceEqual(FileSignature)) return false;
 #endif
             byte version = fileBytes[4];
-            if (version != FileVersion) return false;
-            headerParameters = new HeaderParameters((HeaderFlags)fileBytes[5]) { HeaderLength = HeaderSize };
+            if (version != FileVersion && version != LegacyAutoFileVersion) return false;
+            headerParameters = new HeaderParameters(version, (HeaderFlags)fileBytes[5]) { HeaderLength = HeaderSize };
             return true;
         }
 

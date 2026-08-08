@@ -1,31 +1,38 @@
 using System;
 using System.IO;
 using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using NeoIni.Core;
 using NeoIni.Models;
 
 namespace NeoIni.Providers
 {
     /// <summary>
     /// Provides encryption and decryption functionality using AES-CBC with PKCS7 padding.
-    /// Keys are derived from a password using PBKDF2 with SHA-256, or from the current user's environment if no password is supplied.
+    /// Keys are derived from a password using PBKDF2 with SHA-256, or from machine-bound secret material if no password is supplied.
     /// </summary>
     public sealed class NeoIniEncryptionProvider : IEncryptionProvider
     {
         private const int Pbkdf2Iterations = 320000;
         private const int KeySizeBytes = 32;
 
-        private static byte[] DeriveKeyFromString(string? password, byte[]? salt, int keySize = KeySizeBytes)
+        private static byte[] DeriveKey(byte[] password, byte[] salt, int keySize = KeySizeBytes)
         {
-            if (password is null) throw new ArgumentNullException(nameof(password));
-            if (salt is null) throw new ArgumentNullException(nameof(salt));
 #if NETSTANDARD2_0 || NET5_0
             using var rfc2898 = new Rfc2898DeriveBytes(password, salt, Pbkdf2Iterations);
             return rfc2898.GetBytes(keySize);
 #else
             return Rfc2898DeriveBytes.Pbkdf2(password, salt, Pbkdf2Iterations, HashAlgorithmName.SHA256, keySize);
 #endif
+        }
+
+        private static byte[] DeriveKeyFromString(string? password, byte[]? salt, int keySize = KeySizeBytes)
+        {
+            if (password is null) throw new ArgumentNullException(nameof(password));
+            if (salt is null) throw new ArgumentNullException(nameof(salt));
+            return DeriveKey(Encoding.UTF8.GetBytes(password), salt, keySize);
         }
 
         private static byte[] GenerateRandomSalt(int size = 16)
@@ -41,38 +48,72 @@ namespace NeoIni.Providers
             return salt;
         }
 
-        private static string GeneratePasswordFromUserId(byte[]? salt)
+        private static string ToHex(byte[] bytes)
         {
-            salt ??= GenerateRandomSalt();
-            string userId = Environment.UserName ?? Environment.GetEnvironmentVariable("USER") ?? "unknown";
-            string envSeed = $"{userId}:{Environment.MachineName}:{Environment.UserDomainName ?? "local"}";
-            byte[] passwordBytes = DeriveKeyFromString(envSeed, salt, KeySizeBytes);
 #if NETSTANDARD2_0
-            return BitConverter.ToString(passwordBytes).Replace("-", "").ToLowerInvariant();
+            return BitConverter.ToString(bytes).Replace("-", "").ToLowerInvariant();
 #else
-            return Convert.ToHexString(passwordBytes).ToLowerInvariant();
+            return Convert.ToHexString(bytes).ToLowerInvariant();
 #endif
         }
 
         /// <summary>
+        /// Generates a deterministic, high-entropy password bound to this machine, using a locally-persisted
+        /// random secret (protected with DPAPI on Windows) mixed with a stable hardware/installation identifier.
+        /// The result is not derivable from any publicly observable information (user name, machine name, etc.).
+        /// </summary>
+        private static string GenerateAutoPassword(byte[] salt)
+        {
+            byte[] secret = MachineIdentity.GetMachineSecret();
+            byte[] machineId = MachineIdentity.GetMachineId();
+            byte[] combined = new byte[secret.Length + machineId.Length];
+            Buffer.BlockCopy(secret, 0, combined, 0, secret.Length);
+            Buffer.BlockCopy(machineId, 0, combined, secret.Length, machineId.Length);
+            return ToHex(DeriveKey(combined, salt));
+        }
+
+        /// <summary>
+        /// Reproduces the pre-3.5 automatic key derivation (user name + machine name + domain), used exclusively
+        /// to decrypt files created before the machine-bound secret scheme existed, so they can be migrated.
+        /// </summary>
+        private static string GenerateLegacyAutoPassword(byte[] salt)
+        {
+            string userId = Environment.UserName ?? Environment.GetEnvironmentVariable("USER") ?? "unknown";
+            string envSeed = $"{userId}:{Environment.MachineName}:{Environment.UserDomainName ?? "local"}";
+            return ToHex(DeriveKeyFromString(envSeed, salt, KeySizeBytes));
+        }
+
+        /// <summary>
         /// Obtains encryption parameters (key and salt) for use with AES encryption.
-        /// If a password is supplied, it is used to derive the key; otherwise a password is derived from the current user environment.
+        /// If a password is supplied, it is used to derive the key; otherwise a machine-bound password is generated.
         /// If salt is not supplied, a random salt is generated.
         /// </summary>
-        /// <param name="password">Optional password. If <c>null</c>, a password is generated from the user environment.</param>
+        /// <param name="password">Optional password. If <c>null</c>, a password is generated from machine-bound secret material.</param>
         /// <param name="salt">Optional salt. If <c>null</c>, a random salt is generated.</param>
         /// <returns>An <see cref="EncryptionParameters"/> instance containing the derived key and the salt used.</returns>
         public EncryptionParameters GetEncryptionParameters(string? password = null, byte[]? salt = null)
         {
             salt ??= GenerateRandomSalt();
-            password ??= GeneratePasswordFromUserId(salt);
+            password ??= GenerateAutoPassword(salt);
             return new EncryptionParameters(DeriveKeyFromString(password, salt, KeySizeBytes), salt);
         }
 
-        /// <summary>Retrieves a deterministic password derived from the current user environment and the provided salt.</summary>
+        /// <summary>Retrieves the deterministic, machine-bound password derived for the provided salt.</summary>
         /// <param name="salt">The salt used in password derivation.</param>
         /// <returns>A hex string password.</returns>
-        public string GetEncryptionPassword(byte[]? salt) => GeneratePasswordFromUserId(salt);
+        public string GetEncryptionPassword(byte[]? salt)
+        {
+            salt ??= GenerateRandomSalt();
+            return GenerateAutoPassword(salt);
+        }
+
+        /// <summary>
+        /// Obtains encryption parameters using the pre-3.5 automatic key derivation. Used only internally
+        /// by <see cref="Providers.NeoIniFileProvider"/> to decrypt and migrate version-1 automatically-encrypted files.
+        /// </summary>
+        /// <param name="salt">The salt stored in the version-1 file.</param>
+        internal EncryptionParameters GetLegacyAutoEncryptionParameters(byte[] salt) =>
+            new EncryptionParameters(DeriveKeyFromString(GenerateLegacyAutoPassword(salt), salt, KeySizeBytes), salt);
 
         /// <summary>
         /// Encrypts plaintext bytes using AES-CBC with PKCS7 padding.

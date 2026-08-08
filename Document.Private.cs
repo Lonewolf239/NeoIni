@@ -118,6 +118,7 @@ namespace NeoIni
             var neoIniData = Provider.GetData(HumanMode);
             Data = neoIniData.Data;
             Comments = neoIniData.Comments;
+            if (UseAutoSave && Provider is NeoIniFileProvider fileProvider && fileProvider.PendingAutoMigration) SaveFile();
         }
 
         internal async Task LoadAsync(CancellationToken cancellationToken = default)
@@ -125,6 +126,8 @@ namespace NeoIni
             var neoIniData = await Provider.GetDataAsync(HumanMode, ct: cancellationToken).ConfigureAwait(false);
             Data = neoIniData.Data;
             Comments = neoIniData.Comments;
+            if (UseAutoSave && Provider is NeoIniFileProvider fileProvider && fileProvider.PendingAutoMigration)
+                await SaveFileAsync(cancellationToken).ConfigureAwait(false);
         }
 
         private void ApplyOptions(NeoIniOptions? options)

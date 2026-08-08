@@ -22,7 +22,7 @@ namespace NeoIni
     /// <br/>
     /// <b>Target Frameworks: .NET 5+ and .NET Standard 2.0</b>
     /// <br/>
-    /// <b>Version: 3.4.4</b>
+    /// <b>Version: 3.5.0</b>
     /// <br/>
     /// <b>Black Box Philosophy:</b> This class follows a strict "black box" design principle - users interact only through the public API without needing to understand internal implementation details. Input goes in, processed output comes out, internals remain hidden and abstracted.
     /// </summary>
@@ -720,13 +720,16 @@ namespace NeoIni
         public void Reload()
         {
             ThrowIfDisposed();
+            bool needsMigrationSave;
             using (Lock.WriteLock())
             {
                 var neoIniData = Provider.GetData(HumanMode);
                 Data = neoIniData.Data;
                 Comments = neoIniData.Comments;
+                needsMigrationSave = UseAutoSave && Provider is NeoIniFileProvider fileProvider && fileProvider.PendingAutoMigration;
             }
             Loaded?.Invoke(this, EventArgs.Empty);
+            if (needsMigrationSave) SaveFile();
         }
 
         /// <summary>Asynchronously reloads data from the INI file, updating the internal data structure.</summary>
@@ -735,13 +738,16 @@ namespace NeoIni
         {
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
+            bool needsMigrationSave;
             using (await Lock.WriteLockAsync(cancellationToken).ConfigureAwait(false))
             {
                 var neoIniData = await Provider.GetDataAsync(HumanMode, cancellationToken).ConfigureAwait(false);
                 Data = neoIniData.Data;
                 Comments = neoIniData.Comments;
+                needsMigrationSave = UseAutoSave && Provider is NeoIniFileProvider fileProvider && fileProvider.PendingAutoMigration;
             }
             Loaded?.Invoke(this, EventArgs.Empty);
+            if (needsMigrationSave) await SaveFileAsync(cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>Removes the INI file from disk.</summary>

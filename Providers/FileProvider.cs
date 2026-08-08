@@ -191,14 +191,18 @@ namespace NeoIni.Providers
         {
             if (path is null) return null;
             if (!File.Exists(path)) return null;
-            byte[] headerBytes = NeoIniIO.ReadBytes(path, HeaderSize);
-            if (!TryParseHeader(headerBytes, out var headerParameters)) return null;
-            if (headerParameters is null) return null;
-            if (!headerParameters.IsEncrypted) return null;
-            int saltIndex = HeaderSize + IvSize;
-            if (headerParameters.HasChecksum) saltIndex += WarningBytes.Length;
-            byte[] salt = NeoIniIO.ReadBytes(path, SaltSize, saltIndex);
-            return salt;
+            try
+            {
+                byte[] headerBytes = NeoIniIO.ReadBytes(path, HeaderSize);
+                if (!TryParseHeader(headerBytes, out var headerParameters)) return null;
+                if (headerParameters is null) return null;
+                if (!headerParameters.IsEncrypted) return null;
+                int saltIndex = HeaderSize + IvSize;
+                if (headerParameters.HasChecksum) saltIndex += WarningBytes.Length;
+                byte[] salt = NeoIniIO.ReadBytes(path, SaltSize, saltIndex);
+                return salt;
+            }
+            catch (IOException) { return null; }
         }
 
         public byte[] GetStateChecksum()

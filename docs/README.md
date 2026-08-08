@@ -25,7 +25,7 @@ dotnet add package NeoIni
 ```
 
 - **Package:** [nuget.org/packages/NeoIni](https://www.nuget.org/packages/NeoIni)
-- **Version:** 3.4.4 | **.NET 5+** | **.NET Standard 2.0**
+- **Version:** 3.5.0 | **.NET 5+** | **.NET Standard 2.0**
 - **Developer:** [Lonewolf239](https://github.com/Lonewolf239)
 
 ---
@@ -195,7 +195,7 @@ document.Error            += (_, e) => Console.WriteLine($"Error: {e.Exception.M
   <summary>⚙️ Code: NeoIni example</summary>
 
 ```csharp
-// Auto-encryption — key is derived from user/machine/domain + per-file salt
+// Auto-encryption — key is derived from machine-bound secret material + per-file salt
 NeoIniDocument document = new("secure.ini", EncryptionType.Auto);
 
 // Retrieve password to migrate to another machine

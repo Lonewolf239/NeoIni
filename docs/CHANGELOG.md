@@ -4,6 +4,22 @@
 ## Changelog · NeoIni
 
 <details open>
+<summary><strong>3.5.0</strong> — August 8, 2026</summary>
+
+#### List of changes
+
+- **Redesigned automatic ("machine-bound") encryption**
+    - The key is no longer derived from the current user name, machine name, and domain — that scheme only guarded against casual snooping, since those values are often visible over the network or simply guessable.
+    - It is now derived from a random 256-bit secret generated once and persisted locally (protected with DPAPI, `LocalMachine` scope, on Windows) mixed with a stable hardware/installation identifier (registry `MachineGuid` on Windows, `/etc/machine-id` on Linux).
+    - Still fully automatic — no password is ever requested — and still opens only on the machine it was created on, but no longer reconstructable from publicly observable information.
+- **Bumped the file format version to 2** to reflect the new automatic-encryption scheme.
+- **Added transparent migration**: opening a version-1 automatically-encrypted file decrypts it with the legacy derivation and, if `UseAutoSave` is enabled, immediately re-saves it under the new scheme (skipped when `UseAutoSave` is off, e.g. `NeoIniOptions.ReadOnly`, so the migration never performs a write the caller explicitly disabled). Password-based (`EncryptionType.Custom`) files are untouched by this change.
+- **Fixed a crash** (`IOException: File too small to read the requested range`) when constructing an encrypted document over a pre-existing empty or truncated file — `GetSalt` now treats it as "no header present" instead of propagating the exception.
+- Fixed the test project referencing a stale published `NeoIni` package instead of the local source, meaning the test suite was not actually validating local changes.
+
+</details>
+
+<details>
 <summary><strong>3.4.4</strong> — August 8, 2026</summary>
 
 #### List of changes

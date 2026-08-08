@@ -6,7 +6,8 @@ namespace NeoIni.Providers
     {
         private IEncryptionProvider EncryptionProvider;
 
-        private const byte FileVersion = 1;
+        private const byte FileVersion = 2;
+        private const byte LegacyAutoFileVersion = 1;
         private const int HeaderSize = 10;
         private const int IvSize = 16;
         private const int SaltSize = 16;
@@ -18,9 +19,12 @@ namespace NeoIni.Providers
         private static readonly string[] LineSeparators = new[] { "\r\n", "\n", "\r" };
 
         private readonly string FilePath;
-        private readonly byte[]? EncryptionKey;
-        private readonly byte[]? Salt;
+        private byte[]? EncryptionKey;
+        private byte[]? Salt;
         private readonly bool AutoEncryption = false;
+
+        /// <summary>Set when a version-1 auto-encrypted file was just decrypted with the legacy scheme and needs to be re-saved under the new one.</summary>
+        internal bool PendingAutoMigration { get; private set; }
 
         private string TempFilePath => FilePath + ".tmp";
         private string BackupFilePath => FilePath + ".backup";

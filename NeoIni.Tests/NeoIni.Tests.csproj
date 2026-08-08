@@ -20,7 +20,8 @@
 		</PackageReference>
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="NeoIni" Version="3.4.0" />
+		<ProjectReference Include="..\NeoIni.csproj" />
+		<ProjectReference Include="..\Generators\NeoIni.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
 	</ItemGroup>
 	<ItemGroup>
 		<Using Include="Xunit" />

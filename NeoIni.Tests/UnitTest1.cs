@@ -536,6 +536,79 @@ public class NeoIniDocumentEncryptionTests : IDisposable
         var value = doc2.GetValue<string>("Test", "Key");
         Assert.Equal("Secret", value);
     }
+
+    [Fact]
+    public void Encryption_Auto_SavedFileHeaderReportsVersion2()
+    {
+        var doc = new NeoIniDocument(_tempFile, EncryptionType.Auto);
+        doc.SetValue("Test", "Key", "Secret");
+        doc.SaveFile();
+
+        byte[] header = File.ReadAllBytes(_tempFile).Take(10).ToArray();
+        Assert.Equal(2, header[4]);
+    }
+
+    [Fact]
+    public void Encryption_Auto_LegacyV1File_IsMigratedToV2OnOpen()
+    {
+        const string originalContent = "[Test]\nKey = Secret\n";
+        LegacyAutoEncryption.WriteLegacyAutoEncryptedFile(_tempFile, originalContent);
+
+        var doc = new NeoIniDocument(_tempFile, EncryptionType.Auto);
+        Assert.Equal("Secret", doc.GetValue<string>("Test", "Key"));
+
+        byte[] fileBytesAfterOpen = File.ReadAllBytes(_tempFile);
+        Assert.Equal(2, fileBytesAfterOpen[4]);
+
+        var reopened = new NeoIniDocument(_tempFile, EncryptionType.Auto);
+        Assert.Equal("Secret", reopened.GetValue<string>("Test", "Key"));
+    }
+
+    [Fact]
+    public void Encryption_Auto_LegacyV1File_WithAutoSaveDisabled_IsNotRewritten()
+    {
+        const string originalContent = "[Test]\nKey = Secret\n";
+        LegacyAutoEncryption.WriteLegacyAutoEncryptedFile(_tempFile, originalContent);
+
+        var doc = new NeoIniDocument(_tempFile, EncryptionType.Auto, new NeoIniOptions { UseAutoSave = false });
+        Assert.Equal("Secret", doc.GetValue<string>("Test", "Key"));
+
+        byte[] fileBytesAfterOpen = File.ReadAllBytes(_tempFile);
+        Assert.Equal(1, fileBytesAfterOpen[4]);
+    }
+}
+
+/// <summary>Reproduces the pre-3.5 automatic key derivation to build version-1 auto-encrypted test fixtures.</summary>
+internal static class LegacyAutoEncryption
+{
+    private const int Pbkdf2Iterations = 320000;
+
+    internal static byte[] WriteLegacyAutoEncryptedFile(string path, string content)
+    {
+        byte[] salt = RandomNumberGenerator.GetBytes(16);
+        string envSeed = $"{Environment.UserName}:{Environment.MachineName}:{Environment.UserDomainName ?? "local"}";
+        byte[] legacyPasswordBytes = Rfc2898DeriveBytes.Pbkdf2(envSeed, salt, Pbkdf2Iterations, HashAlgorithmName.SHA256, 32);
+        string legacyPassword = Convert.ToHexString(legacyPasswordBytes).ToLowerInvariant();
+        byte[] key = Rfc2898DeriveBytes.Pbkdf2(legacyPassword, salt, Pbkdf2Iterations, HashAlgorithmName.SHA256, 32);
+
+        using var aes = Aes.Create();
+        aes.Mode = CipherMode.CBC;
+        aes.Padding = PaddingMode.PKCS7;
+        aes.Key = key;
+        aes.GenerateIV();
+
+        using var ms = new MemoryStream();
+        byte[] header = { (byte)'N', (byte)'I', (byte)'N', (byte)'I', 1, 6, 0, 0, 0x0D, 0x0A };
+        ms.Write(header);
+        ms.Write(aes.IV);
+        ms.Write(salt);
+        using (var encryptor = aes.CreateEncryptor())
+        using (var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write, leaveOpen: true))
+            cs.Write(Encoding.UTF8.GetBytes(content));
+
+        File.WriteAllBytes(path, ms.ToArray());
+        return salt;
+    }
 }
 
 public class NeoIniDocumentEventsTests : IDisposable
