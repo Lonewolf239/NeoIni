@@ -4,6 +4,33 @@
 ## Changelog · NeoIni
 
 <details open>
+<summary><strong>3.4.4</strong> — August 8, 2026</summary>
+
+#### List of changes
+
+- **Fixed a save-serialization race**
+    - Added an internal semaphore so automatic saves, manual `SaveFile`/`SaveFileAsync`, and `Dispose`/`DisposeAsync` no longer write to the same temp file concurrently.
+    - Concurrent auto-save requests that arrive while a save is already in flight are no longer silently dropped — the in-flight save now performs one extra pass to pick them up.
+- **Safer error handling in `Dispose`/`DisposeAsync`**
+    - Save failures during disposal are now always traced (previously `DEBUG`-only) and reported through `Error` when a handler is attached, instead of being fully silent in Release builds.
+- **Consistent exception behavior**
+    - `AddKey`, `RenameKey`, and `RenameSection` (and their async versions) now always throw `InvalidOperationException` on a conflict, regardless of whether `Error` has a subscriber.
+    - Constructors accepting a custom `IEncryptionProvider` now consistently throw `ArgumentNullException` when it is `null`, instead of silently falling back to the default provider in two of the six overloads.
+- **Fixed a `CreateHumanMode`/`CreateHumanModeAsync` validation gap**
+    - Passing `NeoIniOptions.UseShielding = true` through `options` no longer bypasses the `ModeConflictException` check required by Human Mode.
+- **Fixed swapped `ChecksumMismatchEventArgs` values**
+    - `Expected`/`Actual` were populated in reversed order when a checksum mismatch was reported.
+- **Fixed a misleading exception on `DeleteFile`**
+    - Calling it on a non-file provider previously reported a backup-related message; it now describes the actual failure.
+- **Dependency update**
+    - `AsyncReaderWriterLock` upgraded from `1.0.2` to `1.0.3`, fixing a race where a lock could be acquired — or a waiter left stuck forever — if `Dispose()` ran while an async acquire was in its slow path.
+- **Documentation**
+    - Refreshed XML doc comments across the public API for accuracy and consistency.
+    - Synced `docs/*.md` guides with the corrected behavior (event count, error-handling notes, provider guide, hot-reload notes, security support table).
+
+</details>
+
+<details>
 <summary><strong>3.4.3</strong> — May 31, 2026</summary>
 
 #### List of changes
