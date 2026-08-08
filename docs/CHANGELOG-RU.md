@@ -4,6 +4,15 @@
 ## Changelog · NeoIni
 
 <details open>
+<summary><strong>3.5.1</strong> — 8 августа 2026</summary>
+
+#### Список изменений
+
+- **Только документация, код не менялся.** Коммерческая лицензия стала заметнее: добавлен бейдж рядом с GPLv3 в `README.md`/`README-RU.md`, а также заметный блок в начале `README-NUGET.md` (страница, которую показывает nuget.org) — оба ведут на существующий раздел [Commercial License](./README-RU.md#commercial-license). Такая же ссылка добавлена на главную страницу вики.
+
+</details>
+
+<details>
 <summary><strong>3.5.0</strong> — 8 августа 2026</summary>
 
 #### List of changes

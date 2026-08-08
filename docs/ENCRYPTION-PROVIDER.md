@@ -141,7 +141,7 @@ NeoIni ships with a default AES‑256‑CBC implementation (`NeoIniEncryptionPro
 
 ### How auto-encryption derives its key (since 3.5)
 
-Earlier versions derived the automatic key from the current user name, machine name, and domain — values that are often visible over the network or simply guessable, so a file that only *looked* machine-bound could in practice be decrypted anywhere the attacker could reproduce that string. Since **3.5**, the key is instead derived from:
+Earlier versions derived the automatic key from the current user name, machine name, and domain — values that are often visible over the network or simply guessable, so a file that only _looked_ machine-bound could in practice be decrypted anywhere the attacker could reproduce that string. Since **3.5**, the key is instead derived from:
 
 - a random 256-bit secret generated once and stored locally (protected with **DPAPI**, `LocalMachine` scope, on Windows), and
 - a stable hardware/installation identifier (the registry `MachineGuid` on Windows, `/etc/machine-id` on Linux).

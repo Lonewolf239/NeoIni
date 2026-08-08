@@ -9,41 +9,41 @@ Complete reference for all public methods, options, and events exposed by `NeoIn
 
 ### Core Methods
 
-| Method                  | Description                                                     | Async Version             |
-| ----------------------- | --------------------------------------------------------------- | ------------------------- |
-| `GetValue<T>`           | Read typed value with default fallback (optionally auto-adding) | `GetValueAsync<T>`        |
-| `GetValueClamped<T>`    | Read typed value and clamp it between min/max                   | `GetValueClampedAsync<T>` |
-| `TryGetValue<T>`        | Read typed value without modifying the file and without AutoAdd | –                         |
-| `SetValue<T>`           | Set/create key-value                                            | `SetValueAsync<T>`        |
-| `SetValues<T>`          | Set/create multiple key-value pairs (bulk)                      | `SetValuesAsync<T>`       |
-| `SetValueClamped<T>`    | Set/create key-value and clamp it within range                  | `SetValueClampedAsync<T>` |
-| `AddSection`            | Create section if missing                                       | `AddSectionAsync`         |
-| `AddKey<T>`             | Add unique key-value                                            | `AddKeyAsync<T>`          |
-| `AddKeyClamped<T>`      | Add unique key-value and clamp it within range                  | `AddKeyClampedAsync<T>`   |
-| `RemoveKey`             | Delete specific key                                             | `RemoveKeyAsync`          |
-| `RemoveSection`         | Delete entire section                                           | `RemoveSectionAsync`      |
-| `ClearSection`          | Remove all keys from section                                    | `ClearSectionAsync`       |
-| `RenameKey`             | Rename key in section                                           | `RenameKeyAsync`          |
-| `RenameSection`         | Rename entire section                                           | `RenameSectionAsync`      |
-| `Search`                | Search keys/values by pattern                                   | –                         |
-| `FindKey`               | Search a key across all sections                                | –                         |
-| `GetAllSections`        | List all sections                                               | –                         |
-| `GetAllKeys`            | List keys in section                                            | –                         |
-| `GetSection`            | Get all key-value pairs in section                              | –                         |
-| `SectionExists`         | Check if section exists                                         | –                         |
-| `KeyExists`             | Check if key exists in section                                  | –                         |
-| `SaveFile`              | Save data to storage                                            | `SaveFileAsync`           |
-| `ToString`              | Serialize INI data to formatted string (as in file)             | –                         |
-| `Reload`                | Reload data from storage                                        | `ReloadAsync`             |
-| `StartHotReload`        | Start automatic hot reload monitoring                           | –                         |
-| `StopHotReload`         | Stop hot reload monitoring                                      | –                         |
-| `DeleteFile`            | Delete file from disk                                           | –                         |
-| `DeleteFileWithData`    | Delete file and clear data                                      | –                         |
-| `DeleteBackup`          | Delete the backup file from disk                                | –                         |
-| `Clear`                 | Clear internal data structure completely                        | –                         |
-| `GetEncryptionPassword` | Get the auto-generated encryption password (throws if unavailable) | –                      |
-| `CreateAsync`           | Asynchronously create and initialize reader (static factory)    | –                         |
-| `CreateHumanMode`       | Create reader in human-editable mode                            | `CreateHumanModeAsync`    |
+| Method                  | Description                                                        | Async Version             |
+| ----------------------- | ------------------------------------------------------------------ | ------------------------- |
+| `GetValue<T>`           | Read typed value with default fallback (optionally auto-adding)    | `GetValueAsync<T>`        |
+| `GetValueClamped<T>`    | Read typed value and clamp it between min/max                      | `GetValueClampedAsync<T>` |
+| `TryGetValue<T>`        | Read typed value without modifying the file and without AutoAdd    | –                         |
+| `SetValue<T>`           | Set/create key-value                                               | `SetValueAsync<T>`        |
+| `SetValues<T>`          | Set/create multiple key-value pairs (bulk)                         | `SetValuesAsync<T>`       |
+| `SetValueClamped<T>`    | Set/create key-value and clamp it within range                     | `SetValueClampedAsync<T>` |
+| `AddSection`            | Create section if missing                                          | `AddSectionAsync`         |
+| `AddKey<T>`             | Add unique key-value                                               | `AddKeyAsync<T>`          |
+| `AddKeyClamped<T>`      | Add unique key-value and clamp it within range                     | `AddKeyClampedAsync<T>`   |
+| `RemoveKey`             | Delete specific key                                                | `RemoveKeyAsync`          |
+| `RemoveSection`         | Delete entire section                                              | `RemoveSectionAsync`      |
+| `ClearSection`          | Remove all keys from section                                       | `ClearSectionAsync`       |
+| `RenameKey`             | Rename key in section                                              | `RenameKeyAsync`          |
+| `RenameSection`         | Rename entire section                                              | `RenameSectionAsync`      |
+| `Search`                | Search keys/values by pattern                                      | –                         |
+| `FindKey`               | Search a key across all sections                                   | –                         |
+| `GetAllSections`        | List all sections                                                  | –                         |
+| `GetAllKeys`            | List keys in section                                               | –                         |
+| `GetSection`            | Get all key-value pairs in section                                 | –                         |
+| `SectionExists`         | Check if section exists                                            | –                         |
+| `KeyExists`             | Check if key exists in section                                     | –                         |
+| `SaveFile`              | Save data to storage                                               | `SaveFileAsync`           |
+| `ToString`              | Serialize INI data to formatted string (as in file)                | –                         |
+| `Reload`                | Reload data from storage                                           | `ReloadAsync`             |
+| `StartHotReload`        | Start automatic hot reload monitoring                              | –                         |
+| `StopHotReload`         | Stop hot reload monitoring                                         | –                         |
+| `DeleteFile`            | Delete file from disk                                              | –                         |
+| `DeleteFileWithData`    | Delete file and clear data                                         | –                         |
+| `DeleteBackup`          | Delete the backup file from disk                                   | –                         |
+| `Clear`                 | Clear internal data structure completely                           | –                         |
+| `GetEncryptionPassword` | Get the auto-generated encryption password (throws if unavailable) | –                         |
+| `CreateAsync`           | Asynchronously create and initialize reader (static factory)       | –                         |
+| `CreateHumanMode`       | Create reader in human-editable mode                               | `CreateHumanModeAsync`    |
 
 > **Note:** In version 2.0, the `NeoIniReader` class was renamed to `NeoIniDocument`, and the `ReloadFromFile`/`ReloadFromFileAsync` methods were renamed to `Reload`/`ReloadAsync` for brevity and consistency. In versions prior to 2.0, please use the old names.
 
@@ -51,15 +51,15 @@ Complete reference for all public methods, options, and events exposed by `NeoIn
 
 ### Options (NeoIniOptions)
 
-| Option             | Description                                                                                    | Default            |
-| ------------------ | ---------------------------------------------------------------------------------------------- | ------------------ |
-| `UseAutoSave`      | Automatically saves changes to storage after modifications                                     | `true`             |
-| `AutoSaveInterval` | Number of operations between automatic saves when AutoSave is enabled                          | `0` (every change) |
-| `UseAutoBackup`    | Creates `.backup` files during save operations for safety                                      | `true`             |
-| `UseAutoAdd`       | Automatically creates missing sections/keys with default values when reading via `GetValue<T>` | `true`             |
-| `UseChecksum`      | Calculates and verifies checksums during load/save operations                                  | `true`             |
-| `SaveOnDispose`    | Automatically saves the configuration when the instance is disposed                            | `true`             |
-| `AllowEmptyValues` | Permits configuration keys to be saved with empty or null values                               | `true`             |
+| Option             | Description                                                                                     | Default            |
+| ------------------ | ----------------------------------------------------------------------------------------------- | ------------------ |
+| `UseAutoSave`      | Automatically saves changes to storage after modifications                                      | `true`             |
+| `AutoSaveInterval` | Number of operations between automatic saves when AutoSave is enabled                           | `0` (every change) |
+| `UseAutoBackup`    | Creates `.backup` files during save operations for safety                                       | `true`             |
+| `UseAutoAdd`       | Automatically creates missing sections/keys with default values when reading via `GetValue<T>`  | `true`             |
+| `UseChecksum`      | Calculates and verifies checksums during load/save operations                                   | `true`             |
+| `SaveOnDispose`    | Automatically saves the configuration when the instance is disposed                             | `true`             |
+| `AllowEmptyValues` | Permits configuration keys to be saved with empty or null values                                | `true`             |
 | `UseShielding`     | Enables quoted values (e.g., key = "value ; not a comment"); cannot be combined with Human Mode | `false`            |
 
 **Built-in presets:** `Default`, `Safe`, `Performance`, `ReadOnly`, `BufferedAutoSave(interval)`.

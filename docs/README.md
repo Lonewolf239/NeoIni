@@ -3,6 +3,7 @@
 [![.NET 5+](https://img.shields.io/badge/.NET-5+-2D2D2D?style=for-the-badge&logo=dotnet&logoColor=FFFFFF)](https://dotnet.microsoft.com/)
 [![.NET Standard 2.0](https://img.shields.io/badge/.NET%20Standard-2.0-2D2D2D?style=for-the-badge&logo=dotnet&logoColor=FFFFFF)](https://learn.microsoft.com/en-us/dotnet/standard/net-standard?tabs=net-standard-2-0)
 [![GPLv3](https://img.shields.io/badge/License-GPLv3-2D2D2D?style=for-the-badge&logo=gnu&logoColor=FFFFFF)](https://github.com/Lonewolf239/NeoIni/blob/main/LICENSE)
+[![Commercial License Available](https://img.shields.io/badge/Commercial%20License-Available-2D2D2D?style=for-the-badge)](#commercial-license)
 
 [![Wiki](https://img.shields.io/badge/NeoIni-WIKI-2D2D2D?style=for-the-badge&logo=github&logoColor=FFFFFF)](https://github.com/Lonewolf239/NeoIni/wiki)
 [![Roadmap](https://img.shields.io/badge/ROADMAP-2D2D2D?style=for-the-badge&logo=map&logoColor=FFFFFF)](./ROADMAP.md)
@@ -25,7 +26,7 @@ dotnet add package NeoIni
 ```
 
 - **Package:** [nuget.org/packages/NeoIni](https://www.nuget.org/packages/NeoIni)
-- **Version:** 3.5.0 | **.NET 5+** | **.NET Standard 2.0**
+- **Version:** 3.5.1 | **.NET 5+** | **.NET Standard 2.0**
 - **Developer:** [Lonewolf239](https://github.com/Lonewolf239)
 
 ---

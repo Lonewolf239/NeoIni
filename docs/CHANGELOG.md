@@ -4,6 +4,15 @@
 ## Changelog · NeoIni
 
 <details open>
+<summary><strong>3.5.1</strong> — August 8, 2026</summary>
+
+#### List of changes
+
+- **Documentation only, no code changes.** Made the commercial-license option more discoverable: added a badge next to the GPLv3 badge in `README.md`/`README-RU.md`, and a callout at the top of `README-NUGET.md` (the page shown on nuget.org), both linking to the existing [Commercial License](./README.md#commercial-license) section. Added the same pointer to the wiki's Home page.
+
+</details>
+
+<details>
 <summary><strong>3.5.0</strong> — August 8, 2026</summary>
 
 #### List of changes

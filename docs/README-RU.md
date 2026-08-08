@@ -3,6 +3,7 @@
 [![.NET 5+](https://img.shields.io/badge/.NET-5+-2D2D2D?style=for-the-badge&logo=dotnet&logoColor=FFFFFF)](https://dotnet.microsoft.com/)
 [![.NET Standard 2.0](https://img.shields.io/badge/.NET%20Standard-2.0-2D2D2D?style=for-the-badge&logo=dotnet&logoColor=FFFFFF)](https://learn.microsoft.com/ru-ru/dotnet/standard/net-standard?tabs=net-standard-2-0)
 [![GPLv3](https://img.shields.io/badge/License-GPLv3-2D2D2D?style=for-the-badge&logo=gnu&logoColor=FFFFFF)](https://github.com/Lonewolf239/NeoIni/blob/main/LICENSE)
+[![Коммерческая лицензия](https://img.shields.io/badge/Коммерческая%20лицензия-Доступна-2D2D2D?style=for-the-badge)](#commercial-license)
 
 [![Wiki](https://img.shields.io/badge/NeoIni-WIKI-2D2D2D?style=for-the-badge&logo=github&logoColor=FFFFFF)](https://github.com/Lonewolf239/NeoIni/wiki/Главная)
 [![Roadmap](https://img.shields.io/badge/ROADMAP-2D2D2D?style=for-the-badge&logo=map&logoColor=FFFFFF)](./ROADMAP-RU.md)
@@ -25,7 +26,7 @@ dotnet add package NeoIni
 ```
 
 - **Пакет:** [nuget.org/packages/NeoIni](https://www.nuget.org/packages/NeoIni)
-- **Версия:** 3.5.0 | **.NET 5+** | **.NET Standard 2.0**
+- **Версия:** 3.5.1 | **.NET 5+** | **.NET Standard 2.0**
 - **Разработчик:** [Lonewolf239](https://github.com/Lonewolf239)
 
 ---
@@ -45,7 +46,7 @@ dotnet add package NeoIni
 | ✏️  | **Human-editable mode**   | Сохранение комментариев и форматирования для ручного редактирования INI-файлов (без checksum, без шифрования).                             |
 | 📡  | **Full async API**        | Асинхронные версии всех основных операций — `CreateAsync`, `GetValueAsync`, `SaveFileAsync` и т.д.                                         |
 | 🔍  | **Search & TryGet**       | Регистронезависимый поиск по ключам/значениям. `TryGetValue<T>` читает без модификации файла.                                              |
-| 📢  | **Rich event system**     | 15 событий: сохранение, загрузка, CRUD ключей/секций, очистка данных, autosave, checksum mismatch, ошибки, завершение поиска.                              |
+| 📢  | **Rich event system**     | 15 событий: сохранение, загрузка, CRUD ключей/секций, очистка данных, autosave, checksum mismatch, ошибки, завершение поиска.              |
 | 🔑  | **Easy migration**        | Перенос зашифрованных конфигов между машинами через `GetEncryptionPassword()`.                                                             |
 | 📦  | **Black-box design**      | Единая точка входа — `NeoIniDocument` владеет и управляет всем за чистым публичным API.                                                    |
 

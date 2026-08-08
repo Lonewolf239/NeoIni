@@ -6,12 +6,14 @@
 
 > ⚠️ **Not a classic INI parser** – NeoIni is a **configuration management system** that uses an extended INI format as its storage layer. Files written in standard mode contain binary headers, checksums, and encryption metadata, making them unsuitable for direct manual editing (use Human Mode for hand-edited configs).
 
+> 💼 **Licensed under GPLv3.** Need it in a closed-source/proprietary product? A **[commercial license](#commercial-license)** is available.
+
 ```bash
 dotnet add package NeoIni
 ```
 
 - **Package:** [nuget.org/packages/NeoIni](https://www.nuget.org/packages/NeoIni)
-- **Version:** 3.5.0 | **.NET 5+** | **.NET Standard 2.0**
+- **Version:** 3.5.1 | **.NET 5+** | **.NET Standard 2.0**
 - **Developer:** [Lonewolf239](https://github.com/Lonewolf239)
 
 ---

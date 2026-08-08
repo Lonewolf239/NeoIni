@@ -19,7 +19,8 @@ NeoIni follows a tiered support model:
 
 | Version              | Status  | Support                                                                                                       |
 | -------------------- | ------- | ------------------------------------------------------------------------------------------------------------- |
-| 3.5.0                | **CSR** | Security patches + bug fixes                                                                                  |
+| 3.5.1                | **CSR** | Security patches + bug fixes                                                                                  |
+| 3.5.0                | LSR     | Available for download                                                                                        |
 | 3.4.4                | LSR     | Available for download                                                                                        |
 | 3.4.3                | LSR     | Available for download                                                                                        |
 | 3.4.2                | LSR     | Available for download                                                                                        |
